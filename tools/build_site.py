@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the "Papan Harga Slab EGS" page from latest.json. Read-only on the data.
 
-Usage: python3 tools/build_site.py [latest.json] [--out FILE] [--standalone]
+Usage: python3 tools/build_site.py [latest.json] [--raw raw.json] [--out FILE] [--standalone]
 
 Every asking price is treated as the price (price_type OBSERVED_ASKING_ONLY);
 nothing waits for a sale. For each tracked card type the page lists every known
@@ -12,6 +12,8 @@ Match confidence of a discovery candidate to a tracked card:
   nama+set   name and set code match, no conflicting rarity       -> counted
   nama       name only, or the rarity/set conflicts               -> shown, not counted
 Foreign-language versions are shown but never counted. Non-Pokemon cards are hidden.
+With --raw (see docs/raw-dataset.md) each card also shows the RAW (ungraded) asking range next to the
+slabs, and RAW-only cards get their own table.
 Without --standalone the output is a fragment for the Artifact tool (no <html> tag).
 """
 import argparse
@@ -71,7 +73,7 @@ def match_type(text, types):
     return (best[1], best[2]) if best else None
 
 
-def build(d):
+def build(d, raw=None):
     gen = datetime.fromisoformat(d["generated_at"])
     types, index = [], {}
     for l in d["listings"]:
@@ -118,12 +120,42 @@ def build(d):
             row["conf"] = "lain"
             others.append(row)
 
-    return {
+    data = {
         "generated": wib_label(d["generated_at"]),
         "last_observed": wib_label(d["coverage"]["last_observed_at"]),
         "discovery": wib_label(d["discovery"]["generated_at"]),
         "types": types, "others": others, "hidden": hidden,
+        "raw_meta": None, "raw_only": [],
     }
+    if raw:
+        attach_raw(data, raw, gen)
+    return data
+
+
+def card_key(set_code, number):
+    return (set_code.lower(), number.replace(" ", "").lower())
+
+
+def attach_raw(data, raw, gen):
+    """Join raw.json cards to the tracked types on (set_code, card_number)."""
+    by = {card_key(c["set_code"], c["card_number"]): c for c in raw["cards"]}
+    used = set()
+    for t in data["types"]:
+        k = card_key(t["set"], t["number"])
+        c = by.get(k)
+        if not c:
+            continue
+        used.add(k)
+        t["raw"] = {**c["stats"], "listings": [
+            {"ask": l["ask_idr"], "city": l["city"], "url": l["url"], "conf": l["conf"],
+             "text": l["title"], **age_fields(l["url"], gen)} for l in c["listings"]]}
+    data["raw_only"] = sorted(
+        ({"name": c["name"], "set": c["set_code"], "number": c["card_number"],
+          "rarity": c["rarity"], **c["stats"]}
+         for k, c in by.items() if k not in used),
+        key=lambda c: -c["n"])
+    data["raw_meta"] = {"generated": wib_label(raw["generated_at"]), "cards": len(raw["cards"]),
+                        "listings": raw["coverage"]["listings_counted"]}
 
 
 def render(data, standalone):
@@ -142,11 +174,17 @@ def render(data, standalone):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("path", nargs="?", default="latest.json")
+    ap.add_argument("--raw", help="raw.json with the RAW (ungraded) dataset")
     ap.add_argument("--out", default="-", help="output file (default: stdout)")
     ap.add_argument("--standalone", action="store_true", help="wrap in a full HTML document")
     a = ap.parse_args()
     with open(a.path, encoding="utf-8") as fh:
-        html = render(build(json.load(fh)), a.standalone)
+        latest = json.load(fh)
+    raw = None
+    if a.raw:
+        with open(a.raw, encoding="utf-8") as fh:
+            raw = json.load(fh)
+    html = render(build(latest, raw), a.standalone)
     if a.out == "-":
         sys.stdout.write(html)
     else:

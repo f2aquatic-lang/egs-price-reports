@@ -57,9 +57,14 @@ h2{font:600 20px/1.2 var(--display);margin:0}
 .dot::after{content:"";position:absolute;inset:-9px}
 .dot.tr{background:var(--tracked);border-color:var(--tracked);box-shadow:0 0 0 2px var(--surface)}
 .dot.maybe{width:10px;height:10px;margin:-5px 0 0 -5px;border:2px solid var(--muted)}
+.iqr{position:absolute;top:50%;height:12px;margin-top:-6px;border-radius:3px;background:var(--ink-2);opacity:.28;border:1px solid var(--ink-2)}
+.med{position:absolute;top:50%;width:2px;height:16px;margin:-8px 0 0 -1px;background:var(--ink)}
+.rawstrip{cursor:default}
+.nodata{color:var(--ink-2);font-size:12px}
 .mk{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid var(--other);background:var(--surface)}
 .mk.tr{background:var(--tracked);border-color:var(--tracked)}
 .mk.maybe{width:9px;height:9px;border-color:var(--muted)}
+.mk.raw{width:18px;height:10px;border-radius:3px;border:1px solid var(--ink-2);background:var(--soft)}
 .axis{position:relative;height:16px;font:11px var(--mono);color:var(--ink-2)}
 .axis span{position:absolute;top:0;white-space:nowrap}
 details.more{border-top:1px solid var(--line);padding-top:8px}
@@ -108,11 +113,17 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
     <span><i class="mk tr"></i>Dipantau bot</span>
     <span><i class="mk"></i>Listing lain, kartu dan grade sama</span>
     <span><i class="mk maybe"></i>Mirip, perlu dicek (tidak dihitung)</span>
+    <span id="legend-raw" hidden><i class="mk raw"></i>RAW: garis = rentang, kotak = tengah 50%, tanda = median</span>
   </div>
 
   <section class="sec">
     <div class="sechead"><h2>Kartu yang dipantau</h2><p>Satu strip per grade. Klik titik untuk membuka listing.</p></div>
     <div class="grid" id="cards"></div>
+  </section>
+
+  <section class="sec" id="rawonly" hidden>
+    <div class="sechead"><h2>RAW tanpa slab yang dipantau</h2><p>Kartu bahasa Indonesia yang belum di-slab dan belum punya slab di daftar pantau.</p></div>
+    <div class="panel"><div class="tablewrap" id="rawonly-body"></div></div>
   </section>
 
   <section class="sec">
@@ -126,6 +137,8 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
       <summary>Cara membaca papan ini</summary>
       <ul class="notes">
         <li>Harga di sini harga penawaran, bukan harga transaksi.</li>
+        <li>RAW adalah kartu bahasa Indonesia yang belum di-slab. Angka RAW dihitung dari semua listing yang cocok, sedangkan tabel hanya memuat contoh yang termurah.</li>
+        <li>Kalau harga RAW dan slab terpaut jauh, sumbu dibuat logaritmik supaya keduanya terbaca. Jaraknya sama untuk kelipatan harga yang sama.</li>
         <li>Rentang dan median hanya menghitung titik terisi dan titik kosong. Titik abu-abu kecil (kartu mirip tapi rarity atau set berbeda) dan versi bahasa lain ditampilkan tetapi tidak dihitung.</li>
         <li>Setiap listing dihitung sebagai satu slab. Nomor seri belum ada di data, jadi satu slab yang dijual dua kali bisa terhitung dua.</li>
         <li>"Sejak" dibaca dari kode di URL listing, jadi hanya perkiraan.</li>
@@ -172,6 +185,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
   var CONF = {dipantau:'Dipantau', nomor:'Nomor kartu cocok', 'nama+set':'Nama dan set cocok', nama:'Perlu dicek', lain:'Belum dipantau'};
   function counted(r){ return r.in_stock && r.lang === 'ID' && (r.tracked || r.conf === 'nomor' || r.conf === 'nama+set'); }
   function status(r){
+    if (r.raw) return 'RAW · ' + CONF[r.conf];
     if (r.lang !== 'ID') return 'Beda versi, tidak dihitung';
     if (!r.in_stock) return 'Stok habis';
     return CONF[r.conf] || r.conf;
@@ -183,7 +197,10 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
 
   var tip = $('#tip');
   function showTip(target, r){
-    tip.replaceChildren(h('strong', {text: rp(r.ask)}), h('span', {text: '  EGS ' + r.grade}), h('div', {text: describe(r)}));
+    showTipNodes(target, [h('strong', {text: rp(r.ask)}), h('span', {text: '  EGS ' + r.grade}), h('div', {text: describe(r)})]);
+  }
+  function showTipNodes(target, nodes){
+    tip.replaceChildren.apply(tip, nodes);
     tip.hidden = false;
     var b = target.getBoundingClientRect(), w = tip.offsetWidth, t = tip.offsetHeight;
     var x = Math.min(Math.max(8, b.left + b.width / 2 - w / 2), window.innerWidth - w - 8);
@@ -204,14 +221,52 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
     });
   }
 
+  function rawTip(raw){
+    return [h('strong', {text: 'RAW median ' + rp(raw.median)}),
+      h('div', {text: raw.n + ' listing'}),
+      h('div', {text: 'Tengah 50%: ' + rp(raw.p25) + ' – ' + rp(raw.p75)}),
+      h('div', {text: 'Rentang: ' + rp(raw.min) + ' – ' + rp(raw.max)})];
+  }
+  function rawBlock(raw, pos){
+    var strip = h('div', {'class': 'strip rawstrip', tabindex: '0',
+      'aria-label': 'RAW median ' + rp(raw.median) + ', ' + raw.n + ' listing, ' + rp(raw.min) + ' sampai ' + rp(raw.max),
+      onmouseenter: function(e){ showTipNodes(e.currentTarget, rawTip(raw)); },
+      onfocus: function(e){ showTipNodes(e.currentTarget, rawTip(raw)); },
+      onmouseleave: hideTip, onblur: hideTip});
+    var a = pos(raw.min), b = pos(raw.max), q1 = pos(raw.p25), q3 = pos(raw.p75), m = pos(raw.median);
+    strip.append(
+      h('div', {'class': 'range', style: 'left:' + a + '%;width:' + Math.max(b - a, 0.5) + '%'}),
+      h('div', {'class': 'iqr', style: 'left:' + q1 + '%;width:' + Math.max(q3 - q1, 0.8) + '%'}),
+      h('div', {'class': 'med', style: 'left:' + m + '%'}));
+    return h('div', {'class': 'grow'},
+      h('div', {'class': 'gline'},
+        h('span', {'class': 'gchip', text: 'RAW'}),
+        h('div', {'class': 'gsum'},
+          h('strong', {text: rp(raw.median)}),
+          h('small', {text: 'median · ' + raw.n + ' listing · ' + rp(raw.min) + ' – ' + rp(raw.max)}))),
+      strip);
+  }
+  function rawEmpty(){
+    return h('div', {'class': 'grow'}, h('div', {'class': 'gline'},
+      h('span', {'class': 'gchip', text: 'RAW'}),
+      h('span', {'class': 'nodata', text: D.raw_meta ? 'Belum ada listing RAW yang cocok' : 'Belum ada data RAW'})));
+  }
+
   function card(t){
     var grades = Array.from(new Set(t.rows.map(function(r){ return r.grade; }))).sort(gradeSort);
     var plot = t.rows.filter(function(r){ return r.lang === 'ID' && r.in_stock; });
+    var raw = t.raw;
     var vals = plot.map(function(r){ return r.ask; });
+    if (raw) vals.push(raw.min, raw.max);
+    if (!vals.length) vals.push(1);
     var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
     var axisLo = lo, axisHi = hi;
-    if (lo === hi) { lo *= 0.8; hi *= 1.2; } else { var pad = (hi - lo) * 0.06; lo -= pad; hi += pad; }
-    function pos(v){ return (v - lo) / (hi - lo) * 100; }
+    var useLog = hi / lo > 4;
+    function f(v){ return useLog ? Math.log(v) : v; }
+    var a0, b0;
+    if (lo === hi) { a0 = f(lo * 0.8); b0 = f(hi * 1.2); }
+    else { a0 = f(lo); b0 = f(hi); var pad = (b0 - a0) * 0.06; a0 -= pad; b0 += pad; }
+    function pos(v){ return (f(v) - a0) / (b0 - a0) * 100; }
 
     var body = grades.map(function(g){
       var rows = t.rows.filter(function(r){ return r.grade === g; });
@@ -238,6 +293,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
       sub.push(!prices.length ? 'hanya listing mirip, perlu dicek'
         : prices.length === 1 ? 'baru 1 listing' : prices.length + ' listing');
       if (tr) sub.push(tr.flat ? 'tetap ' + tr.days + ' hari' : 'berubah dalam ' + tr.days + ' hari');
+      if (raw && prices.length) sub.push((median(prices) / raw.median).toLocaleString('id-ID', {maximumFractionDigits: 1}) + '× RAW');
       var extra = rows.length - cnt.length;
       if (extra > 0 && prices.length) sub.push('+' + extra + ' tidak dihitung');
       return h('div', {'class': 'grow'},
@@ -247,6 +303,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
         strip);
     });
 
+    body.unshift(raw ? rawBlock(raw, pos) : rawEmpty());
     var axis = h('div', {'class': 'axis', 'aria-hidden': 'true'});
     function tick(v, p){
       var s = h('span', {text: short(v)});
@@ -254,10 +311,21 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
       else { s.style.left = p + '%'; s.style.transform = 'translateX(-50%)'; }
       axis.append(s);
     }
-    tick(axisLo, pos(axisLo));
-    if (axisHi !== axisLo) tick(axisHi, pos(axisHi));
+    var marks = [axisLo];
+    if (useLog) {
+      var nice = [];
+      for (var e = Math.floor(Math.log10(axisLo)); e <= Math.ceil(Math.log10(axisHi)); e++) {
+        [1, 2, 5].forEach(function(m){ var v = m * Math.pow(10, e); if (v > axisLo && v < axisHi) nice.push(v); });
+      }
+      nice.forEach(function(v){ if (Math.abs(pos(v) - pos(marks[marks.length - 1])) >= 16 && pos(axisHi) - pos(v) >= 16) marks.push(v); });
+    }
+    if (axisHi !== axisLo) marks.push(axisHi);
+    marks.forEach(function(v){ tick(v, pos(v)); });
 
-    var all = t.rows.slice().sort(function(x, y){ return gradeSort(x.grade, y.grade) || x.ask - y.ask; });
+    var rawRows = raw ? raw.listings.map(function(l){
+      return {ask: l.ask, grade: 'RAW', city: l.city, url: l.url, listed: l.listed, conf: l.conf, lang: 'ID', in_stock: true, tracked: false, raw: true};
+    }) : [];
+    var all = t.rows.slice().sort(function(x, y){ return gradeSort(x.grade, y.grade) || x.ask - y.ask; }).concat(rawRows);
     var table = h('table', null,
       h('thead', null, h('tr', null, ['Harga', 'Grade', 'Status', 'Kota', 'Sejak', ''].map(function(c){ return h('th', {text: c}); }))),
       h('tbody', null, all.map(function(r){
@@ -276,7 +344,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
         h('a', {'class': 'toco', href: t.search, target: '_blank', rel: 'noopener', text: 'Cari di toco ↗'})),
       h('div', {'class': 'meta', text: [t.set, t.number, t.rarity].join(' · ')}),
       body, axis,
-      h('details', {'class': 'more'}, h('summary', {text: 'Semua ' + t.rows.length + ' listing'}), h('div', {'class': 'tablewrap'}, table)));
+      h('details', {'class': 'more'}, h('summary', {text: 'Semua listing (' + t.rows.length + ' slab' + (raw ? ', RAW ' + raw.listings.length + ' dari ' + raw.n : '') + ')'}), h('div', {'class': 'tablewrap'}, table)));
   }
 
   var total = 0;
@@ -287,7 +355,28 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
     h('li', null, h('b', {text: String(D.others.length)}), ' listing lain'),
     h('li', null, 'laporan ', h('b', {text: D.generated})),
     h('li', null, 'observasi ', h('b', {text: D.last_observed})));
+  if (D.raw_meta) {
+    $('#legend-raw').hidden = false;
+    $('#facts').append(
+      h('li', null, h('b', {text: String(D.raw_meta.listings)}), ' listing RAW dari ', h('b', {text: String(D.raw_meta.cards)}), ' kartu'),
+      h('li', null, 'data RAW ', h('b', {text: D.raw_meta.generated})));
+  }
   $('#cards').append.apply($('#cards'), D.types.map(card));
+
+  if (D.raw_only.length) {
+    $('#rawonly').hidden = false;
+    $('#rawonly-body').append(h('table', null,
+      h('thead', null, h('tr', null, ['Kartu', 'Set · No', 'Listing', 'Termurah', 'Median', 'Termahal'].map(function(c){ return h('th', {text: c}); }))),
+      h('tbody', null, D.raw_only.map(function(c){
+        return h('tr', null,
+          h('td', {text: c.name + (c.rarity ? ' ' + c.rarity : '')}),
+          h('td', {'class': 'num', text: c.set + ' · ' + c.number}),
+          h('td', {'class': 'num', text: String(c.n)}),
+          h('td', {'class': 'num', text: rp(c.min)}),
+          h('td', {'class': 'num', text: rp(c.median)}),
+          h('td', {'class': 'num', text: rp(c.max)}));
+      }))));
+  }
 
   var st = {grade: 'all', q: '', sort: 'desc'};
   var grades = Array.from(new Set(D.others.map(function(r){ return r.grade; }))).sort(gradeSort);
