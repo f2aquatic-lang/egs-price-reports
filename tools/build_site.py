@@ -1,0 +1,159 @@
+#!/usr/bin/env python3
+"""Build the "Papan Harga Slab EGS" page from latest.json. Read-only on the data.
+
+Usage: python3 tools/build_site.py [latest.json] [--out FILE] [--standalone]
+
+Every asking price is treated as the price (price_type OBSERVED_ASKING_ONLY);
+nothing waits for a sale. For each tracked card type the page lists every known
+listing per grade: the tracked listing plus matching discovery candidates.
+
+Match confidence of a discovery candidate to a tracked card:
+  nomor      card number (e.g. 223/193) appears in the title      -> counted
+  nama+set   name and set code match, no conflicting rarity       -> counted
+  nama       name only, or the rarity/set conflicts               -> shown, not counted
+Foreign-language versions are shown but never counted. Non-Pokemon cards are hidden.
+Without --standalone the output is a fragment for the Artifact tool (no <html> tag).
+"""
+import argparse
+import json
+import os
+import re
+import sys
+from datetime import datetime, timedelta, timezone
+from urllib.parse import quote_plus
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from triage_candidates import FOREIGN, NON_POKEMON, clean_name, parse  # noqa: E402
+
+WIB = timezone(timedelta(hours=7))
+RARITY = re.compile(r"\b(SAR|SR|AR|UR|HR|CSR|SSR|RRR|RR)\b")
+URL_TS = re.compile(r"-(\d{13})-[0-9a-f]{4}$")
+MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]
+
+
+def wib_label(iso):
+    t = datetime.fromisoformat(iso).astimezone(WIB)
+    return f"{t.day} {MONTHS[t.month - 1]} {t:%H:%M} WIB"
+
+
+def listed_at(url):
+    m = URL_TS.search(url)
+    return datetime.fromtimestamp(int(m.group(1)) / 1000, timezone.utc) if m else None
+
+
+def age_fields(url, gen):
+    t = listed_at(url)
+    if not t:
+        return {"age_days": None, "listed": None}
+    t = t.astimezone(WIB)
+    return {"age_days": (gen - t).days, "listed": f"{t.day} {MONTHS[t.month - 1]}"}
+
+
+def match_type(text, types):
+    """Best (index, confidence) of a candidate title against the tracked card types."""
+    low = text.lower()
+    squashed = low.replace(" ", "")
+    tokens = set(RARITY.findall(text.upper()))
+    best = None
+    for i, t in enumerate(types):
+        words = clean_name(t["name"])
+        name_ok = all(re.search(rf"\b{re.escape(w)}\b", low) for w in words)
+        if t["number"].lower() in squashed:
+            cand = (3, i, "nomor")
+        elif name_ok:
+            set_ok = re.search(rf"\b{re.escape(t['set'].lower())}\b", low)
+            conflict = bool(tokens) and t["rarity"].upper() not in tokens
+            cand = (2, i, "nama+set") if set_ok and not conflict else (1, i, "nama")
+        else:
+            continue
+        if best is None or cand[0] > best[0]:
+            best = cand
+    return (best[1], best[2]) if best else None
+
+
+def build(d):
+    gen = datetime.fromisoformat(d["generated_at"])
+    types, index = [], {}
+    for l in d["listings"]:
+        key = (l["name"], l["set_code"], l["card_number"], l["rarity"])
+        if key not in index:
+            index[key] = len(types)
+            types.append({
+                "name": re.sub(r"[<>]", "", l["name"]), "set": l["set_code"], "number": l["card_number"],
+                "rarity": l["rarity"],
+                "search": "https://toco.id/search?q=" + quote_plus(re.sub(r"[<>]", "", l["name"]) + " egs"),
+                "rows": [],
+            })
+        prices = [x["asking_idr"] for x in l["daily_latest"]]
+        types[index[key]]["rows"].append({
+            "grade": l["grade"], "ask": l["latest"]["asking_idr"], "list": None,
+            "tracked": True, "conf": "dipantau", "lang": "ID", "city": "",
+            "url": l["url"], "in_stock": l["latest"]["in_stock"],
+            "days": len(prices), "flat": len(set(prices)) == 1,
+            "seen": wib_label(l["latest"]["observed_at"]),
+            "text": f"{l['name']} {l['card_number']} {l['set_code']} {l['rarity']}",
+            **age_fields(l["url"], gen),
+        })
+
+    tracked_urls = {l["url"] for l in d["listings"]}
+    others, hidden = [], 0
+    for c in d["discovery"]["candidates"]:
+        if c["url"] in tracked_urls:
+            continue
+        p = parse(c)
+        if NON_POKEMON.search(p["text"]):
+            hidden += 1
+            continue
+        row = {
+            "grade": p["grade"], "ask": p["ask_idr"], "list": p["list_idr"], "tracked": False,
+            "lang": "beda" if FOREIGN.search(p["text"]) else "ID", "city": p["city"],
+            "url": p["url"], "in_stock": True, "text": re.sub(r"^Sisa \d+ ", "", p["text"]),
+            **age_fields(p["url"], gen),
+        }
+        m = match_type(p["text"], types)
+        if m:
+            row["conf"] = m[1]
+            types[m[0]]["rows"].append(row)
+        else:
+            row["conf"] = "lain"
+            others.append(row)
+
+    return {
+        "generated": wib_label(d["generated_at"]),
+        "last_observed": wib_label(d["coverage"]["last_observed_at"]),
+        "discovery": wib_label(d["discovery"]["generated_at"]),
+        "types": types, "others": others, "hidden": hidden,
+    }
+
+
+def render(data, standalone):
+    here = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(here, "site_template.html"), encoding="utf-8") as fh:
+        page = fh.read()
+    blob = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
+    page = page.replace("/*__DATA__*/null", blob)
+    if standalone:
+        page = ("<!doctype html><html lang=\"id\"><head><meta charset=\"utf-8\">"
+                "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1,viewport-fit=cover\">"
+                "</head><body>" + page + "</body></html>")
+    return page
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("path", nargs="?", default="latest.json")
+    ap.add_argument("--out", default="-", help="output file (default: stdout)")
+    ap.add_argument("--standalone", action="store_true", help="wrap in a full HTML document")
+    a = ap.parse_args()
+    with open(a.path, encoding="utf-8") as fh:
+        html = render(build(json.load(fh)), a.standalone)
+    if a.out == "-":
+        sys.stdout.write(html)
+    else:
+        with open(a.out, "w", encoding="utf-8") as fh:
+            fh.write(html)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

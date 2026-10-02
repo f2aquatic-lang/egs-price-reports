@@ -1,0 +1,331 @@
+<title>Papan Harga Slab EGS</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a board of one card per tracked card type; each card has one price strip per EGS grade, then the other cards still unwatched. */
+:root{
+  --bg:#F2F5F3; --surface:#FFFFFF; --ink:#14201C; --ink-2:#4A5A54; --muted:#6B7B75;
+  --line:#D5DDD9; --soft:#E7EDEA; --tracked:#008A74; --other:#C2641E; --focus:#0B5FFF;
+  --display:"Archivo","Segoe UI",system-ui,sans-serif;
+  --body:"Public Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1411; --surface:#151E1B; --ink:#E7EFEB; --ink-2:#A9B9B2; --muted:#8A9A93;
+    --line:#26332E; --soft:#1D2925; --tracked:#25A98C; --other:#D9782A; --focus:#7AA7FF;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1411; --surface:#151E1B; --ink:#E7EFEB; --ink-2:#A9B9B2; --muted:#8A9A93;
+  --line:#26332E; --soft:#1D2925; --tracked:#25A98C; --other:#D9782A; --focus:#7AA7FF;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:max(16px,3vw);padding-block:28px 64px;display:flex;flex-direction:column;gap:28px}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+a{color:inherit}
+header.top{display:flex;flex-direction:column;gap:8px}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+h1{font:700 clamp(26px,4.4vw,40px)/1.08 var(--display);margin:0;text-wrap:balance}
+.sub{color:var(--ink-2);max-width:68ch;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:4px 0 0;padding:0;list-style:none;font:500 13px var(--mono);color:var(--ink-2)}
+.facts b{color:var(--ink);font-weight:500}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;color:var(--ink-2);font-size:13px;align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+h2{font:600 20px/1.2 var(--display);margin:0}
+.sec{display:flex;flex-direction:column;gap:14px;min-width:0}
+.sechead{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;justify-content:space-between}
+.sechead p{margin:0;color:var(--ink-2);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,500px),1fr));gap:16px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.cardhead{display:flex;flex-wrap:wrap;gap:4px 12px;justify-content:space-between;align-items:baseline}
+.card h3{font:600 18px/1.25 var(--display);margin:0}
+.meta{font:500 12px var(--mono);color:var(--ink-2)}
+.toco{font-size:12px;color:var(--ink-2)}
+.grow{display:flex;flex-direction:column;gap:2px;padding-top:10px;border-top:1px solid var(--line)}
+.gline{display:flex;flex-wrap:wrap;gap:2px 12px;align-items:baseline;justify-content:space-between}
+.gchip{font:500 12px var(--mono);background:var(--soft);border-radius:4px;padding:2px 7px;white-space:nowrap}
+.gsum{display:flex;flex-direction:column;align-items:flex-end;text-align:right}
+.gsum strong{font:500 15px var(--mono);font-variant-numeric:tabular-nums}
+.gsum small{color:var(--ink-2);font-size:12px}
+.strip{position:relative;height:30px}
+.strip::before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:var(--line)}
+.range{position:absolute;top:50%;height:3px;margin-top:-1px;border-radius:2px;background:var(--ink-2);opacity:.35}
+.dot{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;border:2px solid var(--other);background:var(--surface);display:block}
+.dot::after{content:"";position:absolute;inset:-9px}
+.dot.tr{background:var(--tracked);border-color:var(--tracked);box-shadow:0 0 0 2px var(--surface)}
+.dot.maybe{width:10px;height:10px;margin:-5px 0 0 -5px;border:2px solid var(--muted)}
+.mk{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid var(--other);background:var(--surface)}
+.mk.tr{background:var(--tracked);border-color:var(--tracked)}
+.mk.maybe{width:9px;height:9px;border-color:var(--muted)}
+.axis{position:relative;height:16px;font:11px var(--mono);color:var(--ink-2)}
+.axis span{position:absolute;top:0;white-space:nowrap}
+details.more{border-top:1px solid var(--line);padding-top:8px}
+details.more summary{cursor:pointer;color:var(--ink-2);font-size:13px;padding-block:2px}
+.tablewrap{overflow-x:auto;margin-top:6px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{text-align:left;font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);padding:6px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+td.title{min-width:220px}
+.badge{display:inline-block;font:500 11px var(--mono);border:1px solid var(--line);border-radius:4px;padding:0 6px;margin-left:6px;color:var(--ink-2);white-space:nowrap}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 14px;font:500 13px var(--body);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:7px 12px;font:14px var(--body)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 16px;min-width:0}
+.notes{color:var(--ink-2);font-size:13px;max-width:72ch}
+.notes li{margin-block:4px}
+#tip{position:fixed;z-index:10;pointer-events:none;background:var(--ink);color:var(--bg);border-radius:6px;padding:6px 10px;font-size:12px;max-width:260px;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+#tip strong{font:500 13px var(--mono)}
+.empty{color:var(--ink-2);padding:14px 0}
+@media (max-width:640px){
+  #others table,#others tbody{display:block}
+  #others thead{display:none}
+  #others tr{display:grid;grid-template-columns:1fr auto auto;grid-template-areas:"p g l" "t t t" "c s s";gap:2px 14px;padding:10px 0;border-bottom:1px solid var(--line)}
+  #others td{border:0;padding:0}
+  #others td.p{grid-area:p}
+  #others td.g{grid-area:g}
+  #others td.g::before{content:"EGS "}
+  #others td.l{grid-area:l}
+  #others td.t{grid-area:t;min-width:0}
+  #others td.c{grid-area:c;color:var(--ink-2);font-size:12px}
+  #others td.s{grid-area:s;color:var(--ink-2);font-size:12px;text-align:right}
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">toco.id · EGS</div>
+    <h1>Papan Harga Slab EGS</h1>
+    <p class="sub">Harga penawaran penjual dipakai sebagai harga yang ada. Tidak menunggu terjual. Setiap titik adalah satu listing.</p>
+    <ul class="facts" id="facts"></ul>
+  </header>
+
+  <div class="legend" aria-label="Arti titik">
+    <span><i class="mk tr"></i>Dipantau bot</span>
+    <span><i class="mk"></i>Listing lain, kartu dan grade sama</span>
+    <span><i class="mk maybe"></i>Mirip, perlu dicek (tidak dihitung)</span>
+  </div>
+
+  <section class="sec">
+    <div class="sechead"><h2>Kartu yang dipantau</h2><p>Satu strip per grade. Klik titik untuk membuka listing.</p></div>
+    <div class="grid" id="cards"></div>
+  </section>
+
+  <section class="sec">
+    <div class="sechead"><h2>Listing lain, belum dipantau</h2><p id="others-count"></p></div>
+    <div class="tools" id="tools"></div>
+    <div class="panel"><div class="tablewrap" id="others"></div></div>
+  </section>
+
+  <section class="sec">
+    <details class="panel">
+      <summary>Cara membaca papan ini</summary>
+      <ul class="notes">
+        <li>Harga di sini harga penawaran, bukan harga transaksi.</li>
+        <li>Rentang dan median hanya menghitung titik terisi dan titik kosong. Titik abu-abu kecil (kartu mirip tapi rarity atau set berbeda) dan versi bahasa lain ditampilkan tetapi tidak dihitung.</li>
+        <li>Setiap listing dihitung sebagai satu slab. Nomor seri belum ada di data, jadi satu slab yang dijual dua kali bisa terhitung dua.</li>
+        <li>"Sejak" dibaca dari kode di URL listing, jadi hanya perkiraan.</li>
+        <li>Semua jam dalam WIB.</li>
+      </ul>
+    </details>
+  </section>
+</div>
+<div id="tip" hidden></div>
+
+<script id="egs-data" type="application/json">/*__DATA__*/null</script>
+<script>
+(function(){
+  var D = JSON.parse(document.getElementById('egs-data').textContent);
+  var $ = function(s){ return document.querySelector(s); };
+  function h(tag, props){
+    var e = document.createElement(tag);
+    if (props) Object.keys(props).forEach(function(k){
+      var v = props[k];
+      if (v == null || v === false) return;
+      if (k === 'class') e.className = v;
+      else if (k === 'text') e.textContent = v;
+      else if (k.indexOf('on') === 0) e.addEventListener(k.slice(2), v);
+      else e.setAttribute(k, v === true ? '' : v);
+    });
+    for (var i = 2; i < arguments.length; i++) {
+      [].concat(arguments[i]).forEach(function(c){
+        if (c == null || c === false) return;
+        e.append(c.nodeType ? c : document.createTextNode(c));
+      });
+    }
+    return e;
+  }
+  var nf = new Intl.NumberFormat('id-ID');
+  function rp(n){ return n == null ? '—' : 'Rp' + nf.format(n); }
+  function short(n){
+    return n >= 1e6 ? (n / 1e6).toLocaleString('id-ID', {maximumFractionDigits: 2}) + 'jt'
+                    : nf.format(Math.round(n / 1e3)) + 'rb';
+  }
+  function median(a){
+    var s = a.slice().sort(function(x, y){ return x - y; }), m = s.length >> 1;
+    return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
+  }
+  var CONF = {dipantau:'Dipantau', nomor:'Nomor kartu cocok', 'nama+set':'Nama dan set cocok', nama:'Perlu dicek', lain:'Belum dipantau'};
+  function counted(r){ return r.in_stock && r.lang === 'ID' && (r.tracked || r.conf === 'nomor' || r.conf === 'nama+set'); }
+  function status(r){
+    if (r.lang !== 'ID') return 'Beda versi, tidak dihitung';
+    if (!r.in_stock) return 'Stok habis';
+    return CONF[r.conf] || r.conf;
+  }
+  function describe(r){
+    return [status(r), r.city, r.listed ? 'sejak ' + r.listed : ''].filter(Boolean).join(' · ');
+  }
+  function gradeSort(a, b){ return parseFloat(b) - parseFloat(a); }
+
+  var tip = $('#tip');
+  function showTip(target, r){
+    tip.replaceChildren(h('strong', {text: rp(r.ask)}), h('span', {text: '  EGS ' + r.grade}), h('div', {text: describe(r)}));
+    tip.hidden = false;
+    var b = target.getBoundingClientRect(), w = tip.offsetWidth, t = tip.offsetHeight;
+    var x = Math.min(Math.max(8, b.left + b.width / 2 - w / 2), window.innerWidth - w - 8);
+    var y = b.top - t - 8; if (y < 8) y = b.bottom + 8;
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  }
+  function hideTip(){ tip.hidden = true; }
+
+  function dot(r, pos, dy){
+    var cls = 'dot' + (r.tracked ? ' tr' : (counted(r) ? '' : ' maybe'));
+    return h('a', {
+      'class': cls, href: r.url, target: '_blank', rel: 'noopener',
+      style: 'left:' + pos + '%;top:calc(50% + ' + dy + 'px)',
+      'aria-label': rp(r.ask) + ', ' + describe(r),
+      onmouseenter: function(e){ showTip(e.currentTarget, r); },
+      onfocus: function(e){ showTip(e.currentTarget, r); },
+      onmouseleave: hideTip, onblur: hideTip
+    });
+  }
+
+  function card(t){
+    var grades = Array.from(new Set(t.rows.map(function(r){ return r.grade; }))).sort(gradeSort);
+    var plot = t.rows.filter(function(r){ return r.lang === 'ID' && r.in_stock; });
+    var vals = plot.map(function(r){ return r.ask; });
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    var axisLo = lo, axisHi = hi;
+    if (lo === hi) { lo *= 0.8; hi *= 1.2; } else { var pad = (hi - lo) * 0.06; lo -= pad; hi += pad; }
+    function pos(v){ return (v - lo) / (hi - lo) * 100; }
+
+    var body = grades.map(function(g){
+      var rows = t.rows.filter(function(r){ return r.grade === g; });
+      var cnt = rows.filter(counted), prices = cnt.map(function(r){ return r.ask; });
+      var tr = rows.filter(function(r){ return r.tracked; })[0];
+      var strip = h('div', {'class': 'strip'});
+      if (prices.length > 1) {
+        var a = pos(Math.min.apply(null, prices)), b = pos(Math.max.apply(null, prices));
+        strip.append(h('div', {'class': 'range', style: 'left:' + a + '%;width:' + (b - a) + '%'}));
+      }
+      var k = 0, start = -99;
+      rows.filter(function(r){ return r.lang === 'ID' && r.in_stock; })
+          .sort(function(x, y){ return x.ask - y.ask; })
+          .forEach(function(r){
+            var p = pos(r.ask);
+            if (p - start < 3) k++; else { k = 0; start = p; }
+            strip.append(dot(r, p, ((k % 3) === 1 ? -6 : (k % 3) === 2 ? 6 : 0)));
+          });
+      var main = !prices.length ? (tr && !tr.in_stock ? 'Stok habis' : 'Belum ada harga pasti')
+        : prices.length === 1 ? rp(prices[0])
+        : rp(Math.min.apply(null, prices)) + ' – ' + rp(Math.max.apply(null, prices));
+      var sub = [];
+      if (prices.length > 1) sub.push('median ' + rp(median(prices)));
+      sub.push(!prices.length ? 'hanya listing mirip, perlu dicek'
+        : prices.length === 1 ? 'baru 1 listing' : prices.length + ' listing');
+      if (tr) sub.push(tr.flat ? 'tetap ' + tr.days + ' hari' : 'berubah dalam ' + tr.days + ' hari');
+      var extra = rows.length - cnt.length;
+      if (extra > 0 && prices.length) sub.push('+' + extra + ' tidak dihitung');
+      return h('div', {'class': 'grow'},
+        h('div', {'class': 'gline'},
+          h('span', {'class': 'gchip', text: 'EGS ' + g}),
+          h('div', {'class': 'gsum'}, h('strong', {text: main}), h('small', {text: sub.join(' · ')}))),
+        strip);
+    });
+
+    var axis = h('div', {'class': 'axis', 'aria-hidden': 'true'});
+    function tick(v, p){
+      var s = h('span', {text: short(v)});
+      if (p < 12) s.style.left = p + '%'; else if (p > 88) s.style.right = (100 - p) + '%';
+      else { s.style.left = p + '%'; s.style.transform = 'translateX(-50%)'; }
+      axis.append(s);
+    }
+    tick(axisLo, pos(axisLo));
+    if (axisHi !== axisLo) tick(axisHi, pos(axisHi));
+
+    var all = t.rows.slice().sort(function(x, y){ return gradeSort(x.grade, y.grade) || x.ask - y.ask; });
+    var table = h('table', null,
+      h('thead', null, h('tr', null, ['Harga', 'Grade', 'Status', 'Kota', 'Sejak', ''].map(function(c){ return h('th', {text: c}); }))),
+      h('tbody', null, all.map(function(r){
+        return h('tr', null,
+          h('td', {'class': 'num', text: rp(r.ask)}),
+          h('td', {'class': 'num', text: r.grade}),
+          h('td', {text: status(r)}),
+          h('td', {text: r.city || '—'}),
+          h('td', {text: r.listed || '—'}),
+          h('td', null, h('a', {href: r.url, target: '_blank', rel: 'noopener', text: 'Buka ↗'})));
+      })));
+
+    return h('article', {'class': 'card'},
+      h('div', {'class': 'cardhead'},
+        h('h3', {text: t.name}),
+        h('a', {'class': 'toco', href: t.search, target: '_blank', rel: 'noopener', text: 'Cari di toco ↗'})),
+      h('div', {'class': 'meta', text: [t.set, t.number, t.rarity].join(' · ')}),
+      body, axis,
+      h('details', {'class': 'more'}, h('summary', {text: 'Semua ' + t.rows.length + ' listing'}), h('div', {'class': 'tablewrap'}, table)));
+  }
+
+  var total = 0;
+  D.types.forEach(function(t){ total += t.rows.filter(counted).length; });
+  $('#facts').append(
+    h('li', null, h('b', {text: String(D.types.length)}), ' kartu dipantau'),
+    h('li', null, h('b', {text: String(total)}), ' listing dihitung'),
+    h('li', null, h('b', {text: String(D.others.length)}), ' listing lain'),
+    h('li', null, 'laporan ', h('b', {text: D.generated})),
+    h('li', null, 'observasi ', h('b', {text: D.last_observed})));
+  $('#cards').append.apply($('#cards'), D.types.map(card));
+
+  var st = {grade: 'all', q: '', sort: 'desc'};
+  var grades = Array.from(new Set(D.others.map(function(r){ return r.grade; }))).sort(gradeSort);
+  var tools = $('#tools'), chips = [];
+  function chip(label, val){
+    var c = h('button', {'class': 'chip', type: 'button', 'aria-pressed': String(st.grade === val), text: label,
+      onclick: function(){ st.grade = val; chips.forEach(function(x){ x.el.setAttribute('aria-pressed', String(x.val === st.grade)); }); drawOthers(); }});
+    chips.push({el: c, val: val}); return c;
+  }
+  tools.append(chip('Semua grade', 'all'));
+  grades.forEach(function(g){ tools.append(chip('EGS ' + g, g)); });
+  var sortBtn = h('button', {'class': 'chip', type: 'button', id: 'sort', text: 'Termahal dulu',
+    onclick: function(){ st.sort = st.sort === 'desc' ? 'asc' : 'desc'; sortBtn.textContent = st.sort === 'desc' ? 'Termahal dulu' : 'Termurah dulu'; drawOthers(); }});
+  var q = h('input', {type: 'search', id: 'q', placeholder: 'Cari nama kartu atau kota', 'aria-label': 'Cari listing',
+    oninput: function(e){ st.q = e.target.value.trim().toLowerCase(); drawOthers(); }});
+  tools.append(sortBtn, q);
+
+  function drawOthers(){
+    var rows = D.others.filter(function(r){
+      return (st.grade === 'all' || r.grade === st.grade) &&
+             (!st.q || (r.text + ' ' + r.city).toLowerCase().indexOf(st.q) >= 0);
+    }).sort(function(x, y){ return st.sort === 'desc' ? y.ask - x.ask : x.ask - y.ask; });
+    $('#others-count').textContent = rows.length + ' dari ' + D.others.length + ' listing' +
+      (D.hidden ? ' · ' + D.hidden + ' bukan Pokémon disembunyikan' : '');
+    var box = $('#others');
+    if (!rows.length) { box.replaceChildren(h('div', {'class': 'empty', text: 'Tidak ada listing yang cocok dengan filter ini.'})); return; }
+    box.replaceChildren(h('table', null,
+      h('thead', null, h('tr', null, ['Harga', 'Grade', 'Listing', 'Kota', 'Sejak', ''].map(function(c){ return h('th', {text: c}); }))),
+      h('tbody', null, rows.map(function(r){
+        return h('tr', null,
+          h('td', {'class': 'num p'}, rp(r.ask), r.list ? h('span', {'class': 'badge', text: 'coret ' + short(r.list)}) : null),
+          h('td', {'class': 'num g', text: r.grade}),
+          h('td', {'class': 'title t'}, r.text, r.lang !== 'ID' ? h('span', {'class': 'badge', text: 'beda versi'}) : null),
+          h('td', {'class': 'c', text: r.city || '—'}),
+          h('td', {'class': 's', text: r.listed ? 'sejak ' + r.listed : '—'}),
+          h('td', {'class': 'l'}, h('a', {href: r.url, target: '_blank', rel: 'noopener', text: 'Buka ↗'})));
+      }))));
+  }
+  drawOthers();
+})();
+</script>
