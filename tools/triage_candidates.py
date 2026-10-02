@@ -16,6 +16,9 @@ import re
 import statistics
 import sys
 from collections import Counter
+from datetime import datetime, timedelta, timezone
+
+WIB = timezone(timedelta(hours=7))
 
 NON_POKEMON = re.compile(
     r"one ?piece|\bop\d{2}-\d{3}|\bp-\d{3}\b|digimon|\bex\d-\d{3}|yu-?gi-?oh|"
@@ -89,7 +92,8 @@ def triage(d, grades):
 def report(d, rows):
     tracked = {l["url"]: l for l in d["listings"]}
     by = {k: [r for r in rows if r["verdict"] == k] for k in ("reject", "same-card", "new-card")}
-    lines = [f"# Candidate triage ({d['discovery']['generated_at'][:16]} UTC)", "",
+    when = datetime.fromisoformat(d["discovery"]["generated_at"]).astimezone(WIB)
+    lines = [f"# Candidate triage (discovery {when:%Y-%m-%d %H:%M} WIB)", "",
              f"{len(rows)} pending -> {len(by['reject'])} reject, "
              f"{len(by['same-card'])} extra listing of a tracked card, "
              f"{len(by['new-card'])} new cards to decide", ""]

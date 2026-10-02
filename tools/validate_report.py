@@ -6,9 +6,10 @@ Exit code 1 if any ERROR is found; warnings and info lines do not fail the run.
 """
 import json
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 WIB = timedelta(hours=7)
+WIB_TZ = timezone(WIB)
 TOP_KEYS = ("schema_version", "generated_at", "price_type", "source",
             "coverage", "discovery", "listings")
 LISTING_KEYS = ("name", "set_code", "card_number", "rarity", "grade", "url",
@@ -93,7 +94,12 @@ def validate(d):
             warn(f"coverage.observed_within_14_days={cov.get('observed_within_14_days')}, recomputed {n14}")
         if cov.get("fresh_within_8_hours") != n8:
             warn(f"coverage.fresh_within_8_hours={cov.get('fresh_within_8_hours')}, recomputed {n8}")
-        info.append(f"report lag: generated_at is {(gen - max(observed))} after the newest observation")
+        newest = max(observed)
+        lag = gen - newest
+        info.append(
+            f"newest observation {newest.astimezone(WIB_TZ):%Y-%m-%d %H:%M} WIB, "
+            f"report generated {gen.astimezone(WIB_TZ):%Y-%m-%d %H:%M} WIB "
+            f"(lag {int(lag.total_seconds() // 3600)}h{int(lag.total_seconds() % 3600 // 60):02d}m)")
 
     disc = d["discovery"]
     gone = [k for k in DISCOVERY_KEYS if k not in disc]
