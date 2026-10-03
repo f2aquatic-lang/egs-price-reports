@@ -29,6 +29,8 @@ from triage_candidates import FOREIGN, NON_POKEMON, clean_name, parse  # noqa: E
 
 WIB = timezone(timedelta(hours=7))
 RARITY = re.compile(r"\b(SAR|SR|AR|UR|HR|CSR|SSR|RRR|RR)\b")
+FRACTION = re.compile(r"\b(\d{1,3})\s*/\s*(\d{2,3})\b")
+HASH_NO = re.compile(r"#\s?(\d{1,3})\b")
 URL_TS = re.compile(r"-(\d{13})-[0-9a-f]{4}$")
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]
 
@@ -51,6 +53,16 @@ def age_fields(url, gen):
     return {"age_days": (gen - t).days, "listed": f"{t.day} {MONTHS[t.month - 1]}"}
 
 
+def number_conflict(text, number):
+    """True when the text shows a card number and it is not the tracked one (003/126 is not 173/126)."""
+    want = tuple(int(x) for x in number.replace(" ", "").split("/"))
+    fractions = [(int(a), int(b)) for a, b in FRACTION.findall(text)]
+    if fractions:
+        return want not in fractions
+    hashes = [int(h) for h in HASH_NO.findall(text)]
+    return bool(hashes) and want[0] not in hashes
+
+
 def match_type(text, types):
     """Best (index, confidence) of a candidate title against the tracked card types."""
     low = text.lower()
@@ -64,7 +76,7 @@ def match_type(text, types):
             cand = (3, i, "nomor")
         elif name_ok:
             set_ok = re.search(rf"\b{re.escape(t['set'].lower())}\b", low)
-            conflict = bool(tokens) and t["rarity"].upper() not in tokens
+            conflict = (bool(tokens) and t["rarity"].upper() not in tokens) or number_conflict(text, t["number"])
             cand = (2, i, "nama+set") if set_ok and not conflict else (1, i, "nama")
         else:
             continue

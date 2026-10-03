@@ -62,7 +62,7 @@ Sebuah listing masuk statistik kalau semua ini benar:
 1. `classify_title` (`tools/classify.py`) menjawab `kind = raw`. Slab, produk segel (booster, box, deck, sleeve, binder), dan kartu non-Pokémon tidak dihitung.
 2. Bahasa kartu Indonesia, dan itu **dipastikan dari foto listing**, bukan dari judul. Penjual sering tidak menulis bahasa di judul, atau salah menulisnya, sedangkan teks pada kartu tidak bisa berbohong. Kartu berbahasa Jepang, Inggris, atau lainnya tidak dihitung. Lihat bagian "Cek bahasa dari gambar".
 3. Cocok dengan kartu: nomor kartu persis (`nomor`), atau nama dan kode set cocok tanpa rarity yang bertentangan (`nama+set`). Aturannya sama dengan `match_type` di `tools/build_site.py`.
-4. Stok ada (judul diawali `Sisa N` dengan N lebih dari 0) dan harga lebih dari 0.
+4. Stok ada (`stock` lebih dari 0, dan listing tidak diarsipkan atau dihapus) dan harga lebih dari 0. Harga yang dipakai adalah `price_special` kalau ada dan lebih rendah dari `price`, yaitu harga setelah diskon.
 
 Kalau ada dua harga di judul (harga coret), yang dipakai harga yang lebih rendah. Itu harga yang diminta penjual.
 
@@ -70,7 +70,8 @@ Kalau ada dua harga di judul (harga coret), yang dipakai harga yang lebih rendah
 
 Untuk tiap listing yang cocok dengan kartu tetapi belum punya hasil bahasa:
 
-1. Ambil foto pertama listing (biasanya sisi depan kartu). Hanya foto pertama, supaya jumlah permintaan tetap kecil.
+0. Saringan gratis dulu: kalau judul atau deskripsi jelas menyebut bahasa asing (Jepang, Inggris, Mandarin, atau nama set Jepang seperti "Mega Dream" dan "M2a") dan tidak menyebut Indonesia, listing itu langsung dibuang tanpa memeriksa foto.
+1. Untuk sisanya, ambil foto utama listing (`primary_photo`, ukuran penuh, sekitar 900 piksel). Hanya satu foto, supaya biaya tetap kecil.
 2. Tentukan bahasa teks pada kartu: `ID`, `JP`, `EN`, `lain`, atau `tidak jelas`. Jawaban `tidak jelas` dipakai untuk foto buram, pantulan cahaya, atau sisi belakang kartu.
 3. Hanya `ID` yang dihitung. `tidak jelas` masuk `language_unverified`, dan bahasa lain dibuang.
 4. Simpan hasilnya per URL listing, bersama URL fotonya, supaya tiap listing dicek satu kali. Cek ulang hanya kalau URL foto berubah.
@@ -88,11 +89,11 @@ Penanda bahasa di judul (`ID`, `Indo`, `Indonesia`) tetap terbaca oleh `tools/cl
 
 Implementasi referensi ada di `tools/collect_raw.py`, dan langkah menjalankannya di VPS ada di [vps-setup.md](vps-setup.md). Uraian di bawah menjelaskan apa yang dilakukannya.
 
-1. Ambil daftar kartu dari `latest.json`, lalu buat kata kunci per kartu dengan `python3 tools/watch_queries.py latest.json`. Daftar `raw` adalah kata kunci untuk dataset ini.
-2. Jalankan tiap kata kunci di pencarian toco, halaman demi halaman, sampai halaman tidak lagi memberi listing baru atau sampai batas halaman. Beri jeda antar permintaan dan patuhi aturan situs.
-3. Gabungkan hasil antar kata kunci lewat URL listing, supaya tidak dihitung dua kali.
-4. Klasifikasi tiap judul (`kind = raw`), lalu cocokkan ke kartu.
-5. Untuk listing yang lolos langkah 4 dan belum pernah dicek, ambil foto utamanya dan cek bahasanya (bagian berikut). Simpan hasilnya per URL listing supaya tidak diulang.
+1. Ambil daftar kartu dari `latest.json` dan buat kata kunci per kartu (`tools/watch_queries.py`, daftar `raw`).
+2. Panggil pencarian toco sendiri: `POST https://toco.id/api/toco-api/search` dengan `path: "/listing-search"`, 45 listing per permintaan, halaman berikutnya dengan `from` + 45 (diperiksa langsung di VPS: hasilnya sama dengan di browser, tanpa browser). Beri jeda antar permintaan.
+3. Gabungkan hasil antar kata kunci lewat `slug` listing, supaya tidak dihitung dua kali. Pencarian toco mengurutkan menurut relevansi dan mencampur Jepang, Inggris, Indonesia, slab, dan RAW, jadi penyaringan berikutnya wajib.
+4. Klasifikasi tiap judul (`kind = raw`), lalu cocokkan ke kartu. Nomor kartu yang berbeda berarti kartu berbeda ("003/126" bukan "173/126").
+5. Cek bahasa: saringan gratis dari teks, lalu foto untuk sisanya (bagian di atas). Hasil disimpan per listing supaya tidak diulang.
 6. Hitung statistik dari listing yang terbukti Indonesia.
 7. Tulis `raw.json`, jalankan `python3 tools/validate_raw.py raw.json`, dan publikasikan hanya kalau 0 galat.
 
@@ -112,9 +113,15 @@ python3 tools/build_site.py latest.json --raw raw.json --out board.html
 
 Tiap kartu menampilkan batang RAW (rentang, kotak untuk tengah 50%, tanda median) di atas baris slab, plus rasio "N× RAW" per grade. Kartu RAW yang belum punya slab di daftar pantau muncul di tabel sendiri.
 
+## Sudah diperiksa di VPS (3 Okt 2026)
+
+- Halaman pencarian toco dirender dengan JavaScript, tetapi datanya diambil lewat `POST /api/toco-api/search` yang bisa dipanggil langsung. Setiap listing punya `title`, `slug`, `stock`, `price`, `price_special`, `description`, `city`, `created_at`, `photos`, dan `primary_photo`.
+- Foto asli (`primary_photo`, cloudfront) berukuran sekitar 900 piksel dan bisa diambil tanpa tanda tangan. Foto kecil 184 piksel di halaman pencarian tidak dipakai.
+- Deskripsi sering menyebut bahasa ("CHINESE", "bahasa jepang"), jadi dipakai sebagai saringan awal.
+- Teks halaman listing slab tidak memuat kata "serial". Nomor seri slab kemungkinan hanya ada di foto label.
+
 ## Belum diketahui
 
-- Struktur halaman dan cara paginasi pencarian toco. Dari `latest.json` hanya terlihat bahwa tiap hasil punya URL listing dan teks `Sisa N <judul> Rp<harga> [Rp<coret> -<diskon>%] <kota>`.
-- Pengaruh kondisi (NM, LP, dan sebagainya) terhadap harga. `condition` dicatat kalau tertulis, tetapi statistik belum memisahkannya.
-- Di mana foto listing disimpan (domain CDN-nya), dan apakah foto pertama selalu sisi depan kartu. Keduanya perlu dicek pada halaman asli.
+- Pengaruh kondisi (NM, LP, dan sebagainya) terhadap harga. `condition` dicatat kalau tertulis di judul, tetapi statistik belum memisahkannya.
+- Akurasi pembaca bahasa dari foto pada data nyata. Diuji lewat `--sample-check` sebelum dipakai (lihat vps-setup.md).
 - Nomor seri. Untuk RAW tidak ada, jadi satu kartu yang dijual dua kali bisa terhitung dua.

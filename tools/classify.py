@@ -26,6 +26,9 @@ PRODUCT = re.compile(
     r"collection box|binder|playmat|sleeves?\b|\bcase\b|protector|toploader|top loader", re.I)
 FOREIGN = re.compile(r"japan\w*|jepang|\bjpn?\b|chinese|china|korea\w*|thai\w*|english|\beng\b", re.I)
 ID_MARK = re.compile(r"\[id\]|\bid\b|\bindo\b|indonesia\w*", re.I)
+JP_HINT = re.compile(r"\bm\d[a-z]\b|mega dream|mega attack|high class pack|\U0001F1EF\U0001F1F5|\U0001F1E8\U0001F1F3|"
+                     r"\U0001F1F0\U0001F1F7|\U0001F1FA\U0001F1F8|\U0001F1EC\U0001F1E7", re.I)
+ID_SETS = re.compile(r"evolusi mega|mega impian", re.I)
 NUMBER = re.compile(r"\b(\d{1,3})\s*/\s*(\d{2,3})\b")
 HASH_NO = re.compile(r"#\s?(\d{1,3})\b")
 SET_CODE = re.compile(r"\b(ma\d{1,2}|sv\d{1,2}[a-z]?|s\d{1,2}[a-z]{0,2}|m\d[a-z]?|ac\d[a-z]*)\b", re.I)
@@ -69,6 +72,22 @@ def classify_title(text):
         "rarity": sorted(set(RARITY.findall(t.upper()))),
         "condition": cond.group(1).lower() if cond else None,
     }
+
+
+def text_language(title, description=""):
+    """Cheap language guess from the listing text: 'foreign', 'ID' or 'unknown'.
+
+    Only a pre-filter: a card with clearly foreign text is skipped without a (paid) photo check.
+    The photo stays the authority for everything that is not clearly foreign.
+    """
+    t = f"{title} {(description or '')[:400]}"
+    foreign = bool(FOREIGN.search(t) or JP_HINT.search(t))
+    indonesian = bool(ID_MARK.search(t) or ID_SETS.search(t))
+    if foreign and not indonesian:
+        return "foreign"
+    if indonesian and not foreign:
+        return "ID"
+    return "unknown"
 
 
 if __name__ == "__main__":

@@ -89,6 +89,47 @@ class Match(unittest.TestCase):
         self.assertIsNone(self.idx("Gengar VMAX CSR"))
 
 
+class RealTitles(unittest.TestCase):
+    """Titles copied from toco search results on the VPS (2026-10-03), checked against the 6 tracked cards."""
+    TYPES = [
+        {"name": "Mega Venusaur ex", "set": "MA1", "number": "173/126", "rarity": "SAR"},
+        {"name": "Pikachu ex", "set": "SV8s", "number": "211/182", "rarity": "SR"},
+        {"name": "Pikachu ex", "set": "MA3", "number": "234/193", "rarity": "SAR"},
+        {"name": "Mega Charizard X ex", "set": "MA3", "number": "223/193", "rarity": "MA"},
+        {"name": "Zekrom N", "set": "MA3", "number": "210/193", "rarity": "AR"},
+        {"name": "Mega Dragonite ex", "set": "MA3", "number": "232/193", "rarity": "MA"},
+    ]
+    CASES = [  # title, kind, text language, (tracked card number 1-6, match confidence)
+        ("EGS 10 Mega Venusaur ex SAR #173 ma1 Pokemon Evolusi Mega [ID]", "slab", "ID", (1, "nama+set")),
+        ("mega venusaur ex 003/132 MEG en pokemon tcg english mega evolution", "raw", "foreign", (1, "nama")),
+        ("Mega Venusaur ex M1L | 003/063 RR - Pokemon TCG Japanese", "raw", "foreign", (1, "nama")),
+        ("pokemon (ID) mega venusaur ex - MA1 003/126 - RR", "raw", "ID", (1, "nama")),
+        ("Mega Venusaur Ex RR Jepang", "raw", "foreign", (1, "nama")),
+        ("Pikachu ex RR 044/193 MEGA Dream ex M2a Pokemon Card Japanese NM", "raw", "foreign", (2, "nama")),
+        ("Pikachu EX SAR MA3 kartu pokemon tcg indo", "raw", "ID", (3, "nama+set")),
+        ("Kartu Pokemon Zekrom N 210/193 AR Evolusi Mega Impian ex MA3 Indonesia", "raw", "ID", (5, "nomor")),
+        ("N's Zekrom AR 210/193 MEGA Dream ex M2a Pokemon Card Japanese Near Mint", "raw", "foreign", (5, "nomor")),
+        ("Pokemon TCG Indonesian Mega Dragonite ex MA3 232/193 MA Evolusi Mega Impian ex", "raw", "ID", (6, "nomor")),
+        ("Mega Dragonite Ex MA3 232/193 egs 10 celar slab not tag Grading Slab Original", "slab", "unknown", (6, "nomor")),
+        ("Pikachu ex SAR INDO", "raw", "ID", (2, "nama")),
+        ("Pokemon Mega Charizard X Ex 223/193 - MA Mega Attack Rare - JP Japan Jepang - m2a Mega Dream ex",
+         "raw", "foreign", (4, "nomor")),
+    ]
+
+    def test_kind_language_and_match(self):
+        from classify import text_language
+        for title, kind, lang, match in self.CASES:
+            m = build_site.match_type(title, self.TYPES)
+            got = (classify_title(title)["kind"], text_language(title), (m[0] + 1, m[1]) if m else None)
+            self.assertEqual(got, (kind, lang, match), title)
+
+    def test_a_different_card_number_is_a_different_card(self):
+        self.assertTrue(build_site.number_conflict("Mega Venusaur ex MA1 003/126", "173/126"))
+        self.assertTrue(build_site.number_conflict("Mega Venusaur ex #003 ma1", "173/126"))
+        self.assertFalse(build_site.number_conflict("Mega Venusaur ex #173 ma1", "173/126"))
+        self.assertFalse(build_site.number_conflict("Mega Venusaur ex SAR ma1", "173/126"))
+
+
 def good_raw():
     s = {"n": 3, "min": 80000, "p25": 90000, "median": 100000, "p75": 120000, "max": 150000}
     ls = [{"url": f"https://toco.id/id/listing/a-{i}-1790000000000-ab12", "ask_idr": p, "city": "Kota Jambi",
@@ -177,6 +218,25 @@ def fake_page():
         f"<span>{text}</span></a>" for i, (slug, img, text) in enumerate(cards)) + "</body></html>"
 
 
+def api_item(slug, title, price, stock=1, special=None, description="", photo=None, **extra):
+    return {"slug": slug, "title": title, "price": price, "price_special": special, "stock": stock,
+            "description": description, "city": "Kota Jambi", "primary_photo": photo or f"https://img.example/{slug}.webp",
+            "photos": [], "show": True, "archived": False, "deleted": False, **extra}
+
+
+API_CATALOG = [
+    api_item("a-1", "Pikachu EX SAR MA3 kartu pokemon tcg indo", 420000, photo="https://img.example/id-1.webp"),
+    api_item("a-2", "Pikachu ex SAR 234/193 MA3 Indo", 400000, special=380000, photo="https://img.example/id-2.webp"),
+    api_item("a-3", "Pikachu ex SAR 234/193 MA3 NM", 300000, photo="https://img.example/jp-3.webp"),  # Japanese only in the photo
+    api_item("a-4", "Booster Box Pokemon Mega Impian MA3 Indonesia", 900000, stock=5),
+    api_item("a-5", "Pikachu ex SAR 234/193 MA3 EGS 10", 2760000),
+    api_item("a-6", "Gengar VMAX CSR", 150000),
+    api_item("a-7", "MEGA CHARIZARD X EX SR", 600000),
+    api_item("a-8", "Pikachu ex SAR 234/193 MA3 Japanese", 250000),  # foreign by text: no photo needed
+    api_item("a-9", "Pikachu ex 234/193 MA3 ID", 350000, stock=0),  # sold out
+]
+
+
 class Collector(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -191,19 +251,25 @@ class Collector(unittest.TestCase):
             json.dump(latest, fh)
         self.cfg = argparse.Namespace(
             latest=self.latest, out=os.path.join(self.tmp.name, "raw.json"), db=os.path.join(self.tmp.name, "x.sqlite"),
-            pages=3, delay=0, page_param="page", queries_limit=2, max_checks=50, max_age_hours=36,
-            dry_run=False, save_html=None)
-        self.page_calls = self.image_calls = self.api_calls = 0
+            pages=5, size=45, delay=0, queries_limit=2, max_checks=50, max_age_hours=36, dry_run=False,
+            save_json=None, sample_check="Pikachu ex 234/193", sample_size=3)
+        self.catalog = API_CATALOG
+        self.posts, self.image_calls, self.api_calls = [], 0, 0
+        self.photo_error = False
 
     def tearDown(self):
         self.tmp.cleanup()
 
-    def fetch_fn(self, url):
-        self.page_calls += 1
-        return fake_page() if "page=" not in url else "<html></html>"
+    def post_fn(self, body):
+        self.posts.append(body)
+        inner = body["body"]
+        off, size = inner["from"], inner["size"]
+        return {"results": self.catalog[off:off + size], "total": len(self.catalog)}
 
     def image_fn(self, url):
         self.image_calls += 1
+        if self.photo_error:
+            raise collect_raw.FetchError("403")
         return b"\xff\xd8\xff" + url.encode(), "image/jpeg"
 
     def classify_fn(self, data, media):
@@ -213,17 +279,27 @@ class Collector(unittest.TestCase):
     def go(self, **over):
         for k, v in over.items():
             setattr(self.cfg, k, v)
-        return collect_raw.run(self.cfg, self.fetch_fn, self.image_fn,
-                               None if self.cfg.dry_run else self.classify_fn,
+        return collect_raw.run(self.cfg, self.post_fn, self.image_fn, None if self.cfg.dry_run else self.classify_fn,
                                now=datetime(2026, 10, 3, 1, 0, tzinfo=timezone.utc), sleep=lambda s: None, log=lambda *a: None)
 
-    def test_parse_cards_and_prices(self):
-        cards = collect_raw.parse_search_html(fake_page())
-        self.assertEqual(len(cards), 7)
-        l = collect_raw.to_listing(cards[0])
-        self.assertEqual((l["ask"], l["stock"], l["city"], l["image"]),
-                         (420000, 1, "Kota Jambi", "https://toco.id/img/id-1.jpg"))
-        self.assertEqual(l["title"], "Pikachu ex SAR 234/193 MA3 ID NM")
+    def test_search_body_matches_what_the_site_sends(self):
+        b = collect_raw.search_body("Pikachu ex 234/193", 45, 45)
+        self.assertEqual(b["path"], "/listing-search")
+        self.assertEqual((b["body"]["from"], b["body"]["size"], b["body"]["query"]), (45, 45, "Pikachu ex 234/193"))
+        self.assertEqual(b["body"]["filters"], {"web": True, "add_to_cart": True, "special_daytop": False, "safe_search": True})
+
+    def test_listing_uses_the_discounted_price_and_marks_unavailable_items(self):
+        l = collect_raw.to_listing(API_CATALOG[1])
+        self.assertEqual((l["ask"], l["list"], l["stock"], l["url"]), (380000, 400000, 1, "https://toco.id/listing/a-2"))
+        self.assertEqual(l["image"], "https://img.example/id-2.webp")
+        self.assertEqual(collect_raw.to_listing(api_item("x", "t", 1, archived=True))["stock"], 0)
+        self.assertEqual(collect_raw.to_listing(api_item("x", "t", 1, show=False))["stock"], 0)
+        self.assertIsNone(collect_raw.to_listing(API_CATALOG[0])["list"])
+
+    def test_crawl_pages_with_from_and_size(self):
+        items, diag = collect_raw.crawl(["q"], self.post_fn, 5, 4, 0, sleep=lambda s: None, log=lambda *a: None)
+        self.assertEqual((len(items), diag[0]["pages"], diag[0]["total"]), (9, 3, 9))
+        self.assertEqual([p["body"]["from"] for p in self.posts], [0, 4, 8])
 
     def test_full_run_counts_only_indonesian_raw_cards(self):
         raw, summary = self.go()
@@ -234,17 +310,16 @@ class Collector(unittest.TestCase):
         self.assertEqual(card["stats"]["median"], 400000)
         self.assertTrue(all(l["lang"] == "ID" and l["lang_by"] == "image" for l in card["listings"]))
         self.assertEqual(raw["unmatched"], {"count": 2, "language_unverified": 0})
-        self.assertEqual(summary["jenis_product"], 1)
-        self.assertEqual(summary["jenis_slab"], 1)
+        self.assertEqual((summary["jenis_product"], summary["jenis_slab"]), (1, 1))
+        self.assertEqual(self.api_calls, 3)  # a-1, a-2, a-3; the Japanese-by-text and the sold-out ones cost nothing
 
     def test_language_is_cached_per_listing(self):
         self.go()
         first = self.api_calls
-        self.assertEqual(first, 3)
         self.go()
         self.assertEqual(self.api_calls, first)
 
-    def test_dry_run_makes_no_api_calls(self):
+    def test_dry_run_makes_no_photo_or_api_calls(self):
         raw, summary = self.go(dry_run=True)
         self.assertEqual((self.api_calls, self.image_calls), (0, 0))
         self.assertEqual(raw["cards"], [])
@@ -255,10 +330,34 @@ class Collector(unittest.TestCase):
         self.assertEqual(self.api_calls, 1)
         self.assertEqual(raw["unmatched"]["language_unverified"], 2)
 
-    def test_unreadable_page_writes_nothing(self):
-        self.fetch_fn = lambda url: "<html><body>tidak ada listing</body></html>"
+    def test_photo_failure_falls_back_to_an_explicit_id_in_the_title(self):
+        self.photo_error = True
+        raw, summary = self.go()
+        card = raw["cards"][0]
+        self.assertEqual(card["stats"]["n"], 2)
+        self.assertTrue(all(l["lang_by"] == "title" for l in card["listings"]))
+        self.assertEqual(raw["unmatched"]["language_unverified"], 1)  # a-3 has no language in its text
+        self.assertEqual(validate_raw.validate(raw)[0], [])
+
+    def test_no_listings_writes_nothing(self):
+        self.catalog = []
         raw, summary = self.go()
         self.assertIsNone(raw)
+
+    def test_sample_check_prints_photo_language_next_to_the_text_guess(self):
+        lines = []
+        n = collect_raw.sample_check(self.cfg, self.post_fn, self.image_fn, self.classify_fn, log=lines.append)
+        self.assertEqual(n, 3)
+        self.assertIn("foto=ID | teks=ID | jenis=raw | Rp420,000 | Pikachu EX SAR MA3 kartu pokemon tcg indo", lines[0])
+        self.assertTrue(lines[2].startswith("foto=JP | teks=unknown | jenis=raw"))
+
+    def test_real_http_post_reaches_the_search_endpoint(self):
+        site = FakeToco()
+        try:
+            data = collect_raw.make_post(site.base + "/api/toco-api/search")(collect_raw.search_body("x", 0, 2))
+        finally:
+            site.server.shutdown()
+        self.assertEqual((data["total"], [r["slug"] for r in data["results"]]), (len(API_CATALOG), ["a-1", "a-2"]))
 
     def test_helpers(self):
         self.assertEqual(collect_raw.normalize_lang("ID"), "ID")
@@ -267,7 +366,6 @@ class Collector(unittest.TestCase):
         self.assertEqual(collect_raw.sniff_media_type(b"\x89PNG\r\n\x1a\nxx"), "image/png")
         self.assertIsNone(collect_raw.sniff_media_type(b"not an image"))
         self.assertEqual([collect_raw.quantile([1, 2, 3, 4], p) for p in (0, .25, .5, 1)], [1, 2, 2, 4])
-        self.assertEqual(collect_raw.find_og_image('<meta property="og:image" content="/a.jpg">'), "https://toco.id/a.jpg")
 
 
 class Probe(unittest.TestCase):
@@ -404,6 +502,10 @@ class FakeToco:
                 req = json.loads(self.rfile.read(n) or b"{}")
                 if req.get("path") == "/store-search":
                     out = {"results": [{"toco_name": "muslim tcg"}, {"toco_name": "lain"}], "total": 2, "query": "egs"}
+                elif req.get("path") == "/listing-search":
+                    inner = req.get("body") or {}
+                    off, size = int(inner.get("from", 0)), int(inner.get("size", 45))
+                    out = {"results": API_CATALOG[off:off + size], "total": len(API_CATALOG), "query": inner.get("query")}
                 else:
                     inner = req.get("body") or {}
                     page = str(int(inner.get("offset", inner.get("from", 0))) // 3 + 1)
@@ -435,8 +537,8 @@ class FieldsProbe(unittest.TestCase):
         text = "\n".join(lines)
         self.assertEqual(code, 0)
         self.assertIn("slug = a-1", text)
-        self.assertIn("[Pikachu ex 234/193] total=5 diterima=3", text)
-        self.assertIn("[zzz] total=5 diterima=3", text)
+        self.assertIn("[Pikachu ex 234/193] total=9 diterima=9", text)
+        self.assertIn("[zzz] total=9 diterima=9", text)
 
     def test_reports_failure(self):
         lines = []
@@ -455,27 +557,10 @@ class BrowserRender(unittest.TestCase):
     def setUpClass(cls):
         os.environ["EGS_CHROME"] = chrome_path()
         cls.site = FakeToco()
-        cls.browser = collect_raw.Browser(log=lambda *a: None)
-        cls.browser.WAIT_MS = 1500
 
     @classmethod
     def tearDownClass(cls):
-        cls.browser.close()
         cls.site.server.shutdown()
-
-    def test_plain_fetch_sees_nothing_but_the_browser_sees_listings(self):
-        base = self.site.base
-        plain = urlopen(base + "/search?q=egs").read().decode()
-        self.assertEqual(len(collect_raw.parse_search_html(plain, base)), 0)
-        self.assertEqual(len(collect_raw.parse_search_html(self.browser(base + "/search?q=egs"), base)), 3)
-
-    def test_crawl_follows_pages_until_empty(self):
-        old, collect_raw.BASE = collect_raw.BASE, self.site.base
-        try:
-            cards, diag = collect_raw.crawl(["egs"], self.browser, 5, 0, "page", sleep=lambda s: None, log=lambda *a: None)
-        finally:
-            collect_raw.BASE = old
-        self.assertEqual((len(cards), diag[0]["pages"]), (5, 3))
 
     def test_browser_probe_reports_listings_data_requests_and_serial(self):
         script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "probe_toco_browser.py")

@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 """Collect RAW (ungraded) Indonesian card listings from toco and write raw.json.
 
-Runs on the VPS (it needs toco.id and an Anthropic credential). See docs/vps-setup.md
-and docs/raw-dataset.md. Steps: search toco per tracked card, classify titles
-(tools/classify.py), match to the tracked cards, read the card language from the listing
-photo with Claude, keep everything in a local SQLite file, write raw.json.
+Runs on the VPS (needs toco.id and an Anthropic credential). See docs/vps-setup.md and
+docs/raw-dataset.md.
 
-  python3 tools/collect_raw.py --dry-run --save-html ~/egs-raw/html   # first run, no API calls
-  python3 tools/collect_raw.py --test-image card.jpg                  # check the API key
-  python3 tools/collect_raw.py                                        # real run
+How it works: for every tracked card it calls toco's own search endpoint (the same request the
+website makes, verified on the VPS: POST /api/toco-api/search with path /listing-search, 45 results
+per request, paged with from/size), keeps listings that are single raw cards and match a tracked card,
+reads the card language, and writes raw.json. Language: clearly foreign text (Japanese, English,
+Chinese in title or description) is skipped for free; everything else is decided from the listing
+photo by Claude (official SDK), cached per listing in a local SQLite file, capped per run.
 
-toco renders its search results with JavaScript (a plain HTTP fetch sees an empty page), so
-pages are rendered with a headless browser (--fetch browser, the default; Playwright is already
-on the VPS). The parser then reads every link to /listing/ with the text "Sisa N <title> Rp<price>
-... <city>", the same text the EGS bot records. --dry-run prints what was and was not understood.
+  python3 tools/collect_raw.py --dry-run                  # no API calls, no raw.json
+  python3 tools/collect_raw.py --sample-check "Zekrom N 210/193"   # 6 photos: see the language check work
+  python3 tools/collect_raw.py --test-image card.jpg      # check the API key with one photo
+  python3 tools/collect_raw.py                            # real run
 """
 import argparse
 import base64
@@ -25,18 +26,16 @@ import sys
 import time
 from collections import Counter
 from datetime import datetime, timedelta, timezone
-from html.parser import HTMLParser
-from urllib.parse import quote_plus, urljoin, urlsplit, urlunsplit
 from urllib.request import Request, urlopen
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_site  # noqa: E402
 import validate_raw  # noqa: E402
 import watch_queries  # noqa: E402
-from classify import classify_title  # noqa: E402
-from triage_candidates import parse as parse_card_text  # noqa: E402
+from classify import classify_title, text_language  # noqa: E402
 
-BASE = "https://toco.id"
+SITE = os.environ.get("EGS_TOCO_SITE", "https://toco.id")  # only changed in tests
+SEARCH_URL = SITE + "/api/toco-api/search"
 UA = "Mozilla/5.0 (compatible; egs-price-reports/1.0)"
 DEFAULT_MODEL = "claude-opus-5-5"
 LANG_PROMPT = (
@@ -48,9 +47,11 @@ LANG_PROMPT = (
 LANG_ALIASES = {"ID": "ID", "INDONESIAN": "ID", "INDONESIA": "ID", "JP": "JP", "JAPANESE": "JP",
                 "EN": "EN", "ENGLISH": "EN", "OTHER": "OTHER", "UNCLEAR": "UNCLEAR"}
 MATCHED = ("nomor", "nama+set")
-OG_IMAGE = (re.compile(r'<meta[^>]+(?:property|name)=["\']og:image["\'][^>]*content=["\']([^"\']+)', re.I),
-            re.compile(r'<meta[^>]+content=["\']([^"\']+)["\'][^>]*(?:property|name)=["\']og:image', re.I))
-STOCK = re.compile(r"^Sisa\s+(\d+)\b")
+AGGREGATIONS = {"department_agg": {"terms": {"field": "department"}}, "category_agg": {"terms": {"field": "category"}},
+                "type_agg": {"terms": {"field": "type"}}, "price_agg": {"terms": {"field": "price"}},
+                "production_year_agg": {"terms": {"field": "production_year"}},
+                "store_tier_agg": {"terms": {"field": "store_tier"}},
+                "official_seller_agg": {"terms": {"field": "official_seller"}}}
 
 
 class FetchError(Exception):
@@ -58,7 +59,8 @@ class FetchError(Exception):
 
 
 def fetch(url, timeout=30, limit=6_000_000):
-    req = Request(url, headers={"User-Agent": UA, "Accept-Language": "id,en;q=0.5"})
+    """Plain GET (photos). Returns (bytes, content_type)."""
+    req = Request(url, headers={"User-Agent": UA})
     try:
         with urlopen(req, timeout=timeout) as r:
             return r.read(limit), r.headers.get("Content-Type", "")
@@ -66,127 +68,69 @@ def fetch(url, timeout=30, limit=6_000_000):
         raise FetchError(f"{url}: {e}") from e
 
 
-def fetch_html(url):
-    return fetch(url, limit=3_000_000)[0].decode("utf-8", "replace")
-
-
-class Browser:
-    """Headless browser for pages toco renders with JavaScript. Needs Playwright and Chrome/Chromium."""
-    SELECTOR = 'a[href*="/listing/"]'
-    WAIT_MS = 15000
-
-    def __init__(self, log=print):
-        from playwright.sync_api import sync_playwright
-        self._pw = sync_playwright().start()
-        args = ["--no-sandbox"] if hasattr(os, "geteuid") and os.geteuid() == 0 else []
-        self._browser = None
-        for path in (None, os.environ.get("EGS_CHROME"), "/usr/bin/google-chrome", "/usr/bin/chromium",
-                     "/usr/bin/chromium-browser"):
-            if path is not None and not os.path.exists(path):
-                continue
-            try:
-                kw = {"headless": True, "args": args}
-                if path:
-                    kw["executable_path"] = path
-                self._browser = self._pw.chromium.launch(**kw)
-                break
-            except Exception as e:
-                log(f"  ! browser gagal ({path or 'bawaan'}): {str(e).strip().splitlines()[0][:120]}")
-        if self._browser is None:
-            self._pw.stop()
-            raise SystemExit("Tidak ada browser yang bisa dijalankan. Isi EGS_CHROME dengan lokasi Chrome.")
-        self.page = self._browser.new_page()
-
-    def __call__(self, url):
+def make_post(url=SEARCH_URL):
+    def post(body):
+        req = Request(url, data=json.dumps(body).encode(), headers={
+            "Content-Type": "application/json", "Accept": "application/json", "User-Agent": UA,
+            "Origin": SITE, "Referer": SITE + "/search"})
         try:
-            self.page.goto(url, wait_until="domcontentloaded", timeout=45000)
+            with urlopen(req, timeout=30) as r:
+                return json.loads(r.read(8_000_000).decode("utf-8", "replace"))
         except Exception as e:
             raise FetchError(f"{url}: {e}") from e
-        try:
-            self.page.wait_for_selector(self.SELECTOR, timeout=self.WAIT_MS)
-        except Exception:
-            pass  # a query with no results is a valid answer
-        self.page.wait_for_timeout(1500)
-        return self.page.content()
-
-    def close(self):
-        self._browser.close()
-        self._pw.stop()
+    return post
 
 
-# ---- search page parsing -------------------------------------------------------
-
-class CardLinks(HTMLParser):
-    def __init__(self, base):
-        super().__init__(convert_charrefs=True)
-        self.base, self.cards, self._cur, self._text = base, {}, None, []
-
-    def handle_starttag(self, tag, attrs):
-        a = dict(attrs)
-        if tag == "a" and "/listing/" in (a.get("href") or ""):
-            u = urlsplit(urljoin(self.base, a["href"]))
-            self._cur = urlunsplit((u.scheme, u.netloc, u.path, "", ""))
-            self._text = []
-            self.cards.setdefault(self._cur, {"url": self._cur, "text": "", "image": None})
-        elif tag == "img" and self._cur:
-            src = a.get("src") or a.get("data-src") or (a.get("srcset") or "").split(" ")[0]
-            if src and not src.startswith("data:") and not self.cards[self._cur]["image"]:
-                self.cards[self._cur]["image"] = urljoin(self.base, src)
-
-    def handle_data(self, data):
-        if self._cur:
-            self._text.append(data)
-
-    def handle_endtag(self, tag):
-        if tag == "a" and self._cur:
-            text = " ".join(" ".join(self._text).split())
-            if len(text) > len(self.cards[self._cur]["text"]):
-                self.cards[self._cur]["text"] = text
-            self._cur = None
+def search_body(query, offset, size):
+    return {"path": "/listing-search", "body": {
+        "from": offset, "size": size, "search_operator": "and", "include_quality_score": True,
+        "sort_mode": "relevance_only", "query": query,
+        "filters": {"web": True, "add_to_cart": True, "special_daytop": False, "safe_search": True},
+        "aggregations": AGGREGATIONS}}
 
 
-def parse_search_html(html, base=BASE):
-    p = CardLinks(base)
-    p.feed(html)
-    return [c for c in p.cards.values() if c["text"]]
-
-
-def to_listing(card):
-    text = card["text"]
-    p = parse_card_text({"url": card["url"], "search_text": text, "grade_hint": ""})
-    m = STOCK.match(text)
-    title = re.split(r"\s+Rp\s?[\d.]+", re.sub(r"^Sisa\s+\d+\s+", "", text), 1)[0].strip()
-    return {"url": card["url"], "text": text, "title": title, "ask": p["ask_idr"], "list": p["list_idr"],
-            "city": p["city"], "stock": int(m.group(1)) if m else None, "image": card["image"]}
-
-
-def crawl(queries, fetch_fn, pages, delay, page_param, save_dir=None, sleep=time.sleep, log=print):
-    cards, diag = {}, []
+def crawl(queries, post_fn, pages, size, delay, save_dir=None, sleep=time.sleep, log=print):
+    """Run every query page by page. Returns ({slug: item}, per-query diagnostics)."""
+    items, diag = {}, []
     for q in queries:
-        seen, fetched = set(), 0
-        for n in range(1, pages + 1):
-            url = f"{BASE}/search?q={quote_plus(q)}" + (f"&{page_param}={n}" if n > 1 else "")
+        seen, fetched, total = set(), 0, None
+        for n in range(pages):
             try:
-                html = fetch_fn(url)
+                data = post_fn(search_body(q, n * size, size))
             except FetchError as e:
-                log(f"  ! gagal ambil halaman: {e}")
+                log(f"  ! pencarian gagal: {e}")
                 break
             fetched += 1
-            if save_dir:
+            total = data.get("total", total)
+            if save_dir and n == 0:
                 os.makedirs(save_dir, exist_ok=True)
-                name = re.sub(r"\W+", "_", q)[:50] + f"_p{n}.html"
-                with open(os.path.join(save_dir, name), "w", encoding="utf-8") as fh:
-                    fh.write(html)
-            new = [c for c in parse_search_html(html) if c["url"] not in seen]
-            seen.update(c["url"] for c in new)
-            for c in new:
-                prev = cards.setdefault(c["url"], c)
-                prev["image"] = prev["image"] or c["image"]
-            if not new:
+                with open(os.path.join(save_dir, re.sub(r"\W+", "_", q)[:50] + ".json"), "w", encoding="utf-8") as fh:
+                    json.dump(data, fh, ensure_ascii=False)
+            new = [r for r in data.get("results") or [] if r.get("slug") and r["slug"] not in seen]
+            seen.update(r["slug"] for r in new)
+            for r in new:
+                items.setdefault(r["slug"], r)
+            if not new or (total is not None and (n + 1) * size >= total):
                 break
             sleep(delay)
-        diag.append({"query": q, "pages": fetched, "listings": len(seen)})
-    return cards, diag
+        diag.append({"query": q, "pages": fetched, "listings": len(seen), "total": total})
+    return items, diag
+
+
+def to_listing(item):
+    price, special = item.get("price"), item.get("price_special")
+    ask = special if special and price and special < price else price
+    photos = item.get("photos") or []
+    active = not item.get("archived") and not item.get("deleted") and item.get("show") is not False
+    return {
+        "url": f"{SITE}/listing/{item.get('slug')}",
+        "title": (item.get("title") or "").strip(),
+        "description": (item.get("description") or "").strip(),
+        "ask": ask, "list": price if ask != price else None,
+        "city": item.get("city") or "?",
+        "stock": item.get("stock") if active else 0,
+        "image": item.get("primary_photo") or (photos[0] if photos else None),
+    }
 
 
 # ---- language from the photo ---------------------------------------------------
@@ -206,14 +150,6 @@ def sniff_media_type(data):
 def normalize_lang(answer):
     m = re.search(r"\b(ID|INDONESIAN|INDONESIA|JP|JAPANESE|EN|ENGLISH|OTHER|UNCLEAR)\b", answer.upper())
     return LANG_ALIASES[m.group(1)] if m else "UNCLEAR"
-
-
-def find_og_image(html):
-    for rx in OG_IMAGE:
-        m = rx.search(html)
-        if m:
-            return urljoin(BASE, m.group(1))
-    return None
 
 
 def make_vision_classifier(model):
@@ -251,10 +187,10 @@ def make_vision_classifier(model):
 
 
 class LangChecker:
-    """Language per listing, cached in SQLite so each listing is looked at once."""
+    """Language per listing, cached in SQLite so each listing is decided once."""
 
-    def __init__(self, db, classify_fn, fetch_fn, image_fn, budget, now, delay=1.0, sleep=time.sleep, log=print):
-        self.db, self.classify_fn, self.fetch_fn, self.image_fn = db, classify_fn, fetch_fn, image_fn
+    def __init__(self, db, classify_fn, image_fn, budget, now, delay=0.5, sleep=time.sleep, log=print):
+        self.db, self.classify_fn, self.image_fn = db, classify_fn, image_fn
         self.budget, self.now, self.delay, self.sleep, self.log = budget, now, delay, sleep, log
         self.failures, self.calls = 0, 0
 
@@ -277,31 +213,30 @@ class LangChecker:
             (url, lang, by, image_url, self.now.isoformat()))
 
     def photo(self, listing):
-        image_url = listing["image"]
+        if not listing["image"]:
+            return None, None
         try:
-            if not image_url:
-                self.sleep(self.delay)
-                image_url = find_og_image(self.fetch_fn(listing["url"]))
-            if not image_url:
-                return None, None, None
             self.sleep(self.delay)
-            data, _ = self.image_fn(image_url)
+            data, _ = self.image_fn(listing["image"])
         except FetchError as e:
             self.log(f"  ! foto tidak bisa diambil: {e}")
-            return None, None, None
+            return None, None
         media = sniff_media_type(data)
-        return (data, media, image_url) if media else (None, None, image_url)
+        return (data, media) if media else (None, None)
 
     def ensure(self, listing):
         hit = self.cached(listing["url"])
         if hit:
             return hit
+        if text_language(listing["title"], listing["description"]) == "foreign":
+            self.store(listing["url"], "FOREIGN", "text", None)  # free: no photo needed
+            return "FOREIGN"
         if self.classify_fn is None or self.budget <= 0 or self.failures >= 5:
             return None
-        data, media, image_url = self.photo(listing)
+        data, media = self.photo(listing)
         if data is None:  # no usable photo: fall back to an explicit "ID" in the title
             if classify_title(listing["title"])["lang"] == "ID":
-                self.store(listing["url"], "ID", "title", image_url)
+                self.store(listing["url"], "ID", "title", listing["image"])
                 return "ID"
             return None
         self.calls += 1
@@ -311,7 +246,7 @@ class LangChecker:
             self.failures += 1
             return None
         self.failures = 0
-        self.store(listing["url"], lang, "image", image_url)
+        self.store(listing["url"], lang, "image", listing["image"])
         return lang
 
 
@@ -393,7 +328,7 @@ def build_raw(db, types, now, max_age_hours):
             "cards": cards, "unmatched": {"count": unmatched, "language_unverified": unverified}}
 
 
-def run(cfg, fetch_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=print, listing_fn=None):
+def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=print):
     now = now or datetime.now(timezone.utc)
     with open(cfg.latest, encoding="utf-8") as fh:
         types = load_types(json.load(fh))
@@ -401,29 +336,28 @@ def run(cfg, fetch_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pr
     if cfg.queries_limit:
         queries = queries[:cfg.queries_limit]
     log(f"{len(types)} jenis kartu, {len(queries)} kata kunci")
-    cards, diag = crawl(queries, fetch_fn, cfg.pages, cfg.delay, cfg.page_param, cfg.save_html, sleep, log)
+    items, diag = crawl(queries, post_fn, cfg.pages, cfg.size, cfg.delay, cfg.save_json, sleep, log)
     for d in diag:
-        log(f"  {d['query']!r}: {d['pages']} halaman, {d['listings']} listing")
-    if not cards:
-        log("Tidak ada listing yang terbaca. raw.json TIDAK ditulis. Jalankan dengan --dry-run --save-html DIR "
-            "dan kirim file HTML-nya supaya parsernya bisa disesuaikan.")
-        return None, {"listings": 0}
+        log(f"  {d['query']!r}: {d['pages']} halaman, {d['listings']} listing dari total {d['total']}")
+    if not items:
+        log("Tidak ada listing yang terbaca. raw.json TIDAK ditulis.")
+        return None, {"listing_dibaca": 0}
 
     db = open_db(cfg.db)
     ctr, to_check = Counter(), []
-    for card in cards.values():
-        l = to_listing(card)
+    for item in items.values():
+        l = to_listing(item)
         if not l["ask"] or l["ask"] <= 0:
             ctr["tanpa_harga"] += 1
             continue
-        kind = classify_title(l["text"])["kind"]
+        kind = classify_title(l["title"])["kind"]
         ctr["jenis_" + kind] += 1
         conf = cset = cnum = None
         if kind == "raw":
-            m = build_site.match_type(l["text"], types)
+            m = build_site.match_type(l["title"], types)
             if m:
                 conf, cset, cnum = m[1], types[m[0]]["set"], types[m[0]]["number"]
-        ctr["cocok_" + (conf or "tidak")] += kind == "raw"
+            ctr["cocok_" + (conf or "tidak")] += 1
         db.execute(
             "INSERT INTO listing(url,title,ask_idr,list_idr,city,stock,image_url,kind,card_set,card_number,conf,first_seen,last_seen) "
             "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(url) DO UPDATE SET title=excluded.title, "
@@ -436,18 +370,42 @@ def run(cfg, fetch_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pr
             to_check.append(l)
     db.commit()
 
-    checker = None
-    if not cfg.dry_run:
-        checker = LangChecker(db, classify_fn, listing_fn or fetch_fn, image_fn, cfg.max_checks, now, cfg.delay / 2, sleep, log)
-        to_check.sort(key=lambda l: classify_title(l["title"])["lang"] != "ID")  # explicit "ID" first
-        for l in to_check:
-            checker.ensure(l)
-        db.commit()
+    # dry run: classify_fn is None, so only the free text filter runs and nothing is fetched or paid for
+    checker = LangChecker(db, None if cfg.dry_run else classify_fn, image_fn, cfg.max_checks, now, cfg.delay / 2, sleep, log)
+    # listings whose text already says "Indonesia" first, so a capped budget is spent on likely hits
+    to_check.sort(key=lambda l: text_language(l["title"], l["description"]) != "ID")
+    for l in to_check:
+        checker.ensure(l)
+    db.commit()
     raw = build_raw(db, types, now, cfg.max_age_hours)
     db.close()
-
-    ctr.update({"listing_dibaca": len(cards), "foto_dicek_sekarang": checker.calls if checker else 0})
+    ctr.update({"listing_dibaca": len(items), "foto_dicek_sekarang": checker.calls})
     return raw, dict(ctr)
+
+
+def sample_check(cfg, post_fn, image_fn, classify_fn, log=print):
+    """Show the photo language check on a few real listings of one query (nothing is stored)."""
+    data = post_fn(search_body(cfg.sample_check, 0, 45))
+    shown = 0
+    for item in data.get("results") or []:
+        if shown >= cfg.sample_size:
+            break
+        l = to_listing(item)
+        if not l["image"]:
+            continue
+        try:
+            photo, _ = image_fn(l["image"])
+        except FetchError as e:
+            log(f"  ! {e}")
+            continue
+        media = sniff_media_type(photo)
+        if not media:
+            continue
+        shown += 1
+        by_photo = classify_fn(photo, media)
+        log(f"foto={by_photo} | teks={text_language(l['title'], l['description'])} | jenis={classify_title(l['title'])['kind']} "
+            f"| Rp{l['ask']:,} | {l['title'][:70]}")
+    return shown
 
 
 def main(argv=None):
@@ -456,17 +414,17 @@ def main(argv=None):
     ap.add_argument("--out", default="raw.json")
     ap.add_argument("--db", default=os.path.expanduser("~/.egs-raw/raw.sqlite"), help="database di VPS, bukan di repo")
     ap.add_argument("--pages", type=int, default=5, help="halaman maksimal per kata kunci")
-    ap.add_argument("--delay", type=float, default=2.0, help="jeda antar permintaan (detik)")
-    ap.add_argument("--fetch", choices=("browser", "plain"), default="browser",
-                    help="browser = render halaman dengan Chrome (perlu untuk toco); plain = HTTP biasa")
-    ap.add_argument("--page-param", default="page", help="nama parameter halaman di URL pencarian (belum terverifikasi)")
+    ap.add_argument("--size", type=int, default=45, help="listing per permintaan")
+    ap.add_argument("--delay", type=float, default=1.5, help="jeda antar permintaan (detik)")
     ap.add_argument("--queries-limit", type=int, help="batasi jumlah kata kunci (untuk uji)")
     ap.add_argument("--max-checks", type=int, default=150, help="batas cek foto per putaran (membatasi biaya)")
     ap.add_argument("--max-age-hours", type=float, default=36, help="listing dihitung kalau terlihat dalam rentang ini")
     ap.add_argument("--model", default=os.environ.get("EGS_LANG_MODEL", DEFAULT_MODEL))
-    ap.add_argument("--dry-run", action="store_true", help="hanya baca dan cocokkan; tanpa panggilan API, tanpa menulis raw.json")
-    ap.add_argument("--save-html", metavar="DIR", help="simpan halaman pencarian mentah untuk diagnosis")
+    ap.add_argument("--dry-run", action="store_true", help="hanya baca dan cocokkan; tanpa panggilan Claude, tanpa menulis raw.json")
+    ap.add_argument("--save-json", metavar="DIR", help="simpan jawaban pencarian mentah untuk diagnosis")
     ap.add_argument("--test-image", metavar="FILE_OR_URL", help="uji pembaca bahasa pada satu foto, lalu selesai")
+    ap.add_argument("--sample-check", metavar="QUERY", help="cek bahasa dari foto pada beberapa listing nyata, lalu selesai")
+    ap.add_argument("--sample-size", type=int, default=6)
     cfg = ap.parse_args(argv)
 
     if cfg.test_image:
@@ -483,6 +441,16 @@ def main(argv=None):
         print(f"model {cfg.model}: bahasa kartu = {classify(data, media)}  token={dict(classify.usage)}")
         return 0
 
+    if cfg.sample_check:
+        try:
+            classify = make_vision_classifier(cfg.model)
+        except ImportError:
+            print("Paket 'anthropic' belum terpasang. Jalankan: pip install anthropic (perlu Python 3.10+)")
+            return 2
+        n = sample_check(cfg, make_post(), fetch, classify)
+        print(f"{n} foto dicek, model {cfg.model}, token={dict(classify.usage)}")
+        return 0
+
     classify = None
     if not cfg.dry_run:
         try:
@@ -490,18 +458,7 @@ def main(argv=None):
         except ImportError:
             print("Paket 'anthropic' belum terpasang. Jalankan: pip install anthropic (perlu Python 3.10+)")
             return 2
-    browser = None
-    if cfg.fetch == "browser":
-        try:
-            browser = Browser()
-        except ImportError:
-            print("Playwright belum terpasang (pip install playwright). Atau pakai --fetch plain.")
-            return 2
-    try:
-        raw, summary = run(cfg, browser or fetch_html, fetch, classify, listing_fn=fetch_html)
-    finally:
-        if browser:
-            browser.close()
+    raw, summary = run(cfg, make_post(), fetch, classify)
     print(json.dumps(summary, ensure_ascii=False))
     if raw is None:
         return 3
