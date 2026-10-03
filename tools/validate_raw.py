@@ -12,7 +12,7 @@ TOP = ("schema_version", "kind", "price_type", "language", "source", "generated_
        "coverage", "cards", "unmatched")
 CARD = ("name", "set_code", "card_number", "rarity", "stats", "listings")
 STATS = ("n", "min", "p25", "median", "p75", "max")
-LISTING = ("url", "ask_idr", "city", "observed_at", "conf", "title")
+LISTING = ("url", "ask_idr", "city", "observed_at", "conf", "lang", "lang_by", "title")
 
 
 def key(c):
@@ -67,6 +67,10 @@ def validate(d):
             urls.add(l["url"])
             if not (s["min"] <= l["ask_idr"] <= s["max"]):
                 err(f"{label}: listing ask {l['ask_idr']} is outside stats min..max")
+            if l["lang"] != "ID":
+                err(f"{label}: listing lang is {l['lang']!r}; only Indonesian listings may be published")
+            if l["lang_by"] not in ("image", "title"):
+                err(f"{label}: listing lang_by {l['lang_by']!r} must be image or title")
             if l["conf"] not in ("nomor", "nama+set"):
                 err(f"{label}: listing conf {l['conf']!r} must be nomor or nama+set (only counted listings are published)")
             obs = datetime.fromisoformat(l["observed_at"])

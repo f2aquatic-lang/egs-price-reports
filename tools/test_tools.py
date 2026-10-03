@@ -77,7 +77,8 @@ class Match(unittest.TestCase):
 def good_raw():
     s = {"n": 3, "min": 80000, "p25": 90000, "median": 100000, "p75": 120000, "max": 150000}
     ls = [{"url": f"https://toco.id/id/listing/a-{i}-1790000000000-ab12", "ask_idr": p, "city": "Kota Jambi",
-           "observed_at": "2026-10-02T22:30:00+00:00", "conf": "nomor", "title": "t"}
+           "observed_at": "2026-10-02T22:30:00+00:00", "conf": "nomor",
+           "lang": "ID", "lang_by": "image", "title": "t"}
           for i, p in enumerate((80000, 100000, 150000))]
     return {"schema_version": 1, "kind": "RAW", "price_type": "OBSERVED_ASKING_ONLY", "language": "ID",
             "source": "toco_public", "generated_at": "2026-10-03T00:10:00+00:00",
@@ -97,6 +98,14 @@ class RawFormat(unittest.TestCase):
         d["cards"][0]["listings"][0]["conf"] = "nama"
         d["coverage"]["cards"] = 5
         self.assertEqual(len(validate_raw.validate(d)[0]), 3)
+
+    def test_non_indonesian_listing_is_rejected(self):
+        d = good_raw()
+        d["cards"][0]["listings"][0]["lang"] = "JP"
+        d["cards"][0]["listings"][1]["lang_by"] = "guess"
+        errors = validate_raw.validate(d)[0]
+        self.assertEqual(len(errors), 2)
+        self.assertTrue(any("Indonesian" in e for e in errors))
 
     def test_listing_outside_stats(self):
         d = good_raw()
