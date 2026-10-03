@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_site  # noqa: E402
 import collect_raw  # noqa: E402
+import probe_toco  # noqa: E402
 import validate_raw  # noqa: E402
 import watch_queries  # noqa: E402
 from classify import classify_title  # noqa: E402
@@ -259,6 +260,44 @@ class Collector(unittest.TestCase):
         self.assertIsNone(collect_raw.sniff_media_type(b"not an image"))
         self.assertEqual([collect_raw.quantile([1, 2, 3, 4], p) for p in (0, .25, .5, 1)], [1, 2, 2, 4])
         self.assertEqual(collect_raw.find_og_image('<meta property="og:image" content="/a.jpg">'), "https://toco.id/a.jpg")
+
+
+class Probe(unittest.TestCase):
+    LISTING = ('<html><head><title>Pikachu ex SAR | toco</title>'
+               '<meta property="og:image" content="https://cdn.example/p1.jpg"></head>'
+               '<body><p>Kartu EGS asli. Nomor seri slab: EG1234567 grade 10.</p></body></html>')
+
+    def run_probe(self, get):
+        lines = []
+        code = probe_toco.probe(get=get, sleep=lambda s: None, out=lambda *a: lines.append(" ".join(map(str, a))))
+        return code, "\n".join(lines)
+
+    def test_report_covers_page_param_photo_and_serial(self):
+        def get(url):
+            if "/listing/" in url and "search" not in url:
+                return 200, self.LISTING, ""
+            if "&page=2" in url:
+                return 200, '<a href="/id/listing/other-1790000000999-ff00">Sisa 1 Lain Rp1.000 Kota X</a>', ""
+            if "&p=2" in url or "&halaman=2" in url:
+                return 200, fake_page(), ""
+            return 200, fake_page(), ""
+        code, text = self.run_probe(get)
+        self.assertEqual(code, 0)
+        self.assertIn("listing terbaca=7", text)
+        self.assertIn("dengan foto=7", text)
+        self.assertIn("&page=2 -> status=200 listing=1 baru dibanding halaman 1=1", text)
+        self.assertIn("&p=2 -> status=200 listing=7 baru dibanding halaman 1=0", text)
+        self.assertIn("og:image: https://cdn.example/p1.jpg", text)
+        self.assertIn("EG1234567", text)
+
+    def test_blocked_or_offline(self):
+        code, text = self.run_probe(lambda url: (0, "", "URLError: timed out"))
+        self.assertEqual(code, 1)
+        self.assertIn("diblokir", text)
+
+    def test_flags_challenge_page(self):
+        code, text = self.run_probe(lambda url: (403, "<html><title>Just a moment...</title></html>", "HTTP 403"))
+        self.assertIn("PERHATIAN", text)
 
 
 if __name__ == "__main__":

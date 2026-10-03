@@ -4,6 +4,24 @@ Pengumpul (`tools/collect_raw.py`) mencari listing RAW di toco untuk setiap kart
 
 Yang perlu ada: Python 3.10 atau lebih baru, akses git ke repo ini (bot EGS sudah punya), dan kunci API Anthropic.
 
+## Mulai di sini: satu perintah, tanpa kunci
+
+Ini yang pertama dijalankan. Tidak perlu kunci API, tidak memasang apa pun, tidak menulis file, dan tidak menyentuh GitHub. Skripnya mandiri (`tools/probe_toco.py`, hanya pustaka standar Python) dan mengirim sekitar enam permintaan ke toco.id, berjeda 2 detik.
+
+Yang diperlukan adalah terminal ke VPS: SSH dari HP, atau konsol web di panel penyedia VPS. Asisten yang tidak punya terminal ke VPS (misalnya ChatGPT dalam percakapan biasa) tidak bisa menjalankannya.
+
+Tanpa git, paling mudah dari HP:
+
+1. Buka https://github.com/f2aquatic-lang/egs-price-reports/blob/claude/quirky-bardeen-bmq87l/tools/probe_toco.py dan salin isinya.
+2. Di VPS: `nano probe_toco.py`, tempel, simpan.
+3. Jalankan `python3 probe_toco.py`.
+
+Kirim **seluruh keluarannya** (sekitar 30 baris). Itu cukup untuk menyesuaikan pengumpul dengan susunan halaman toco, dan sekaligus menunjukkan apakah nomor seri slab tertulis di teks halaman.
+
+Jangan pernah mengirim kunci pribadi SSH atau kunci API ke chat, ke saya, atau ke siapa pun. Saya tidak membutuhkannya dan tidak punya akses ke VPS Anda.
+
+Langkah 1 sampai 7 di bawah dikerjakan sesudah itu.
+
 ## Langkah 1. Ambil kode
 
 Pakai folder baru, jangan folder bot EGS. Alamat repo sama dengan yang dipakai bot: `git -C <folder bot> remote get-url origin`.
@@ -90,10 +108,10 @@ Cek hasilnya dengan `tail -30 ~/egs-raw/log.txt`.
 - Tiap listing dicek **satu kali**, hasilnya disimpan. `--max-checks` (bawaan 150) membatasi jumlah foto per putaran, jadi biaya per putaran punya batas atas.
 - Angka rupiah yang pasti belum bisa saya berikan. Ukur dari baris `pemakaian token` pada Langkah 6.
 
-## Kalau yang mengurus VPS adalah ChatGPT
+## Kalau memakai asisten yang punya terminal di VPS
 
-Tempel ini ke ChatGPT:
+Hanya kalau asisten itu benar-benar bisa menjalankan perintah di VPS, tempel ini:
 
-> Di VPS, ikuti docs/vps-setup.md di repo f2aquatic-lang/egs-price-reports langkah 1 sampai 4 saja. Jangan ubah latest.json, folder atau jadwal bot EGS yang sudah ada, dan jangan push apa pun ke GitHub. Setelah langkah 4 selesai, kirim ke saya seluruh output perintahnya dan satu file HTML dari ~/egs-raw/html. Jangan lanjut ke langkah berikutnya sebelum saya setuju.
+> Di VPS, simpan isi tools/probe_toco.py dari branch claude/quirky-bardeen-bmq87l repo f2aquatic-lang/egs-price-reports sebagai probe_toco.py, lalu jalankan `python3 probe_toco.py` dan kirim seluruh keluarannya. Jangan ubah latest.json, folder atau jadwal bot EGS yang sudah ada, dan jangan push apa pun ke GitHub. Jangan lanjut ke langkah lain sebelum saya setuju.
 
-Hasil langkah 4 saya baca di sini, lalu parsernya saya sesuaikan kalau perlu. Langkah 5 sampai 7 dikerjakan setelah itu.
+Kalau asisten itu hanya bisa membaca repo, file di branch `claude/quirky-bardeen-bmq87l` dapat dibaca, tetapi di branch utama (`main`) baru ada setelah di-merge.
