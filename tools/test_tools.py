@@ -17,6 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_site  # noqa: E402
 import collect_raw  # noqa: E402
 import probe_toco  # noqa: E402
+import probe_toco_next  # noqa: E402
 import validate_raw  # noqa: E402
 import watch_queries  # noqa: E402
 from classify import classify_title  # noqa: E402
@@ -298,6 +299,32 @@ class Probe(unittest.TestCase):
     def test_flags_challenge_page(self):
         code, text = self.run_probe(lambda url: (403, "<html><title>Just a moment...</title></html>", "HTTP 403"))
         self.assertIn("PERHATIAN", text)
+
+
+class ProbeNext(unittest.TestCase):
+    HTML = ('<html><body><div id="__next"></div>'
+            '<script id="__NEXT_DATA__" type="application/json">'
+            '{"props":{"pageProps":{}},"page":"/search","query":{"q":"egs"},"buildId":"abc123","locale":"id"}</script>'
+            '<script src="/_next/static/chunks/pages/search-1a2b.js"></script></body></html>')
+    JS = ('fetch("https://api.toco.id/v2/products/search?q="+q);var u="/api/listing/detail";'
+          'var d="https://www.w3.org/2000/svg";var x="https://cdn.toco.id/img/logo.png";')
+
+    def test_finds_data_endpoints(self):
+        lines = []
+
+        def get(url, limit=0):
+            if "search-1a2b.js" in url:
+                return 200, self.JS, ""
+            if "_next/data/abc123/search.json" in url:
+                return 200, '{"pageProps":{}}', ""
+            return 200, self.HTML, ""
+        probe_toco_next.run(get=get, sleep=lambda s: None, out=lambda *a: lines.append(" ".join(map(str, a))))
+        text = "\n".join(lines)
+        self.assertIn("buildId=abc123", text)
+        self.assertIn("https://api.toco.id/v2/products/search?q=", text)
+        self.assertIn("/api/listing/detail", text)
+        self.assertNotIn("w3.org", text)
+        self.assertIn("/_next/data/abc123/search.json?q=egs -> status=200", text)
 
 
 if __name__ == "__main__":
