@@ -5,13 +5,19 @@ Real titles below were copied from published latest.json candidates; the grade t
 bot recorded (grade_hint) is the expected answer. RAW titles are made up.
 """
 import argparse
+import importlib.util
 import json
 import os
 import sqlite3
+import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 from datetime import datetime, timezone
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import parse_qs, urlsplit
+from urllib.request import urlopen
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_site  # noqa: E402
@@ -325,6 +331,106 @@ class ProbeNext(unittest.TestCase):
         self.assertIn("/api/listing/detail", text)
         self.assertNotIn("w3.org", text)
         self.assertIn("/_next/data/abc123/search.json?q=egs -> status=200", text)
+
+
+# A fake site that behaves like toco: the search page is an empty shell and JavaScript fills in the
+# listings from a data request. Used only when Playwright and a Chrome binary are available.
+FAKE_PAGES = {
+    "1": [("a-1", "id-1", "Sisa 1 Pikachu ex SAR 234/193 MA3 ID NM Rp420.000 Kota Jambi"),
+          ("a-2", "id-2", "Sisa 2 Pikachu ex SAR 234/193 MA3 Indo Rp380.000 Kota Surabaya"),
+          ("a-3", "jp-3", "Sisa 1 Pikachu ex SAR 234/193 MA3 Rp300.000 Kota Bandung")],
+    "2": [("b-1", "id-4", "Sisa 1 Mega Venusaur ex SAR 173/126 MA1 ID Rp120.000 Kota Jambi"),
+          ("b-2", "id-5", "Sisa 1 Mega Venusaur ex SAR 173/126 MA1 Indo Rp100.000 Kota Depok")],
+}
+SHELL = ("<html><body><div id=app></div><script>"
+         "const p=new URLSearchParams(location.search).get('page')||'1';"
+         "setTimeout(()=>fetch('/api/search?page='+p).then(r=>r.json()).then(d=>{document.getElementById('app').innerHTML="
+         "d.items.map(i=>`<a href=\"/id/listing/${i.slug}-17900000000${p}0-ab12\"><img src=\"/img/${i.img}.jpg\">"
+         "<span>${i.text}</span></a>`).join('')}),300)</script></body></html>")
+LISTING = ('<html><head><title>Pikachu ex SAR | toco</title><meta property="og:image" content="/img/id-1.jpg"></head>'
+           "<body><p>Kartu asli. Nomor seri slab: EG12345</p></body></html>")
+
+
+def chrome_path():
+    for path in (os.environ.get("EGS_CHROME"), "/opt/pw-browsers/chromium", "/usr/bin/google-chrome"):
+        if path and os.path.exists(path):
+            return path
+    return None
+
+
+class FakeToco:
+    def __init__(self):
+        class H(BaseHTTPRequestHandler):
+            def do_GET(self):
+                u = urlsplit(self.path)
+                q = parse_qs(u.query)
+                if u.path == "/search":
+                    body, ctype = SHELL.encode(), "text/html"
+                elif u.path == "/api/search":
+                    items = [{"slug": s, "img": i, "text": t} for s, i, t in FAKE_PAGES.get(q.get("page", ["1"])[0], [])]
+                    body, ctype = json.dumps({"items": items}).encode(), "application/json"
+                elif "/listing/" in u.path:
+                    body, ctype = LISTING.encode(), "text/html"
+                elif u.path.startswith("/img/"):
+                    body, ctype = b"\xff\xd8\xff" + u.path.encode(), "image/jpeg"
+                else:
+                    self.send_response(404)
+                    self.end_headers()
+                    return
+                self.send_response(200)
+                self.send_header("Content-Type", ctype)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *a):
+                pass
+        self.server = HTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        self.base = f"http://127.0.0.1:{self.server.server_port}"
+
+
+HAVE_BROWSER = importlib.util.find_spec("playwright") is not None and chrome_path() is not None
+
+
+@unittest.skipUnless(HAVE_BROWSER, "Playwright dan Chrome tidak tersedia")
+class BrowserRender(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        os.environ["EGS_CHROME"] = chrome_path()
+        cls.site = FakeToco()
+        cls.browser = collect_raw.Browser(log=lambda *a: None)
+        cls.browser.WAIT_MS = 1500
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.browser.close()
+        cls.site.server.shutdown()
+
+    def test_plain_fetch_sees_nothing_but_the_browser_sees_listings(self):
+        base = self.site.base
+        plain = urlopen(base + "/search?q=egs").read().decode()
+        self.assertEqual(len(collect_raw.parse_search_html(plain, base)), 0)
+        self.assertEqual(len(collect_raw.parse_search_html(self.browser(base + "/search?q=egs"), base)), 3)
+
+    def test_crawl_follows_pages_until_empty(self):
+        old, collect_raw.BASE = collect_raw.BASE, self.site.base
+        try:
+            cards, diag = collect_raw.crawl(["egs"], self.browser, 5, 0, "page", sleep=lambda s: None, log=lambda *a: None)
+        finally:
+            collect_raw.BASE = old
+        self.assertEqual((len(cards), diag[0]["pages"]), (5, 3))
+
+    def test_browser_probe_reports_listings_data_requests_and_serial(self):
+        script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "probe_toco_browser.py")
+        done = subprocess.run([sys.executable, script, self.site.base], capture_output=True, text=True,
+                              timeout=180, env={**os.environ, "EGS_CHROME": chrome_path()})
+        self.assertEqual(done.returncode, 0, done.stderr[-500:])
+        text = done.stdout
+        self.assertIn("listing terlihat=3", text)
+        self.assertIn("/api/search", text)
+        self.assertIn("&page=2 -> listing=2 baru dibanding halaman 1=2", text)
+        self.assertIn("EG12345", text)
 
 
 if __name__ == "__main__":

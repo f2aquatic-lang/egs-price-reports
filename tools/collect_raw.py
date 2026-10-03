@@ -10,9 +10,10 @@ photo with Claude, keep everything in a local SQLite file, write raw.json.
   python3 tools/collect_raw.py --test-image card.jpg                  # check the API key
   python3 tools/collect_raw.py                                        # real run
 
-The toco page layout was not available when this was written. The parser reads every
-link to /listing/ with the text "Sisa N <title> Rp<price> ... <city>", the same text the
-EGS bot already records. --dry-run prints what was and was not understood.
+toco renders its search results with JavaScript (a plain HTTP fetch sees an empty page), so
+pages are rendered with a headless browser (--fetch browser, the default; Playwright is already
+on the VPS). The parser then reads every link to /listing/ with the text "Sisa N <title> Rp<price>
+... <city>", the same text the EGS bot records. --dry-run prints what was and was not understood.
 """
 import argparse
 import base64
@@ -67,6 +68,50 @@ def fetch(url, timeout=30, limit=6_000_000):
 
 def fetch_html(url):
     return fetch(url, limit=3_000_000)[0].decode("utf-8", "replace")
+
+
+class Browser:
+    """Headless browser for pages toco renders with JavaScript. Needs Playwright and Chrome/Chromium."""
+    SELECTOR = 'a[href*="/listing/"]'
+    WAIT_MS = 15000
+
+    def __init__(self, log=print):
+        from playwright.sync_api import sync_playwright
+        self._pw = sync_playwright().start()
+        args = ["--no-sandbox"] if hasattr(os, "geteuid") and os.geteuid() == 0 else []
+        self._browser = None
+        for path in (None, os.environ.get("EGS_CHROME"), "/usr/bin/google-chrome", "/usr/bin/chromium",
+                     "/usr/bin/chromium-browser"):
+            if path is not None and not os.path.exists(path):
+                continue
+            try:
+                kw = {"headless": True, "args": args}
+                if path:
+                    kw["executable_path"] = path
+                self._browser = self._pw.chromium.launch(**kw)
+                break
+            except Exception as e:
+                log(f"  ! browser gagal ({path or 'bawaan'}): {str(e).strip().splitlines()[0][:120]}")
+        if self._browser is None:
+            self._pw.stop()
+            raise SystemExit("Tidak ada browser yang bisa dijalankan. Isi EGS_CHROME dengan lokasi Chrome.")
+        self.page = self._browser.new_page()
+
+    def __call__(self, url):
+        try:
+            self.page.goto(url, wait_until="domcontentloaded", timeout=45000)
+        except Exception as e:
+            raise FetchError(f"{url}: {e}") from e
+        try:
+            self.page.wait_for_selector(self.SELECTOR, timeout=self.WAIT_MS)
+        except Exception:
+            pass  # a query with no results is a valid answer
+        self.page.wait_for_timeout(1500)
+        return self.page.content()
+
+    def close(self):
+        self._browser.close()
+        self._pw.stop()
 
 
 # ---- search page parsing -------------------------------------------------------
@@ -348,7 +393,7 @@ def build_raw(db, types, now, max_age_hours):
             "cards": cards, "unmatched": {"count": unmatched, "language_unverified": unverified}}
 
 
-def run(cfg, fetch_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=print):
+def run(cfg, fetch_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=print, listing_fn=None):
     now = now or datetime.now(timezone.utc)
     with open(cfg.latest, encoding="utf-8") as fh:
         types = load_types(json.load(fh))
@@ -393,7 +438,7 @@ def run(cfg, fetch_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pr
 
     checker = None
     if not cfg.dry_run:
-        checker = LangChecker(db, classify_fn, fetch_fn, image_fn, cfg.max_checks, now, cfg.delay / 2, sleep, log)
+        checker = LangChecker(db, classify_fn, listing_fn or fetch_fn, image_fn, cfg.max_checks, now, cfg.delay / 2, sleep, log)
         to_check.sort(key=lambda l: classify_title(l["title"])["lang"] != "ID")  # explicit "ID" first
         for l in to_check:
             checker.ensure(l)
@@ -412,6 +457,8 @@ def main(argv=None):
     ap.add_argument("--db", default=os.path.expanduser("~/.egs-raw/raw.sqlite"), help="database di VPS, bukan di repo")
     ap.add_argument("--pages", type=int, default=5, help="halaman maksimal per kata kunci")
     ap.add_argument("--delay", type=float, default=2.0, help="jeda antar permintaan (detik)")
+    ap.add_argument("--fetch", choices=("browser", "plain"), default="browser",
+                    help="browser = render halaman dengan Chrome (perlu untuk toco); plain = HTTP biasa")
     ap.add_argument("--page-param", default="page", help="nama parameter halaman di URL pencarian (belum terverifikasi)")
     ap.add_argument("--queries-limit", type=int, help="batasi jumlah kata kunci (untuk uji)")
     ap.add_argument("--max-checks", type=int, default=150, help="batas cek foto per putaran (membatasi biaya)")
@@ -443,7 +490,18 @@ def main(argv=None):
         except ImportError:
             print("Paket 'anthropic' belum terpasang. Jalankan: pip install anthropic (perlu Python 3.10+)")
             return 2
-    raw, summary = run(cfg, fetch_html, fetch, classify)
+    browser = None
+    if cfg.fetch == "browser":
+        try:
+            browser = Browser()
+        except ImportError:
+            print("Playwright belum terpasang (pip install playwright). Atau pakai --fetch plain.")
+            return 2
+    try:
+        raw, summary = run(cfg, browser or fetch_html, fetch, classify, listing_fn=fetch_html)
+    finally:
+        if browser:
+            browser.close()
     print(json.dumps(summary, ensure_ascii=False))
     if raw is None:
         return 3
