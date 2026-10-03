@@ -19,3 +19,4 @@ These scripts only read `latest.json`; they never write it and are not part of t
 ## Dataset RAW
 
 Dataset kedua untuk kartu bahasa Indonesia yang belum di-slab, supaya papan harga bisa menunjukkan RAW dan slab EGS berdampingan. Format, aturan hitung, dan alur pengumpul ada di [docs/raw-dataset.md](docs/raw-dataset.md). `latest.json` tidak berubah.
+- `python3 tools/collect_raw.py --dry-run` (di VPS) mengumpulkan listing RAW dari toco dan menulis `raw.json`; langkah pemasangan ada di [docs/vps-setup.md](docs/vps-setup.md). `tools/publish_raw.sh` menerbitkannya ke `main` dan hanya mau jalan dari branch `main`.

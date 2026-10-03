@@ -86,6 +86,8 @@ Penanda bahasa di judul (`ID`, `Indo`, `Indonesia`) tetap terbaca oleh `tools/cl
 
 ## Alur pengumpul (dijalankan di VPS)
 
+Implementasi referensi ada di `tools/collect_raw.py`, dan langkah menjalankannya di VPS ada di [vps-setup.md](vps-setup.md). Uraian di bawah menjelaskan apa yang dilakukannya.
+
 1. Ambil daftar kartu dari `latest.json`, lalu buat kata kunci per kartu dengan `python3 tools/watch_queries.py latest.json`. Daftar `raw` adalah kata kunci untuk dataset ini.
 2. Jalankan tiap kata kunci di pencarian toco, halaman demi halaman, sampai halaman tidak lagi memberi listing baru atau sampai batas halaman. Beri jeda antar permintaan dan patuhi aturan situs.
 3. Gabungkan hasil antar kata kunci lewat URL listing, supaya tidak dihitung dua kali.

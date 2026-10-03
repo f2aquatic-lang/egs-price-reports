@@ -4,12 +4,18 @@
 Real titles below were copied from published latest.json candidates; the grade the
 bot recorded (grade_hint) is the expected answer. RAW titles are made up.
 """
+import argparse
+import json
 import os
+import sqlite3
 import sys
+import tempfile
 import unittest
+from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_site  # noqa: E402
+import collect_raw  # noqa: E402
 import validate_raw  # noqa: E402
 import watch_queries  # noqa: E402
 from classify import classify_title  # noqa: E402
@@ -143,6 +149,116 @@ class Board(unittest.TestCase):
         q = watch_queries.queries({"name": "Zekrom <N>", "set": "MA3", "number": "210/193"})
         self.assertEqual(q["egs"][0], "Zekrom N 210/193 egs")
         self.assertIn("210/193 MA3", q["raw"])
+
+
+# The toco page layout is not known; this synthetic page only has the shape the parser relies on:
+# links to /listing/ whose text is "Sisa N <title> Rp<price> ... <city>", with an <img> inside.
+def fake_page():
+    cards = [
+        ("pikachu-id-1", "id-1", "Sisa 1 Pikachu ex SAR 234/193 MA3 ID NM Rp420.000 Kota Jambi"),
+        ("pikachu-id-2", "id-2", "Sisa 2 Pikachu ex SAR 234/193 MA3 Indo Rp380.000 Kota Surabaya"),
+        ("pikachu-jp-3", "jp-3", "Sisa 1 Pikachu ex SAR 234/193 MA3 Rp300.000 Kota Bandung"),
+        ("box-4", "id-4", "Sisa 5 Booster Box Pokemon Mega Impian MA3 Indonesia Rp900.000 Kota Jambi"),
+        ("slab-5", "id-5", "Sisa 1 Pikachu ex SAR 234/193 MA3 EGS 10 Rp2.760.000 Kota Jakarta"),
+        ("gengar-6", "id-6", "Sisa 1 Gengar VMAX CSR Rp150.000 Kota Jambi"),
+        ("charizard-7", "id-7", "Sisa 1 MEGA CHARIZARD X EX SR Rp600.000 Kota Depok"),
+    ]
+    return "<html><body>" + "".join(
+        f'<a href="/id/listing/{slug}-1790000000{i}00-ab1{i}"><img src="/img/{img}.jpg">'
+        f"<span>{text}</span></a>" for i, (slug, img, text) in enumerate(cards)) + "</body></html>"
+
+
+class Collector(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        latest = tiny_latest()
+        latest["listings"] += [
+            {**latest["listings"][0], "name": "Pikachu ex", "set_code": "MA3", "card_number": "234/193",
+             "rarity": "SAR", "url": "https://toco.id/id/listing/s-1790389583181-2c06"},
+            {**latest["listings"][0], "name": "Mega Charizard X ex", "set_code": "MA3", "card_number": "223/193",
+             "rarity": "MA", "url": "https://toco.id/id/listing/c-1790389583182-2c07"}]
+        self.latest = os.path.join(self.tmp.name, "latest.json")
+        with open(self.latest, "w") as fh:
+            json.dump(latest, fh)
+        self.cfg = argparse.Namespace(
+            latest=self.latest, out=os.path.join(self.tmp.name, "raw.json"), db=os.path.join(self.tmp.name, "x.sqlite"),
+            pages=3, delay=0, page_param="page", queries_limit=2, max_checks=50, max_age_hours=36,
+            dry_run=False, save_html=None)
+        self.page_calls = self.image_calls = self.api_calls = 0
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def fetch_fn(self, url):
+        self.page_calls += 1
+        return fake_page() if "page=" not in url else "<html></html>"
+
+    def image_fn(self, url):
+        self.image_calls += 1
+        return b"\xff\xd8\xff" + url.encode(), "image/jpeg"
+
+    def classify_fn(self, data, media):
+        self.api_calls += 1
+        return "JP" if b"/jp-" in data else "ID"
+
+    def go(self, **over):
+        for k, v in over.items():
+            setattr(self.cfg, k, v)
+        return collect_raw.run(self.cfg, self.fetch_fn, self.image_fn,
+                               None if self.cfg.dry_run else self.classify_fn,
+                               now=datetime(2026, 10, 3, 1, 0, tzinfo=timezone.utc), sleep=lambda s: None, log=lambda *a: None)
+
+    def test_parse_cards_and_prices(self):
+        cards = collect_raw.parse_search_html(fake_page())
+        self.assertEqual(len(cards), 7)
+        l = collect_raw.to_listing(cards[0])
+        self.assertEqual((l["ask"], l["stock"], l["city"], l["image"]),
+                         (420000, 1, "Kota Jambi", "https://toco.id/img/id-1.jpg"))
+        self.assertEqual(l["title"], "Pikachu ex SAR 234/193 MA3 ID NM")
+
+    def test_full_run_counts_only_indonesian_raw_cards(self):
+        raw, summary = self.go()
+        self.assertEqual(validate_raw.validate(raw)[0], [])
+        card = raw["cards"][0]
+        self.assertEqual((card["name"], card["stats"]["n"], card["stats"]["min"], card["stats"]["max"]),
+                         ("Pikachu ex", 2, 380000, 420000))
+        self.assertEqual(card["stats"]["median"], 400000)
+        self.assertTrue(all(l["lang"] == "ID" and l["lang_by"] == "image" for l in card["listings"]))
+        self.assertEqual(raw["unmatched"], {"count": 2, "language_unverified": 0})
+        self.assertEqual(summary["jenis_product"], 1)
+        self.assertEqual(summary["jenis_slab"], 1)
+
+    def test_language_is_cached_per_listing(self):
+        self.go()
+        first = self.api_calls
+        self.assertEqual(first, 3)
+        self.go()
+        self.assertEqual(self.api_calls, first)
+
+    def test_dry_run_makes_no_api_calls(self):
+        raw, summary = self.go(dry_run=True)
+        self.assertEqual((self.api_calls, self.image_calls), (0, 0))
+        self.assertEqual(raw["cards"], [])
+        self.assertEqual(raw["unmatched"]["language_unverified"], 3)
+
+    def test_check_budget_limits_cost(self):
+        raw, summary = self.go(max_checks=1)
+        self.assertEqual(self.api_calls, 1)
+        self.assertEqual(raw["unmatched"]["language_unverified"], 2)
+
+    def test_unreadable_page_writes_nothing(self):
+        self.fetch_fn = lambda url: "<html><body>tidak ada listing</body></html>"
+        raw, summary = self.go()
+        self.assertIsNone(raw)
+
+    def test_helpers(self):
+        self.assertEqual(collect_raw.normalize_lang("ID"), "ID")
+        self.assertEqual(collect_raw.normalize_lang("The text is Japanese."), "JP")
+        self.assertEqual(collect_raw.normalize_lang("hmm"), "UNCLEAR")
+        self.assertEqual(collect_raw.sniff_media_type(b"\x89PNG\r\n\x1a\nxx"), "image/png")
+        self.assertIsNone(collect_raw.sniff_media_type(b"not an image"))
+        self.assertEqual([collect_raw.quantile([1, 2, 3, 4], p) for p in (0, .25, .5, 1)], [1, 2, 2, 4])
+        self.assertEqual(collect_raw.find_og_image('<meta property="og:image" content="/a.jpg">'), "https://toco.id/a.jpg")
 
 
 if __name__ == "__main__":
