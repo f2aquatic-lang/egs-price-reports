@@ -34,10 +34,15 @@ Kartu EGS dan RAW digabung lewat `(set_code, card_number)`, huruf kecil dan tanp
     {
       "name": "Mega Venusaur ex", "set_code": "MA1", "card_number": "173/126", "rarity": "SAR",
       "stats": {"n": 41, "min": 47000, "p25": 70000, "median": 92000, "p75": 130000, "max": 255000},
+      "history": [
+        {"date_wib": "2026-10-02", "n": 38, "median": 90000, "min": 47000},
+        {"date_wib": "2026-10-03", "n": 41, "median": 92000, "min": 47000}
+      ],
       "listings": [
         {"url": "https://toco.id/id/listing/...", "ask_idr": 47000, "city": "Kota Jambi",
          "condition": "nm", "observed_at": "2026-10-02T22:30:00+00:00",
          "conf": "nomor", "lang": "ID", "lang_by": "image",
+         "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/....webp",
          "title": "Mega Venusaur ex SAR 173/126 MA1 ID NM"}
       ]
     }
@@ -52,6 +57,8 @@ Aturan field:
 - `listings` memuat paling banyak 30 listing yang dihitung, yang termurah. Hanya listing yang dihitung yang dipublikasikan, jadi `conf` hanya `nomor` atau `nama+set`.
 - Kuantil memakai interpolasi linear, dibulatkan ke rupiah. Urutannya `min <= p25 <= median <= p75 <= max`.
 - `unmatched.count` adalah listing RAW yang tidak cocok dengan kartu mana pun. `language_unverified` adalah listing yang cocok dengan kartu tetapi bahasanya belum terbukti Indonesia dari gambar (belum diperiksa, gambar gagal diambil, atau modelnya menjawab "tidak jelas"). Keduanya tidak dihitung.
+- `history` adalah riwayat median per kartu: satu titik per hari WIB (putaran terakhir hari itu yang dipakai), paling banyak 60 titik, yang tertua di depan. Pengumpul membangunnya dari database lokalnya di VPS, dan papan harga memakainya untuk tren naik-turun dan grafik batang kecil. Putaran yang dibatasi anggaran foto mencatat `n` yang lebih kecil untuk hari itu, jadi baca `n` bersama `median`.
+- `photo` (opsional) adalah alamat foto penuh listing (sekitar 900 piksel) untuk ditampilkan di website. Repo hanya menyimpan alamatnya, bukan fotonya. Foto adalah milik penjual: tampilkan untuk keperluan internal, dan minta izin atau pakai foto sendiri sebelum dipublikasikan.
 - `lang` pada listing yang dipublikasikan selalu `ID`. `lang_by` adalah `image` (dicek dari foto kartu, cara utama) atau `title` (penanda eksplisit di judul, hanya boleh kalau gambar tidak tersedia).
 - `observed_at` di tiap listing adalah waktu listing itu diambil. Semua waktu ISO dengan offset `+00:00`, seperti `latest.json`.
 

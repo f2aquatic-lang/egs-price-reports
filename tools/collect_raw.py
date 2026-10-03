@@ -261,6 +261,9 @@ def open_db(path):
             image_url TEXT, kind TEXT, card_set TEXT, card_number TEXT, conf TEXT, first_seen TEXT, last_seen TEXT);
         CREATE TABLE IF NOT EXISTS lang(
             url TEXT PRIMARY KEY, lang TEXT, lang_by TEXT, image_url TEXT, checked_at TEXT);
+        CREATE TABLE IF NOT EXISTS snapshot(
+            day TEXT, card_set TEXT, card_number TEXT, n INTEGER, median INTEGER, min_idr INTEGER, max_idr INTEGER,
+            taken_at TEXT, PRIMARY KEY(day, card_set, card_number));
     """)
     return db
 
@@ -284,21 +287,25 @@ def load_types(latest):
     return types
 
 
-def build_raw(db, types, now, max_age_hours):
+WIB = timezone(timedelta(hours=7))
+HISTORY_DAYS = 60
+
+
+def build_raw(db, types, now, max_age_hours, record=True):
     cutoff = (now - timedelta(hours=max_age_hours)).isoformat()
     rows = db.execute(
-        "SELECT l.url, l.title, l.ask_idr, l.city, l.stock, l.card_set, l.card_number, l.conf, l.last_seen, g.lang, g.lang_by "
+        "SELECT l.url, l.title, l.ask_idr, l.city, l.stock, l.card_set, l.card_number, l.conf, l.last_seen, g.lang, g.lang_by, l.image_url "
         "FROM listing l LEFT JOIN lang g ON g.url = l.url WHERE l.last_seen >= ? AND l.kind = 'raw'", (cutoff,)).fetchall()
     by_type = {build_site.card_key(t["set"], t["number"]): [] for t in types}
     unmatched = unverified = 0
-    for url, title, ask, city, stock, cset, cnum, conf, seen, lang, lang_by in rows:
+    for url, title, ask, city, stock, cset, cnum, conf, seen, lang, lang_by, image in rows:
         if conf not in MATCHED:
             unmatched += 1
             continue
         if stock is not None and stock <= 0:
             continue
         if lang == "ID":
-            by_type[build_site.card_key(cset, cnum)].append((ask, url, title, city, seen, conf, lang_by))
+            by_type[build_site.card_key(cset, cnum)].append((ask, url, title, city, seen, conf, lang_by, image))
         elif lang in (None, "UNCLEAR"):
             unverified += 1
     cards, newest = [], []
@@ -308,18 +315,30 @@ def build_raw(db, types, now, max_age_hours):
             continue
         prices = [f[0] for f in found]
         listings = []
-        for ask, url, title, city, seen, conf, lang_by in found[:30]:
+        for ask, url, title, city, seen, conf, lang_by, image in found[:30]:
             item = {"url": url, "ask_idr": ask, "city": city, "observed_at": seen, "conf": conf,
                     "lang": "ID", "lang_by": lang_by, "title": title}
+            if image:
+                item["photo"] = image
             cond = classify_title(title)["condition"]
             if cond:
                 item["condition"] = cond
             listings.append(item)
             newest.append(seen)
+        stats = {"n": len(prices), "min": prices[0], "p25": quantile(prices, .25),
+                 "median": quantile(prices, .5), "p75": quantile(prices, .75), "max": prices[-1]}
+        if record:  # one row per card per WIB day; the last run of the day wins
+            db.execute(
+                "INSERT INTO snapshot(day, card_set, card_number, n, median, min_idr, max_idr, taken_at) VALUES(?,?,?,?,?,?,?,?) "
+                "ON CONFLICT(day, card_set, card_number) DO UPDATE SET n=excluded.n, median=excluded.median, "
+                "min_idr=excluded.min_idr, max_idr=excluded.max_idr, taken_at=excluded.taken_at",
+                (now.astimezone(WIB).date().isoformat(), t["set"], t["number"], stats["n"], stats["median"],
+                 stats["min"], stats["max"], now.isoformat()))
+        history = [{"date_wib": d, "n": n, "median": m, "min": lo} for d, n, m, lo in db.execute(
+            "SELECT day, n, median, min_idr FROM snapshot WHERE card_set=? AND card_number=? ORDER BY day DESC LIMIT ?",
+            (t["set"], t["number"], HISTORY_DAYS))][::-1]
         cards.append({"name": t["name"], "set_code": t["set"], "card_number": t["number"], "rarity": t["rarity"],
-                      "stats": {"n": len(prices), "min": prices[0], "p25": quantile(prices, .25),
-                                "median": quantile(prices, .5), "p75": quantile(prices, .75), "max": prices[-1]},
-                      "listings": listings})
+                      "stats": stats, "history": history, "listings": listings})
     cards.sort(key=lambda c: -c["stats"]["n"])
     return {"schema_version": 1, "kind": "RAW", "price_type": "OBSERVED_ASKING_ONLY", "language": "ID",
             "source": "toco_public", "generated_at": now.isoformat(),
@@ -377,7 +396,8 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
     for l in to_check:
         checker.ensure(l)
     db.commit()
-    raw = build_raw(db, types, now, cfg.max_age_hours)
+    raw = build_raw(db, types, now, cfg.max_age_hours, record=not cfg.dry_run)
+    db.commit()  # the daily snapshots written by build_raw must survive the run
     db.close()
     ctr.update({"listing_dibaca": len(items), "foto_dicek_sekarang": checker.calls})
     return raw, dict(ctr)

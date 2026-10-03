@@ -21,7 +21,7 @@ import json
 import os
 import re
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from urllib.parse import quote_plus
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -148,6 +148,20 @@ def card_key(set_code, number):
     return (set_code.lower(), number.replace(" ", "").lower())
 
 
+def trend_of(history):
+    """Change of the RAW median against the entry about 7 days earlier (or the oldest one we have)."""
+    if len(history) < 2:
+        return None
+    last = history[-1]
+    last_day = date.fromisoformat(last["date_wib"])
+    older = [h for h in history[:-1] if date.fromisoformat(h["date_wib"]) <= last_day - timedelta(days=7)]
+    base = older[-1] if older else history[0]
+    days = (last_day - date.fromisoformat(base["date_wib"])).days
+    if days <= 0 or not base["median"]:
+        return None
+    return {"days": days, "pct": round((last["median"] - base["median"]) / base["median"] * 100, 1)}
+
+
 def attach_raw(data, raw, gen):
     """Join raw.json cards to the tracked types on (set_code, card_number)."""
     by = {card_key(c["set_code"], c["card_number"]): c for c in raw["cards"]}
@@ -158,7 +172,8 @@ def attach_raw(data, raw, gen):
         if not c:
             continue
         used.add(k)
-        t["raw"] = {**c["stats"], "listings": [
+        history = c.get("history") or []
+        t["raw"] = {**c["stats"], "history": history, "trend": trend_of(history), "listings": [
             {"ask": l["ask_idr"], "city": l["city"], "url": l["url"], "conf": l["conf"],
              "text": l["title"], **age_fields(l["url"], gen)} for l in c["listings"]]}
     data["raw_only"] = sorted(

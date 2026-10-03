@@ -71,12 +71,25 @@ def validate(d):
                 err(f"{label}: listing lang is {l['lang']!r}; only Indonesian listings may be published")
             if l["lang_by"] not in ("image", "title"):
                 err(f"{label}: listing lang_by {l['lang_by']!r} must be image or title")
+            if "photo" in l and not str(l["photo"]).startswith(("http://", "https://")):
+                err(f"{label}: photo must be an http(s) address")
             if l["conf"] not in ("nomor", "nama+set"):
                 err(f"{label}: listing conf {l['conf']!r} must be nomor or nama+set (only counted listings are published)")
             obs = datetime.fromisoformat(l["observed_at"])
             if obs > gen:
                 err(f"{label}: observed_at is after generated_at")
             newest = obs if newest is None or obs > newest else newest
+        hist = c.get("history")
+        if hist is not None:
+            dates = [h.get("date_wib") for h in hist]
+            if dates != sorted(set(dates)):
+                err(f"{label}: history needs unique dates, oldest first")
+            for h in hist:
+                if not all(k in h for k in ("date_wib", "n", "median", "min")):
+                    err(f"{label}: every history entry needs date_wib, n, median, min")
+                    break
+                if h["n"] < 1 or not (0 < h["min"] <= h["median"]):
+                    err(f"{label}: history {h['date_wib']} must satisfy n >= 1 and 0 < min <= median")
         if s["n"] < 5:
             warn(f"{label}: only {s['n']} counted listing(s)")
 

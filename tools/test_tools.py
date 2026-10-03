@@ -155,6 +155,19 @@ class RawFormat(unittest.TestCase):
         d["coverage"]["cards"] = 5
         self.assertEqual(len(validate_raw.validate(d)[0]), 3)
 
+    def test_history_and_photo_rules(self):
+        d = good_raw()
+        d["cards"][0]["history"] = [{"date_wib": "2026-10-03", "n": 3, "median": 100000, "min": 80000},
+                                    {"date_wib": "2026-10-02", "n": 3, "median": 100000, "min": 80000}]
+        d["cards"][0]["listings"][0]["photo"] = "ftp://x/y.jpg"
+        errors = validate_raw.validate(d)[0]
+        self.assertEqual(len(errors), 2)
+        self.assertTrue(any("history" in e for e in errors) and any("photo" in e for e in errors))
+        d["cards"][0]["history"] = [{"date_wib": "2026-10-02", "n": 3, "median": 100000, "min": 80000},
+                                    {"date_wib": "2026-10-03", "n": 3, "median": 101000, "min": 80000}]
+        d["cards"][0]["listings"][0]["photo"] = "https://img.example/a.webp"
+        self.assertEqual(validate_raw.validate(d)[0], [])
+
     def test_non_indonesian_listing_is_rejected(self):
         d = good_raw()
         d["cards"][0]["listings"][0]["lang"] = "JP"
@@ -189,6 +202,13 @@ class Board(unittest.TestCase):
         data = build_site.build(tiny_latest(), raw)
         self.assertEqual(data["types"][0]["raw"]["median"], 100000)
         self.assertEqual([c["name"] for c in data["raw_only"]], ["Gengar ex"])
+
+    def test_trend_compares_with_about_a_week_earlier(self):
+        h = lambda d, m: {"date_wib": d, "n": 5, "median": m, "min": m}
+        self.assertIsNone(build_site.trend_of([h("2026-10-10", 100)]))
+        self.assertEqual(build_site.trend_of([h("2026-10-03", 100), h("2026-10-06", 110), h("2026-10-10", 120)]),
+                         {"days": 7, "pct": 20.0})   # baseline is the 3 Oct entry, not the 6 Oct one
+        self.assertEqual(build_site.trend_of([h("2026-10-08", 200), h("2026-10-10", 150)]), {"days": 2, "pct": -25.0})
 
     def test_without_raw(self):
         data = build_site.build(tiny_latest())
@@ -276,11 +296,12 @@ class Collector(unittest.TestCase):
         self.api_calls += 1
         return "JP" if b"/jp-" in data else "ID"
 
-    def go(self, **over):
+    def go(self, now=None, **over):
         for k, v in over.items():
             setattr(self.cfg, k, v)
         return collect_raw.run(self.cfg, self.post_fn, self.image_fn, None if self.cfg.dry_run else self.classify_fn,
-                               now=datetime(2026, 10, 3, 1, 0, tzinfo=timezone.utc), sleep=lambda s: None, log=lambda *a: None)
+                               now=now or datetime(2026, 10, 3, 1, 0, tzinfo=timezone.utc), sleep=lambda s: None,
+                               log=lambda *a: None)
 
     def test_search_body_matches_what_the_site_sends(self):
         b = collect_raw.search_body("Pikachu ex 234/193", 45, 45)
@@ -312,6 +333,35 @@ class Collector(unittest.TestCase):
         self.assertEqual(raw["unmatched"], {"count": 2, "language_unverified": 0})
         self.assertEqual((summary["jenis_product"], summary["jenis_slab"]), (1, 1))
         self.assertEqual(self.api_calls, 3)  # a-1, a-2, a-3; the Japanese-by-text and the sold-out ones cost nothing
+
+    def test_listings_carry_their_photo(self):
+        raw, _ = self.go()
+        photos = {l["photo"] for l in raw["cards"][0]["listings"]}
+        self.assertEqual(photos, {"https://img.example/id-1.webp", "https://img.example/id-2.webp"})
+
+    def test_history_gets_one_point_per_wib_day_and_a_trend(self):
+        day1 = datetime(2026, 10, 3, 1, 0, tzinfo=timezone.utc)     # 3 Oct 08:00 WIB
+        raw1, _ = self.go(now=day1)
+        self.assertEqual([h["date_wib"] for h in raw1["cards"][0]["history"]], ["2026-10-03"])
+        self.catalog = [api_item("a-1", "Pikachu EX SAR MA3 kartu pokemon tcg indo", 462000, photo="https://img.example/id-1.webp"),
+                        api_item("a-2", "Pikachu ex SAR 234/193 MA3 Indo", 440000, special=418000, photo="https://img.example/id-2.webp")]
+        self.go(now=datetime(2026, 10, 10, 1, 0, tzinfo=timezone.utc))        # +7 days, prices +10%
+        self.catalog = [api_item("a-1", "Pikachu EX SAR MA3 kartu pokemon tcg indo", 484000, photo="https://img.example/id-1.webp"),
+                        api_item("a-2", "Pikachu ex SAR 234/193 MA3 Indo", 440000, special=418000, photo="https://img.example/id-2.webp")]
+        raw3, _ = self.go(now=datetime(2026, 10, 10, 9, 0, tzinfo=timezone.utc))  # same WIB day: replaces, not appends
+        hist = raw3["cards"][0]["history"]
+        self.assertEqual([h["date_wib"] for h in hist], ["2026-10-03", "2026-10-10"])
+        self.assertEqual((hist[0]["median"], hist[1]["median"]), (400000, 451000))
+        self.assertEqual(validate_raw.validate(raw3)[0], [])
+        self.assertEqual(build_site.trend_of(hist), {"days": 7, "pct": 12.8})
+
+    def test_dry_run_records_no_history(self):
+        self.go(dry_run=True)
+        db = sqlite3.connect(self.cfg.db)
+        try:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM snapshot").fetchone()[0], 0)
+        finally:
+            db.close()
 
     def test_language_is_cached_per_listing(self):
         self.go()
@@ -561,6 +611,30 @@ class BrowserRender(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.site.server.shutdown()
+
+    def test_board_shows_raw_trend_and_history_without_script_errors(self):
+        from playwright.sync_api import sync_playwright
+        raw = good_raw()
+        raw["cards"][0]["history"] = [{"date_wib": "2026-10-03", "n": 3, "median": 100000, "min": 80000},
+                                      {"date_wib": "2026-10-10", "n": 3, "median": 112000, "min": 80000}]
+        html = build_site.render(build_site.build(tiny_latest(), raw), True)
+        path = os.path.join(tempfile.mkdtemp(), "board.html")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(html)
+        errors = []
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path=chrome_path(), headless=True,
+                                        args=["--no-sandbox"] if os.geteuid() == 0 else [])
+            page = browser.new_page()
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            page.goto("file://" + path)
+            page.wait_for_timeout(500)
+            text = page.evaluate("() => document.body.innerText")
+            bars = page.evaluate("() => document.querySelectorAll('.spark span').length")
+            browser.close()
+        self.assertEqual(errors, [])
+        self.assertIn("↑ 12% dalam 7 hari", text)
+        self.assertEqual(bars, 2)
 
     def test_browser_probe_reports_listings_data_requests_and_serial(self):
         script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "probe_toco_browser.py")

@@ -60,6 +60,9 @@ h2{font:600 20px/1.2 var(--display);margin:0}
 .iqr{position:absolute;top:50%;height:12px;margin-top:-6px;border-radius:3px;background:var(--ink-2);opacity:.28;border:1px solid var(--ink-2)}
 .med{position:absolute;top:50%;width:2px;height:16px;margin:-8px 0 0 -1px;background:var(--ink)}
 .rawstrip{cursor:default}
+.spark{display:flex;align-items:flex-end;gap:2px;height:22px;margin-top:2px}
+.spark span{flex:1 1 0;max-width:8px;background:var(--ink-2);opacity:.45;border-radius:1px}
+.spark span.last{opacity:1;background:var(--ink)}
 .nodata{color:var(--ink-2);font-size:12px}
 .mk{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid var(--other);background:var(--surface)}
 .mk.tr{background:var(--tracked);border-color:var(--tracked)}
@@ -227,6 +230,23 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
       h('div', {text: 'Tengah 50%: ' + rp(raw.p25) + ' – ' + rp(raw.p75)}),
       h('div', {text: 'Rentang: ' + rp(raw.min) + ' – ' + rp(raw.max)})];
   }
+  function trendText(raw){
+    var t = raw.trend;
+    if (!t) return raw.history && raw.history.length ? 'riwayat baru mulai' : '';
+    var arrow = t.pct > 0 ? '↑' : t.pct < 0 ? '↓' : '→';
+    return arrow + ' ' + Math.abs(t.pct).toLocaleString('id-ID') + '% dalam ' + t.days + ' hari';
+  }
+  function spark(history){
+    if (!history || history.length < 2) return null;
+    var vals = history.map(function(x){ return x.median; });
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    var shown = history.slice(-30);
+    return h('div', {'class': 'spark', 'aria-label': 'Riwayat median RAW'}, shown.map(function(x, i){
+      var height = hi === lo ? 50 : 20 + (x.median - lo) / (hi - lo) * 80;
+      return h('span', {style: 'height:' + height + '%', title: x.date_wib + ' · median ' + rp(x.median) + ' · ' + x.n + ' listing',
+                        'class': i === shown.length - 1 ? 'last' : null});
+    }));
+  }
   function rawBlock(raw, pos){
     var strip = h('div', {'class': 'strip rawstrip', tabindex: '0',
       'aria-label': 'RAW median ' + rp(raw.median) + ', ' + raw.n + ' listing, ' + rp(raw.min) + ' sampai ' + rp(raw.max),
@@ -243,8 +263,8 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
         h('span', {'class': 'gchip', text: 'RAW'}),
         h('div', {'class': 'gsum'},
           h('strong', {text: rp(raw.median)}),
-          h('small', {text: 'median · ' + raw.n + ' listing · ' + rp(raw.min) + ' – ' + rp(raw.max)}))),
-      strip);
+          h('small', {text: ['median', raw.n + ' listing', rp(raw.min) + ' – ' + rp(raw.max), trendText(raw)].filter(Boolean).join(' · ')}))),
+      strip, spark(raw.history));
   }
   function rawEmpty(){
     return h('div', {'class': 'grow'}, h('div', {'class': 'gline'},
