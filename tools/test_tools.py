@@ -343,13 +343,19 @@ FAKE_PAGES = {
           ("b-2", "id-5", "Sisa 1 Mega Venusaur ex SAR 173/126 MA1 Indo Rp100.000 Kota Depok")],
 }
 SHELL = ("<html><body><div id=app></div><script>"
-         "const p=new URLSearchParams(location.search).get('page')||'1';"
-         "setTimeout(()=>fetch('/api/toco-api/search',{method:'POST',headers:{'Content-Type':'application/json'},"
-         "body:JSON.stringify({searchQuery:'egs',pageQuery:Number(p)-1})}).then(r=>r.json()).then(d=>{"
+         "const p=Number(new URLSearchParams(location.search).get('page')||'1');"
+         "const call=(path,body)=>fetch('/api/toco-api/search',{method:'POST',headers:{'Content-Type':'application/json'},"
+         "body:JSON.stringify({path:path,body:body})}).then(r=>r.json());"
+         "setTimeout(()=>{call('/store-search',{query:'egs',limit:3,offset:0});"
+         "call('/product-search',{query:'egs',limit:3,offset:(p-1)*3}).then(d=>{"
          "document.getElementById('app').innerHTML=d.results.map(i=>`<a href='/id/listing/${i.slug}-17900000000${p}0-ab12'>"
-         "<img src='/img/${i.img}.jpg'><span>${i.text}</span></a>`).join('')}),300)</script></body></html>")
-LISTING = ('<html><head><title>Pikachu ex SAR | toco</title><meta property="og:image" content="/img/id-1.jpg"></head>'
-           '<body><img src="/img/big.png"><p>Kondisi Bekas. Deskripsi: kartu asli. Nomor seri slab: EG12345</p></body></html>')
+         "<img src='/img/${i.img}.jpg'><span>${i.text}</span></a>`).join('')})},300)</script></body></html>")
+LISTING = ("<html><head><title>Pikachu ex SAR | toco</title><meta property='og:image' content='/img/id-1.jpg'></head>"
+           "<body><img src='/img/big.png'><p>Kondisi Bekas. Deskripsi: kartu asli. Nomor seri slab: EG12345</p>"
+           "<script id='__NEXT_DATA__' type='application/json'>"
+           '{"props":{"pageProps":{"adDetail":{"title":"Pikachu ex SAR","description":"Kartu asli CHINESE",'
+           '"condition":"used","images":["__HOST__/img/big.png","__HOST__/img/b2.png"]}}}}'
+           "</script></body></html>")
 
 
 def png_bytes(w=300, h=300):
@@ -379,7 +385,7 @@ class FakeToco:
                 if u.path == "/search":
                     body, ctype = SHELL.encode(), "text/html"
                 elif "/listing/" in u.path:
-                    body, ctype = LISTING.encode(), "text/html"
+                    body, ctype = LISTING.replace("__HOST__", "http://" + self.headers["Host"]).encode(), "text/html"
                 elif u.path.startswith("/img/"):
                     body, ctype = png_bytes(), "image/png"
                 else:
@@ -394,9 +400,14 @@ class FakeToco:
 
             def do_POST(self):
                 n = int(self.headers.get("Content-Length") or 0)
-                page = str(int(json.loads(self.rfile.read(n) or b"{}").get("pageQuery", 0)) + 1)
-                items = [{"slug": s, "img": i, "text": t} for s, i, t in FAKE_PAGES.get(page, [])]
-                body = json.dumps({"results": items, "total": 5, "query": "egs", "filters": {}}).encode()
+                req = json.loads(self.rfile.read(n) or b"{}")
+                if req.get("path") == "/store-search":
+                    out = {"results": [{"toco_name": "muslim tcg"}, {"toco_name": "lain"}], "total": 2, "query": "egs"}
+                else:
+                    page = str(int((req.get("body") or {}).get("offset", 0)) // 3 + 1)
+                    items = [{"slug": s, "img": i, "text": t} for s, i, t in FAKE_PAGES.get(page, [])]
+                    out = {"results": items, "total": 5, "query": "egs", "filters": None}
+                body = json.dumps(out).encode()
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Content-Length", str(len(body)))
@@ -458,12 +469,28 @@ class BrowserRender(unittest.TestCase):
                               timeout=180, env={**os.environ, "EGS_CHROME": chrome_path()})
         self.assertEqual(done.returncode, 0, done.stderr[-500:])
         text = done.stdout
-        self.assertIn("1 kali ke /api/toco-api/search", text)
-        self.assertIn("pageQuery", text)
-        self.assertIn("total=5", text)
+        self.assertIn("2 kali ke /api/toco-api/search", text)
+        self.assertIn("store-search", text)
+        self.assertIn("total=2", text)
         self.assertIn("300x300", text)
         self.assertIn("Kondisi Bekas", text)
         self.assertIn("Deskripsi: kartu asli", text)
+
+    def test_api_probe_finds_product_search_replays_it_and_reads_addetail(self):
+        script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "probe_toco_api.py")
+        done = subprocess.run([sys.executable, script, self.site.base, "2"], capture_output=True, text=True,
+                              timeout=180, env={**os.environ, "EGS_CHROME": chrome_path()})
+        self.assertEqual(done.returncode, 0, done.stderr[-500:])
+        text = done.stdout
+        self.assertIn("path=/store-search item=2", text)
+        self.assertIn("path=/product-search item=3", text)
+        self.assertIn("== 2. permintaan pencarian produk", text)
+        self.assertIn("status=200 item=3 (di browser: 3)", text)
+        self.assertIn("halaman berikutnya (offset+3): status=200 item=2 baru=2", text)
+        self.assertIn("kunci adDetail", text)
+        self.assertIn("/img/big.png", text)
+        self.assertIn("CHINESE", text)
+        self.assertIn("tidak ada alamat toco/... untuk diturunkan", text)
 
 
 if __name__ == "__main__":
