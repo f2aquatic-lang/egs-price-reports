@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_site  # noqa: E402
 import collect_raw  # noqa: E402
 import probe_toco  # noqa: E402
+import probe_toco_fields  # noqa: E402
 import probe_toco_next  # noqa: E402
 import validate_raw  # noqa: E402
 import watch_queries  # noqa: E402
@@ -404,7 +405,8 @@ class FakeToco:
                 if req.get("path") == "/store-search":
                     out = {"results": [{"toco_name": "muslim tcg"}, {"toco_name": "lain"}], "total": 2, "query": "egs"}
                 else:
-                    page = str(int((req.get("body") or {}).get("offset", 0)) // 3 + 1)
+                    inner = req.get("body") or {}
+                    page = str(int(inner.get("offset", inner.get("from", 0))) // 3 + 1)
                     items = [{"slug": s, "img": i, "text": t} for s, i, t in FAKE_PAGES.get(page, [])]
                     out = {"results": items, "total": 5, "query": "egs", "filters": None}
                 body = json.dumps(out).encode()
@@ -419,6 +421,29 @@ class FakeToco:
         self.server = HTTPServer(("127.0.0.1", 0), H)
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
         self.base = f"http://127.0.0.1:{self.server.server_port}"
+
+
+class FieldsProbe(unittest.TestCase):
+    def test_lists_fields_and_runs_card_queries_over_plain_http(self):
+        site = FakeToco()
+        try:
+            lines = []
+            code = probe_toco_fields.run(out=lambda *a: lines.append(" ".join(map(str, a))), sleep=lambda s: None,
+                                         base=site.base, queries=["Pikachu ex 234/193", "zzz"])
+        finally:
+            site.server.shutdown()
+        text = "\n".join(lines)
+        self.assertEqual(code, 0)
+        self.assertIn("slug = a-1", text)
+        self.assertIn("[Pikachu ex 234/193] total=5 diterima=3", text)
+        self.assertIn("[zzz] total=5 diterima=3", text)
+
+    def test_reports_failure(self):
+        lines = []
+        code = probe_toco_fields.run(out=lambda *a: lines.append(" ".join(map(str, a))), sleep=lambda s: None,
+                                     base="http://127.0.0.1:9", queries=[])
+        self.assertEqual(code, 1)
+        self.assertIn("gagal", "\n".join(lines))
 
 
 HAVE_BROWSER = importlib.util.find_spec("playwright") is not None and chrome_path() is not None
