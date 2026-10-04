@@ -9,12 +9,16 @@ website makes, verified on the VPS: POST /api/toco-api/search with path /listing
 per request, paged with from/size), keeps listings that are single raw cards and match a tracked card,
 reads the card language, and writes raw.json. Language: clearly foreign text (Japanese, English,
 Chinese in title or description) is skipped for free; everything else is decided from the listing
-photo by Claude (official SDK), cached per listing in a local SQLite file, capped per run.
+photo by a vision model (Claude by default, OpenAI as an option; official SDKs), cached per listing in
+a local SQLite file, capped per run. --lang-mode text needs no API key at all: only listings whose text
+says Indonesian are counted (marked lang_by "title").
 
   python3 tools/collect_raw.py --dry-run                  # no API calls, no raw.json
   python3 tools/collect_raw.py --sample-check "Zekrom N 210/193"   # 6 photos: see the language check work
   python3 tools/collect_raw.py --test-image card.jpg      # check the API key with one photo
   python3 tools/collect_raw.py                            # real run
+  python3 tools/collect_raw.py --lang-mode text           # no API key: language from the text only
+  python3 tools/collect_raw.py --provider openai --list-models   # models your OpenAI key can use
 """
 import argparse
 import base64
@@ -37,7 +41,7 @@ from classify import classify_title, text_language  # noqa: E402
 SITE = os.environ.get("EGS_TOCO_SITE", "https://toco.id")  # only changed in tests
 SEARCH_URL = SITE + "/api/toco-api/search"
 UA = "Mozilla/5.0 (compatible; egs-price-reports/1.0)"
-DEFAULT_MODEL = "claude-opus-5-5"
+DEFAULT_MODELS = {"anthropic": "claude-opus-5-5", "openai": "gpt-4o-mini"}  # the OpenAI default is unverified: use --list-models
 LANG_PROMPT = (
     "This is a photo from a marketplace listing of a Pokemon trading card. "
     "What language is the text printed on the card itself? "
@@ -152,8 +156,55 @@ def normalize_lang(answer):
     return LANG_ALIASES[m.group(1)] if m else "UNCLEAR"
 
 
-def make_vision_classifier(model):
+def make_vision_classifier(model, provider="anthropic"):
     """Return classify(bytes, media_type) -> 'ID'|'JP'|'EN'|'OTHER'|'UNCLEAR'|None (None = try again later)."""
+    return _openai_classifier(model) if provider == "openai" else _anthropic_classifier(model)
+
+
+def list_openai_models():
+    import openai  # pip install openai
+    return sorted(m.id for m in openai.OpenAI().models.list())
+
+
+def _openai_classifier(model, max_retries=2):
+    import openai  # pip install openai
+    client = openai.OpenAI(max_retries=max_retries)  # reads OPENAI_API_KEY
+    usage = Counter()
+
+    def classify(data, media_type):
+        url = f"data:{media_type};base64,{base64.standard_b64encode(data).decode('ascii')}"
+        try:
+            r = client.chat.completions.create(
+                model=model, max_completion_tokens=2000,  # room for reasoning models; short answers cost little
+                messages=[{"role": "user", "content": [
+                    {"type": "text", "text": LANG_PROMPT},
+                    {"type": "image_url", "image_url": {"url": url}}]}])
+        except openai.AuthenticationError:
+            raise SystemExit("OPENAI_API_KEY salah atau belum diisi.")
+        except openai.PermissionDeniedError:
+            raise SystemExit("Kunci API tidak punya izin untuk model ini.")
+        except openai.NotFoundError:
+            raise SystemExit(f"Model tidak ditemukan: {model}. Lihat daftarnya dengan --provider openai --list-models")
+        except openai.BadRequestError as e:  # e.g. a model without image input: every call would fail the same way
+            raise SystemExit(f"OpenAI menolak permintaan ({e.message}). Coba model lain: --list-models")
+        except openai.RateLimitError as e:
+            if "insufficient_quota" in str(e):
+                raise SystemExit("Saldo API OpenAI habis atau belum diisi (insufficient_quota). Langganan ChatGPT bukan saldo API.")
+            print("  ! OpenAI membatasi laju; dicoba lagi di putaran berikutnya")
+            return None
+        except (openai.APIStatusError, openai.APIConnectionError) as e:
+            print(f"  ! panggilan OpenAI gagal ({type(e).__name__}); dicoba lagi di putaran berikutnya")
+            return None
+        if r.usage:
+            usage["input_tokens"] += r.usage.prompt_tokens
+            usage["output_tokens"] += r.usage.completion_tokens
+        return normalize_lang(r.choices[0].message.content or "")
+
+    classify.usage = usage
+    return classify
+
+
+def _anthropic_classifier(model):
     import anthropic  # pip install anthropic (Python 3.10+)
     client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY
     extra = {} if "haiku" in model else {"output_config": {"effort": "low"}}
@@ -189,8 +240,8 @@ def make_vision_classifier(model):
 class LangChecker:
     """Language per listing, cached in SQLite so each listing is decided once."""
 
-    def __init__(self, db, classify_fn, image_fn, budget, now, delay=0.5, sleep=time.sleep, log=print):
-        self.db, self.classify_fn, self.image_fn = db, classify_fn, image_fn
+    def __init__(self, db, classify_fn, image_fn, budget, now, delay=0.5, sleep=time.sleep, log=print, text_only=False):
+        self.db, self.classify_fn, self.image_fn, self.text_only = db, classify_fn, image_fn, text_only
         self.budget, self.now, self.delay, self.sleep, self.log = budget, now, delay, sleep, log
         self.failures, self.calls = 0, 0
 
@@ -228,9 +279,15 @@ class LangChecker:
         hit = self.cached(listing["url"])
         if hit:
             return hit
-        if text_language(listing["title"], listing["description"]) == "foreign":
+        hint = text_language(listing["title"], listing["description"])
+        if hint == "foreign":
             self.store(listing["url"], "FOREIGN", "text", None)  # free: no photo needed
             return "FOREIGN"
+        if self.text_only:  # no photo check: only an explicit "Indonesia" in the text counts
+            if hint == "ID":
+                self.store(listing["url"], "ID", "title", listing["image"])
+                return "ID"
+            return None
         if self.classify_fn is None or self.budget <= 0 or self.failures >= 5:
             return None
         data, media = self.photo(listing)
@@ -390,7 +447,8 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
     db.commit()
 
     # dry run: classify_fn is None, so only the free text filter runs and nothing is fetched or paid for
-    checker = LangChecker(db, None if cfg.dry_run else classify_fn, image_fn, cfg.max_checks, now, cfg.delay / 2, sleep, log)
+    checker = LangChecker(db, None if cfg.dry_run else classify_fn, image_fn, cfg.max_checks, now, cfg.delay / 2, sleep, log,
+                          text_only=getattr(cfg, "lang_mode", "photo") == "text")
     # listings whose text already says "Indonesia" first, so a capped budget is spent on likely hits
     to_check.sort(key=lambda l: text_language(l["title"], l["description"]) != "ID")
     for l in to_check:
@@ -439,13 +497,27 @@ def main(argv=None):
     ap.add_argument("--queries-limit", type=int, help="batasi jumlah kata kunci (untuk uji)")
     ap.add_argument("--max-checks", type=int, default=150, help="batas cek foto per putaran (membatasi biaya)")
     ap.add_argument("--max-age-hours", type=float, default=36, help="listing dihitung kalau terlihat dalam rentang ini")
-    ap.add_argument("--model", default=os.environ.get("EGS_LANG_MODEL", DEFAULT_MODEL))
+    ap.add_argument("--provider", choices=("anthropic", "openai"), default=os.environ.get("EGS_LANG_PROVIDER", "anthropic"),
+                    help="penyedia model foto (kunci: ANTHROPIC_API_KEY atau OPENAI_API_KEY)")
+    ap.add_argument("--model", default=os.environ.get("EGS_LANG_MODEL"), help="nama model; bawaan tergantung penyedia")
+    ap.add_argument("--lang-mode", choices=("photo", "text"), default=os.environ.get("EGS_LANG_MODE", "photo"),
+                    help="photo = bahasa dari foto (perlu kunci); text = hanya dari teks, tanpa kunci")
+    ap.add_argument("--list-models", action="store_true", help="tampilkan model yang bisa dipakai kunci OpenAI Anda, lalu selesai")
     ap.add_argument("--dry-run", action="store_true", help="hanya baca dan cocokkan; tanpa panggilan Claude, tanpa menulis raw.json")
     ap.add_argument("--save-json", metavar="DIR", help="simpan jawaban pencarian mentah untuk diagnosis")
     ap.add_argument("--test-image", metavar="FILE_OR_URL", help="uji pembaca bahasa pada satu foto, lalu selesai")
     ap.add_argument("--sample-check", metavar="QUERY", help="cek bahasa dari foto pada beberapa listing nyata, lalu selesai")
     ap.add_argument("--sample-size", type=int, default=6)
     cfg = ap.parse_args(argv)
+    cfg.model = cfg.model or DEFAULT_MODELS[cfg.provider]
+
+    if cfg.list_models:
+        if cfg.provider != "openai":
+            print("--list-models hanya untuk --provider openai")
+            return 2
+        for name in list_openai_models():
+            print(name)
+        return 0
 
     if cfg.test_image:
         if cfg.test_image.startswith("http"):
@@ -457,33 +529,33 @@ def main(argv=None):
         if not media:
             print("Format gambar tidak didukung (pakai JPEG, PNG, WEBP, atau GIF).")
             return 2
-        classify = make_vision_classifier(cfg.model)
-        print(f"model {cfg.model}: bahasa kartu = {classify(data, media)}  token={dict(classify.usage)}")
+        classify = make_vision_classifier(cfg.model, cfg.provider)
+        print(f"{cfg.provider} {cfg.model}: bahasa kartu = {classify(data, media)}  token={dict(classify.usage)}")
         return 0
 
     if cfg.sample_check:
         try:
-            classify = make_vision_classifier(cfg.model)
+            classify = make_vision_classifier(cfg.model, cfg.provider)
         except ImportError:
-            print("Paket 'anthropic' belum terpasang. Jalankan: pip install anthropic (perlu Python 3.10+)")
+            print(f"Paket '{cfg.provider}' belum terpasang. Jalankan: pip install {cfg.provider}")
             return 2
         n = sample_check(cfg, make_post(), fetch, classify)
-        print(f"{n} foto dicek, model {cfg.model}, token={dict(classify.usage)}")
+        print(f"{n} foto dicek, {cfg.provider} {cfg.model}, token={dict(classify.usage)}")
         return 0
 
     classify = None
-    if not cfg.dry_run:
+    if not cfg.dry_run and cfg.lang_mode == "photo":
         try:
-            classify = make_vision_classifier(cfg.model)
+            classify = make_vision_classifier(cfg.model, cfg.provider)
         except ImportError:
-            print("Paket 'anthropic' belum terpasang. Jalankan: pip install anthropic (perlu Python 3.10+)")
+            print(f"Paket '{cfg.provider}' belum terpasang. Jalankan: pip install {cfg.provider}")
             return 2
     raw, summary = run(cfg, make_post(), fetch, classify)
     print(json.dumps(summary, ensure_ascii=False))
     if raw is None:
         return 3
     if classify is not None:
-        print("pemakaian token:", dict(classify.usage), "model:", cfg.model)
+        print("pemakaian token:", dict(classify.usage), "model:", f"{cfg.provider} {cfg.model}")
     print(f"dihitung: {raw['coverage']['listings_counted']} listing di {raw['coverage']['cards']} kartu; "
           f"bahasa belum terbukti: {raw['unmatched']['language_unverified']}; tidak cocok kartu: {raw['unmatched']['count']}")
     if cfg.dry_run:

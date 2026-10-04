@@ -1,6 +1,6 @@
 # Menjalankan pengumpul RAW di VPS
 
-Pengumpul (`tools/collect_raw.py`) mencari listing RAW di toco untuk setiap kartu yang dipantau, membaca bahasa kartu (teks dulu, foto untuk sisanya) dengan Claude, lalu menulis `raw.json`. Panduan ini mengikuti VPS Anda sebagaimana hasil pemeriksaan: Ubuntu 24.04, Python 3.12, bot EGS berjalan sebagai pengguna `egsprice` di `/opt/egs-price/` dan mendorong ke GitHub lewat kunci SSH, dengan jadwal systemd.
+Pengumpul (`tools/collect_raw.py`) mencari listing RAW di toco untuk setiap kartu yang dipantau, membaca bahasa kartu (teks dulu, foto untuk sisanya) dengan Claude atau OpenAI, lalu menulis `raw.json`. Panduan ini mengikuti VPS Anda sebagaimana hasil pemeriksaan: Ubuntu 24.04, Python 3.12, bot EGS berjalan sebagai pengguna `egsprice` di `/opt/egs-price/` dan mendorong ke GitHub lewat kunci SSH, dengan jadwal systemd.
 
 Pengumpul RAW memakai folder sendiri, `/opt/egs-raw`, dan **tidak menyentuh folder, jadwal, atau berkas bot yang sudah ada**. Langkah 1 sampai 5 tidak mengirim apa pun ke GitHub. Langkah 6 menambah satu jadwal baru dan hanya dikerjakan sesudah Anda setuju.
 
@@ -24,7 +24,11 @@ sudo -u egsprice -H python3 tools/collect_raw.py --dry-run --queries-limit 3 --d
 
 Yang harus terlihat: tiap kata kunci menemukan puluhan sampai ratusan listing, lalu ringkasan seperti `jenis_raw`, `cocok_nomor`, `cocok_nama+set`. Tidak ada panggilan ke Claude dan tidak ada `raw.json` yang ditulis. Kartu berbahasa asing yang terlihat dari teks sudah disingkirkan di tahap ini.
 
-## Langkah 3. Pasang paket Claude dan simpan kunci
+## Langkah 3. Pilih cara membaca bahasa dari foto
+
+Ada tiga pilihan. Pilih satu; yang lain bisa menyusul tanpa mengubah data.
+
+**A. Claude (bawaan)**, perlu saldo API Anthropic:
 
 ```bash
 sudo -u egsprice -H python3 -m venv /opt/egs-raw/venv
@@ -39,7 +43,32 @@ Di `nano`, tulis satu baris tanpa tanda kutip dan tanpa kata `export`, lalu simp
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-Berkas itu hanya bisa dibaca `egsprice`. Jangan kirim kunci ke chat dan jangan masukkan ke repo. Paket dipasang di venv sendiri, jadi lingkungan Python bot tidak berubah.
+**B. OpenAI**, perlu saldo API OpenAI (langganan ChatGPT Plus bukan saldo API; saldo API diisi terpisah di platform.openai.com):
+
+```bash
+sudo -u egsprice -H python3 -m venv /opt/egs-raw/venv
+sudo -u egsprice -H /opt/egs-raw/venv/bin/pip install openai
+sudo install -m 600 -o egsprice -g egsprice /dev/null /opt/egs-raw/env
+sudo nano /opt/egs-raw/env
+```
+
+```
+OPENAI_API_KEY=sk-...
+EGS_LANG_PROVIDER=openai
+EGS_LANG_MODEL=<nama model>
+```
+
+Nama model bawaan untuk OpenAI (`gpt-4o-mini`) **belum diuji**: daftar model OpenAI berubah dan saya tidak bisa memeriksanya dari sini. Lihat model yang bisa dipakai kunci Anda, lalu pilih satu yang bisa membaca gambar:
+
+```bash
+sudo -u egsprice -H /opt/egs-raw/repo/tools/run_raw.sh --provider openai --list-models
+```
+
+Kalau modelnya tidak bisa membaca gambar atau tidak ada, pengumpul berhenti dengan pesan yang jelas (bukan diam-diam menghitung salah). Apa pun model yang dipilih, Langkah 4 wajib dijalankan dulu.
+
+**C. Tanpa kunci sama sekali**: tambahkan `EGS_LANG_MODE=text` di `/opt/egs-raw/env` (atau `--lang-mode text` di perintah). Hanya listing yang **tertulis** Indonesia di judul atau deskripsi (`ID`, `Indo`, `Indonesia`, nama set Indonesia seperti "Mega Impian") yang dihitung, dan ditandai `lang_by: "title"`. Listing tanpa keterangan bahasa tidak dihitung, jadi datanya lebih sedikit, tetapi tidak ada kartu Jepang atau Inggris yang ikut terhitung dari teks asing. Ini cara tercepat untuk mulai; ganti ke A atau B nanti dan listing yang tadinya dihitung dari judul dicek ulang dengan fotonya sesudah sehari.
+
+Berkas `/opt/egs-raw/env` hanya bisa dibaca `egsprice`. Jangan kirim kunci ke chat dan jangan masukkan ke repo. Paket dipasang di venv sendiri, jadi lingkungan Python bot tidak berubah.
 
 ## Langkah 4. Uji pembaca bahasa pada foto nyata
 
@@ -48,7 +77,7 @@ sudo -u egsprice -H /opt/egs-raw/repo/tools/run_raw.sh --sample-check "Zekrom N 
 sudo -u egsprice -H /opt/egs-raw/repo/tools/run_raw.sh --sample-check "Mega Dragonite ex 232/193"
 ```
 
-Tiap perintah memeriksa 6 foto dan mencetak baris seperti `foto=ID | teks=ID | jenis=raw | Rp… | judul`. Tidak ada yang disimpan. Yang harus benar: kartu Jepang atau Inggris **tidak boleh** terbaca `foto=ID`. Terbaca `UNCLEAR` tidak masalah, listing itu hanya tidak dihitung. **Tempel keluarannya ke sini** supaya saya bisa menilai akurasinya sebelum lanjut.
+Langkah ini hanya untuk pilihan A atau B (pilihan C tidak memakai foto). Tiap perintah memeriksa 6 foto dan mencetak baris seperti `foto=ID | teks=ID | jenis=raw | Rp… | judul`. Tidak ada yang disimpan. Yang harus benar: kartu Jepang atau Inggris **tidak boleh** terbaca `foto=ID`. Terbaca `UNCLEAR` tidak masalah, listing itu hanya tidak dihitung. **Tempel keluarannya ke sini** supaya saya bisa menilai akurasinya sebelum lanjut.
 
 ## Langkah 5. Putaran nyata kecil
 
@@ -106,7 +135,9 @@ Jam di VPS memakai CST (UTC+8), jadi 01:20, 07:20, 13:20, dan 19:20 CST sama den
 
 ## Biaya
 
-- Model bawaan `claude-opus-5-5` (US$4 per juta token masukan, US$20 per juta token keluaran). Yang lebih murah, `claude-haiku-4-5` (US$1 dan US$5), dipilih dengan menambah satu baris `EGS_LANG_MODEL=claude-haiku-4-5` di `/opt/egs-raw/env`. Itu keputusan Anda. Kalau memakai yang murah, ulangi Langkah 4 dulu karena akurasinya belum diuji.
+- Claude: model bawaan `claude-opus-5-5` (US$4 per juta token masukan, US$20 per juta token keluaran). Yang lebih murah, `claude-haiku-4-5` (US$1 dan US$5), dipilih dengan menambah satu baris `EGS_LANG_MODEL=claude-haiku-4-5` di `/opt/egs-raw/env`. Itu keputusan Anda. Kalau memakai yang murah, ulangi Langkah 4 dulu karena akurasinya belum diuji.
+- OpenAI: harga mengikuti model yang Anda pilih; lihat halaman harga OpenAI untuk model itu. Skrip mencetak jumlah token tiap putaran, jadi biaya bisa dihitung sendiri.
+- Pilihan C (teks saja) tidak berbiaya.
 - Saringan teks menyingkirkan kartu asing tanpa biaya, dan tiap listing dicek foto **satu kali** (hasilnya disimpan). `--max-checks` (bawaan 150 per putaran) membatasi biaya per putaran.
 - Angka rupiah yang pasti baru ketahuan dari baris `pemakaian token` pada Langkah 5.
 

@@ -389,6 +389,23 @@ class Collector(unittest.TestCase):
         self.assertEqual(raw["unmatched"]["language_unverified"], 1)  # a-3 has no language in its text
         self.assertEqual(validate_raw.validate(raw)[0], [])
 
+    def test_text_mode_needs_no_key_and_counts_only_listings_that_say_indonesian(self):
+        raw, summary = self.go(lang_mode="text")
+        self.assertEqual((self.api_calls, self.image_calls), (0, 0))
+        card = raw["cards"][0]
+        self.assertEqual(card["stats"]["n"], 2)  # a-1 "indo" and a-2 "Indo"; a-3 says nothing about language
+        self.assertTrue(all(l["lang_by"] == "title" and l["lang"] == "ID" for l in card["listings"]))
+        self.assertEqual(raw["unmatched"]["language_unverified"], 1)
+        self.assertEqual(validate_raw.validate(raw)[0], [])
+
+    def test_text_mode_result_is_replaced_by_a_photo_check_later(self):
+        self.go(lang_mode="text")
+        raw, _ = self.go(lang_mode="photo")  # title answers are rechecked after a day
+        self.assertEqual(self.api_calls, 1)  # same day: only the listing text mode could not decide is checked
+        raw, _ = self.go(lang_mode="photo", now=datetime(2026, 10, 5, 1, 0, tzinfo=timezone.utc))
+        self.assertEqual(self.api_calls, 3)  # a day later the two title-based answers are checked against their photos
+        self.assertTrue(all(l["lang_by"] == "image" for l in raw["cards"][0]["listings"]))
+
     def test_no_listings_writes_nothing(self):
         self.catalog = []
         raw, summary = self.go()
@@ -416,6 +433,102 @@ class Collector(unittest.TestCase):
         self.assertEqual(collect_raw.sniff_media_type(b"\x89PNG\r\n\x1a\nxx"), "image/png")
         self.assertIsNone(collect_raw.sniff_media_type(b"not an image"))
         self.assertEqual([collect_raw.quantile([1, 2, 3, 4], p) for p in (0, .25, .5, 1)], [1, 2, 2, 4])
+
+
+class FakeOpenAI:
+    """Local stand-in for POST /v1/chat/completions and GET /v1/models."""
+
+    def __init__(self, answers, fail=None):
+        self.seen, self.answers, self.fail = [], list(answers), fail
+        outer = self
+
+        class H(BaseHTTPRequestHandler):
+            def send(self, code, obj):
+                data = json.dumps(obj).encode()
+                self.send_response(code)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+
+            def do_GET(self):
+                self.send(200, {"object": "list", "data": [{"id": "model-b", "object": "model", "created": 1, "owned_by": "x"},
+                                                           {"id": "model-a", "object": "model", "created": 1, "owned_by": "x"}]})
+
+            def do_POST(self):
+                body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+                outer.seen.append({"path": self.path, "auth": self.headers.get("Authorization"), "body": body})
+                if outer.fail:
+                    return self.send(*outer.fail)
+                self.send(200, {"id": "c1", "object": "chat.completion", "created": 1, "model": body["model"],
+                                "choices": [{"index": 0, "finish_reason": "stop",
+                                             "message": {"role": "assistant", "content": outer.answers.pop(0)}}],
+                                "usage": {"prompt_tokens": 800, "completion_tokens": 3, "total_tokens": 803}})
+
+            def log_message(self, *a):
+                pass
+
+        self.server = HTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        self.url = f"http://127.0.0.1:{self.server.server_port}/v1"
+
+    def close(self):
+        self.server.shutdown()
+
+
+@unittest.skipUnless(importlib.util.find_spec("openai"), "openai package not installed")
+class OpenAIProvider(unittest.TestCase):
+    PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 20
+
+    def use(self, **kw):
+        self.fake = FakeOpenAI(**kw)
+        self.addCleanup(self.fake.close)
+        saved = {k: os.environ.get(k) for k in ("OPENAI_BASE_URL", "OPENAI_API_KEY")}
+        os.environ.update(OPENAI_BASE_URL=self.fake.url, OPENAI_API_KEY="test-key-not-real")
+
+        def restore():
+            for k, v in saved.items():
+                os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
+        self.addCleanup(restore)
+
+    def test_sends_the_photo_as_a_data_url_and_reads_the_language(self):
+        self.use(answers=["ID", "The text is Japanese.", "???"])
+        clf = collect_raw.make_vision_classifier("some-model", "openai")
+        self.assertEqual([clf(self.PNG, "image/png") for _ in range(3)], ["ID", "JP", "UNCLEAR"])
+        req = self.fake.seen[0]
+        self.assertEqual((req["path"], req["auth"], req["body"]["model"]),
+                         ("/v1/chat/completions", "Bearer test-key-not-real", "some-model"))
+        parts = req["body"]["messages"][0]["content"]
+        self.assertEqual([p["type"] for p in parts], ["text", "image_url"])
+        self.assertTrue(parts[1]["image_url"]["url"].startswith("data:image/png;base64,iVBORw0KGgo"))
+        self.assertEqual(dict(clf.usage), {"input_tokens": 2400, "output_tokens": 9})
+
+    def test_bad_key_missing_model_and_no_balance_stop_the_run_with_a_clear_message(self):
+        cases = [((401, {"error": {"message": "bad key", "type": "invalid_request_error", "code": "invalid_api_key"}}), "OPENAI_API_KEY"),
+                 ((404, {"error": {"message": "no such model", "type": "invalid_request_error", "code": "model_not_found"}}), "Model tidak ditemukan"),
+                 ((429, {"error": {"message": "You exceeded your current quota", "type": "insufficient_quota", "code": "insufficient_quota"}}), "Saldo API OpenAI")]
+        for fail, expected in cases:
+            self.use(answers=[], fail=fail)
+            clf = collect_raw.make_vision_classifier("m", "openai")
+            with self.assertRaises(SystemExit) as ctx:
+                clf(self.PNG, "image/png")
+            self.assertIn(expected, str(ctx.exception))
+
+    def test_a_server_error_only_postpones_that_listing(self):
+        self.use(answers=[], fail=(500, {"error": {"message": "boom", "type": "server_error"}}))
+        clf = collect_raw._openai_classifier("m", max_retries=0)
+        self.assertIsNone(clf(self.PNG, "image/png"))
+
+    def test_list_models_prints_sorted_ids(self):
+        self.use(answers=[])
+        self.assertEqual(collect_raw.list_openai_models(), ["model-a", "model-b"])
+
+    def test_cli_picks_the_provider_default_model(self):
+        self.use(answers=[])
+        out = subprocess.run([sys.executable, os.path.join(os.path.dirname(collect_raw.__file__), "collect_raw.py"),
+                              "--provider", "openai", "--list-models"], capture_output=True, text=True,
+                             env={**os.environ}).stdout
+        self.assertEqual(out.split(), ["model-a", "model-b"])
 
 
 class Probe(unittest.TestCase):

@@ -85,12 +85,12 @@ Untuk tiap listing yang cocok dengan kartu tetapi belum punya hasil bahasa:
 
 Cara membaca bahasa:
 
-- **Model vision (disarankan).** Kirim foto dengan pertanyaan tetap: "Apa bahasa teks pada kartu Pokémon ini? Jawab hanya: ID, JP, EN, lain, atau tidak jelas." Jawabannya satu kata, mudah diperiksa, dan tahan terhadap foto yang miring. Perlu kunci API dan ada biaya per foto, tetapi karena hasilnya disimpan per listing, biayanya sekali per listing.
+- **Model vision (disarankan).** Kirim foto dengan pertanyaan tetap: "Apa bahasa teks pada kartu Pokémon ini? Jawab hanya: ID, JP, EN, lain, atau tidak jelas." Jawabannya satu kata, mudah diperiksa, dan tahan terhadap foto yang miring. Perlu kunci API dan ada biaya per foto, tetapi karena hasilnya disimpan per listing, biayanya sekali per listing. Pengumpul mendukung Claude (bawaan) dan OpenAI (`--provider openai`); tanpa kunci ada `--lang-mode text` yang hanya menghitung listing yang menulis Indonesia di teksnya.
 - **OCR** (misalnya tesseract dengan bahasa `ind`, `jpn`, `eng`). Gratis, tetapi rapuh pada foto dari ponsel, pantulan cahaya, dan kartu di dalam sleeve. Huruf kana atau kanji berarti JP. Membedakan ID dari EN bergantung pada kata khas bahasa Indonesia pada kartu.
 
 Sebelum dipakai ke seluruh data, uji pada sekitar 20 foto yang bahasanya sudah Anda ketahui. Yang harus hampir nol adalah kartu JP atau EN yang terbaca ID, karena salah arah itu yang merusak harga. Salah arah sebaliknya (ID terbaca `tidak jelas`) hanya mengurangi jumlah data.
 
-Penanda bahasa di judul (`ID`, `Indo`, `Indonesia`) tetap terbaca oleh `tools/classify.py`, tetapi hanya sebagai petunjuk untuk mengurutkan listing mana yang dicek dulu. Judul tidak menggantikan gambar. `lang_by: "title"` hanya dipakai kalau foto tidak bisa diambil.
+Penanda bahasa di judul (`ID`, `Indo`, `Indonesia`) tetap terbaca oleh `tools/classify.py`, tetapi hanya sebagai petunjuk untuk mengurutkan listing mana yang dicek dulu. Judul tidak menggantikan gambar. `lang_by: "title"` hanya dipakai kalau foto tidak bisa diambil, atau di mode `--lang-mode text` (tanpa kunci API): di mode itu hanya listing yang menulis Indonesia secara eksplisit yang dihitung, dan dicek ulang dengan fotonya begitu kunci tersedia.
 
 ## Alur pengumpul (dijalankan di VPS)
 
