@@ -33,6 +33,13 @@ UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chr
 DEFAULT_INCLUDE = r"^(MA\d+|SV\d+[A-Z]|AC\d[A-Z])$"
 
 
+# rarity filter codes of the site (seen on 2026-10-04); the run re-reads them from the home page and falls back to these
+RARITY_CODES = {"1": "C", "2": "U", "3": "R", "4": "RR", "5": "RRR", "6": "PR", "7": "TR", "8": "SR", "9": "HR", "10": "UR",
+                "11": "Tanpa Tanda", "12": "K", "13": "A", "14": "AR", "15": "SAR", "16": "S", "17": "SSR", "18": "ACE",
+                "19": "BWR", "20": "MUR", "21": "MA", "22": "FUR"}
+NO_RARITY = "Tanpa Tanda"  # cards without a rarity mark (basic energy, some promos): stored as None
+
+
 class Budget(Exception):
     """The request budget of this run is spent; what was fetched is already saved."""
 
@@ -142,6 +149,7 @@ def open_db(path):
         CREATE TABLE IF NOT EXISTS listed(code TEXT, pos INTEGER, card_id INTEGER, PRIMARY KEY(code, card_id));
         CREATE TABLE IF NOT EXISTS card(id INTEGER PRIMARY KEY, code TEXT, number TEXT, name TEXT, evolve TEXT, image TEXT,
             fetched_at TEXT);
+        CREATE TABLE IF NOT EXISTS card_rarity(card_id INTEGER PRIMARY KEY, rarity TEXT);
     """)
     return db
 
@@ -149,6 +157,7 @@ def open_db(path):
 class Fetcher:
     def __init__(self, get, delay, budget, sleep=time.sleep, log=print):
         self.get, self.delay, self.budget, self.sleep, self.log, self.used = get, delay, budget, sleep, log, 0
+        self.rarity_codes = dict(RARITY_CODES)
 
     def page(self, url):
         if self.budget is not None and self.used >= self.budget:
@@ -170,6 +179,10 @@ def crawl_home(fx, db, now):
         text = fx.page(f"{BASE}/id/card-search/" + (f"?pageNo={page_no}" if page_no > 1 else ""))
         if text is None:
             break
+        if page_no == 1:
+            labels = {c: l for c, l, _ in parse_rarity_filter(text) if c and l}
+            if labels:
+                fx.rarity_codes = labels
         found, seen_last = parse_home(text)
         tiles += [t for t in found if t["code"] not in {x["code"] for x in tiles}]
         last = max(last, seen_last)
@@ -218,22 +231,63 @@ def crawl_set(fx, db, code, now, refresh_days):
         db.commit()
 
 
+def crawl_rarities(fx, db, code):
+    """Rarity of every card of a set: one filtered list per rarity code (the detail pages do not show it).
+
+    A card must come out under exactly one rarity; if the site ignores the filter, cards would show up under
+    several, and nothing is stored for the set.
+    """
+    missing = db.execute("SELECT COUNT(*) FROM listed WHERE code=? AND card_id NOT IN (SELECT card_id FROM card_rarity)",
+                         (code,)).fetchone()[0]
+    if not missing:
+        return
+    wanted = {r[0] for r in db.execute("SELECT card_id FROM listed WHERE code=?", (code,))}
+    found = {}
+    for rcode, label in fx.rarity_codes.items():
+        page_no, pages = 1, None
+        while pages is None or page_no <= pages:
+            text = fx.page(f"{BASE}/id/card-search/list/?pageNo={page_no}&expansionCodes={code}&rarity%5B%5D={rcode}")
+            if text is None:
+                break  # an empty filter may be answered with an error page, or the request failed: either way nothing for this rarity
+            ids, total, pages_now = parse_list(text)
+            pages = pages_now if pages_now is not None else (1 if len(ids) < 20 else None)
+            for cid in ids:
+                found.setdefault(cid, set()).add(label)
+            if not ids or pages is None and len(ids) < 20:
+                break
+            page_no += 1
+    clash = [cid for cid, labels in found.items() if len(labels) > 1]
+    if clash:
+        fx.log(f"  ! {code}: {len(clash)} kartu muncul di lebih dari satu rarity; filter rarity tampaknya diabaikan, tidak disimpan")
+        return
+    for cid in wanted:
+        labels = found.get(cid)
+        if labels:
+            label = next(iter(labels))
+            db.execute("INSERT OR REPLACE INTO card_rarity(card_id, rarity) VALUES(?,?)", (cid, None if label == NO_RARITY else label))
+    db.commit()
+    unknown = len([cid for cid in wanted if cid not in found])
+    if unknown:
+        fx.log(f"  {code}: {unknown} kartu tanpa rarity di filter")
+
+
 def export(db, codes, now):
     sets, cards = [], []
     for code, series, released, product, name, total in db.execute(
             "SELECT code, series, released, product, name, total FROM expansion ORDER BY position"):
         if code not in codes:
             continue
-        rows = db.execute("SELECT c.id, c.number, c.name, c.evolve, c.image FROM listed l JOIN card c ON c.id = l.card_id "
-                          "WHERE l.code=? ORDER BY l.pos", (code,)).fetchall()
+        rows = db.execute("SELECT c.id, c.number, c.name, c.evolve, c.image, r.rarity FROM listed l JOIN card c ON c.id = l.card_id "
+                          "LEFT JOIN card_rarity r ON r.card_id = c.id WHERE l.code=? ORDER BY l.pos", (code,)).fetchall()
         sets.append({"code": code, "series": series, "name": name, "product": product, "released": released,
                      "total": total, "fetched": len(rows), "complete": total is not None and len(rows) >= total})
-        for cid, number, cname, evolve, image in rows:
+        for cid, number, cname, evolve, image, rarity in rows:
             if not number or not cname:
                 continue
             m = re.fullmatch(r"(\d+)/(\d+)", number)
             cards.append({"set": code, "number": number, "num": int(m.group(1)) if m else None,
-                          "den": int(m.group(2)) if m else None, "name": cname, "evolve": evolve, "image": image, "id": cid})
+                          "den": int(m.group(2)) if m else None, "name": cname, "rarity": rarity, "evolve": evolve,
+                          "image": image, "id": cid})
     return {"schema_version": 1, "source": "asia.pokemon-card.com/id", "generated_at": now.isoformat(),
             "sets": sets, "cards": cards}
 
@@ -267,6 +321,8 @@ def run(args, get=http_get, now=None, sleep=time.sleep, log=print):
         for code in wanted:
             try:
                 crawl_set(fx, db, code, now, args.refresh_days)
+                if args.rarities:
+                    crawl_rarities(fx, db, code)
             except Budget:
                 log(f"anggaran {args.max_requests} permintaan habis di set {code}; jalankan lagi untuk melanjutkan")
                 break
@@ -295,6 +351,7 @@ def main(argv=None):
     ap.add_argument("--include", default=DEFAULT_INCLUDE, help="ekspresi reguler kode set yang diambil")
     ap.add_argument("--refresh-days", type=int, default=30, help="daftar kartu sebuah set dibaca ulang setelah sekian hari")
     ap.add_argument("--list-sets", action="store_true", help="hanya tampilkan set di situs, lalu selesai")
+    ap.add_argument("--no-rarities", dest="rarities", action="store_false", help="jangan ambil rarity (lebih sedikit permintaan)")
     ap.add_argument("--list-rarities", action="store_true", help="hanya tampilkan kode dan nama rarity di filter situs, lalu selesai")
     args = ap.parse_args(argv)
     run(args)

@@ -5,6 +5,7 @@ Real titles below were copied from published latest.json candidates; the grade t
 bot recorded (grade_hint) is the expected answer. RAW titles are made up.
 """
 import argparse
+import collections
 import importlib.util
 import json
 import os
@@ -916,6 +917,13 @@ def official_site():
             extra='<a href="/id/card-search/list/?expansionCodes=MATL"> Booster Pack &quot;Lain&quot; </a>' if cid == 1003 else "")
     for n in (1, 2):
         pages[f"/id/card-search/list/?pageNo={n}&expansionCodes=MA6"] = listing("MA6", ma6, n, 25, 2)
+    # rarity: code 1 = C, 2 = U, 4 = RR, 15 = SAR; the other codes have no cards in MA6 and answer with an error page
+    rarity_of = {1: ma6[:12], 2: ma6[12:18], 4: ma6[18:22], 15: ma6[22:]}
+    for rcode, ids in rarity_of.items():
+        for n in range(1, (len(ids) - 1) // 20 + 2):
+            pages[f"/id/card-search/list/?pageNo={n}&expansionCodes=MA6&rarity%5B%5D={rcode}"] = listing("MA6", ids, n, len(ids), (len(ids) - 1) // 20 + 1)
+    pages["/id/card-search/"] += ("".join(f'<input type="checkbox" name="rarity[]" id="rarity_{c}" value="{c}"><label for="rarity_{c}">{l}</label>'
+                                          for c, l in (("1", "C"), ("2", "U"), ("4", "RR"), ("15", "SAR"), ("11", "Tanpa Tanda"))))
     sv = [2000, 2001]
     pages["/id/card-search/list/?pageNo=1&expansionCodes=SV8S"] = listing("SV8S", sv, 1, 2, 1)
     for i, cid in enumerate(sv, 1):
@@ -929,7 +937,7 @@ class FetchCatalog(unittest.TestCase):
         self.pages, self.calls = official_site(), []
         self.args = argparse.Namespace(
             db=os.path.join(self.tmp.name, "c.sqlite"), out=os.path.join(self.tmp.name, "catalog.json"), delay=0, max_requests=None,
-            sets=None, include=fetch_catalog.DEFAULT_INCLUDE, refresh_days=30, list_sets=False, list_rarities=False)
+            sets=None, include=fetch_catalog.DEFAULT_INCLUDE, refresh_days=30, list_sets=False, list_rarities=False, rarities=True)
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -970,6 +978,38 @@ class FetchCatalog(unittest.TestCase):
         with open(self.args.out, encoding="utf-8") as fh:
             self.assertEqual(json.load(fh)["cards"], data["cards"])
 
+    def test_rarity_comes_from_one_filtered_list_per_code(self):
+        data = self.go(sets="MA6")
+        by_number = {c["number"]: c["rarity"] for c in data["cards"] if c["set"] == "MA6"}
+        self.assertEqual((by_number["001/130"], by_number["012/130"], by_number["013/130"], by_number["019/130"], by_number["025/130"]),
+                         ("C", "C", "U", "RR", "SAR"))
+        self.assertEqual(collections.Counter(by_number.values()), {"C": 11, "U": 6, "RR": 4, "SAR": 3})  # 1002 has no number
+        asked = [c for c in self.calls if "rarity%5B%5D" in c]
+        self.assertIn("/id/card-search/list/?pageNo=1&expansionCodes=MA6&rarity%5B%5D=11", asked)       # every code of the filter is asked
+
+    def test_rarities_are_not_asked_again_once_known_and_can_be_skipped(self):
+        self.go(sets="MA6")
+        before = len(self.calls)
+        self.go(sets="MA6")
+        self.assertFalse(any("rarity%5B%5D" in c for c in self.calls[before:]))
+        other = tempfile.mkdtemp()
+        self.args.db = os.path.join(other, "x.sqlite")
+        self.args.rarities = False
+        count = len(self.calls)
+        data = self.go(sets="MA6")
+        self.assertFalse(any("rarity%5B%5D" in c for c in self.calls[count:]))
+        self.assertTrue(all(c["rarity"] is None for c in data["cards"]))
+        self.args.rarities = True
+
+    def test_if_the_site_ignores_the_rarity_filter_nothing_is_stored(self):
+        everything = self.pages["/id/card-search/list/?pageNo=1&expansionCodes=MA6"]
+        for rcode in (1, 2):
+            self.pages[f"/id/card-search/list/?pageNo=1&expansionCodes=MA6&rarity%5B%5D={rcode}"] = everything
+            self.pages[f"/id/card-search/list/?pageNo=2&expansionCodes=MA6&rarity%5B%5D={rcode}"] = self.pages["/id/card-search/list/?pageNo=2&expansionCodes=MA6"]
+        data = self.go(sets="MA6")
+        self.assertTrue(all(c["rarity"] is None for c in data["cards"]))
+        self.assertTrue(any("filter rarity tampaknya diabaikan" in l for l in self.logs))
+
     def test_a_stopped_run_continues_without_refetching(self):
         first = self.go(sets="MA6", max_requests=8)                            # home 2 + list 2 + 4 cards
         self.assertFalse(first["sets"][0]["complete"])
@@ -979,7 +1019,7 @@ class FetchCatalog(unittest.TestCase):
         self.assertTrue(second["sets"][0]["complete"])
         detail_calls = [c for c in self.calls[used_before:] if "/detail/" in c]
         self.assertEqual(len(detail_calls), 21)                                # only the 21 cards still missing
-        self.assertFalse(any("list/?pageNo" in c for c in self.calls[used_before:]))  # lists are fresh for 30 days
+        self.assertFalse(any("list/?pageNo" in c and "rarity" not in c for c in self.calls[used_before:]))  # lists are fresh for 30 days
 
     def test_detail_page_without_a_number_or_with_odd_markup_does_not_crash(self):
         d = fetch_catalog.parse_detail("<html><h1 class='x'>nothing</h1></html>")
