@@ -1097,6 +1097,7 @@ class FetchCatalog(unittest.TestCase):
         self.assertEqual((by_number["001/130"], by_number["012/130"], by_number["013/130"], by_number["019/130"], by_number["025/130"]),
                          ("C", "C", "U", "RR", "SAR"))
         self.assertEqual(collections.Counter(by_number.values()), {"C": 11, "U": 6, "RR": 4, "SAR": 3})  # 1002 has no number
+        self.assertTrue(any(l.strip() == "rarity: C 12, U 6, RR 4, SAR 3" for l in self.logs))          # shown per set in the run log
         asked = [c for c in self.calls if "rarity%5B%5D" in c]
         self.assertIn("/id/card-search/list/?pageNo=1&expansionCodes=MA6&rarity%5B%5D=11", asked)       # every code of the filter is asked
 

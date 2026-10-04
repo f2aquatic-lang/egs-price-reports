@@ -329,6 +329,11 @@ def run(args, get=http_get, now=None, sleep=time.sleep, log=print):
             row = db.execute("SELECT total, (SELECT COUNT(*) FROM card WHERE code=?) FROM expansion WHERE code=?",
                              (code, code)).fetchone()
             log(f"  {code}: {row[1]} dari {row[0]} kartu")
+            if args.rarities:
+                dist = db.execute(
+                    "SELECT CASE WHEN r.card_id IS NULL THEN 'belum diambil' ELSE COALESCE(r.rarity, 'tanpa tanda') END, COUNT(*) "
+                    "FROM listed l LEFT JOIN card_rarity r ON r.card_id = l.card_id WHERE l.code=? GROUP BY 1 ORDER BY 2 DESC", (code,)).fetchall()
+                log(f"    rarity: " + ", ".join(f"{label} {n}" for label, n in dist))
         data = export(db, set(wanted), now)
         os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
         with open(args.out + ".tmp", "w", encoding="utf-8") as fh:
