@@ -11,6 +11,7 @@ set -euo pipefail
 main() {
   cd "$(dirname "$0")/.."
   PYTHON="${PYTHON:-python3}"
+  export PYTHONDONTWRITEBYTECODE=1  # no tools/__pycache__ in the checkout
 
   # a rebase that died half-way (no identity, lost race) leaves HEAD detached: clear it before looking at the branch
   git rebase --abort 2>/dev/null || true
@@ -32,7 +33,7 @@ main() {
   # This checkout only publishes raw.json. A failed earlier run can leave an unpushed commit or a half-done rebase:
   # start from origin/main again, but refuse to throw away anything other than raw.json.
   git fetch -q origin main
-  foreign="$( { git diff --name-only origin/main...HEAD; git status --porcelain | cut -c4-; } | grep -vx raw.json || true)"
+  foreign="$( { git diff --name-only origin/main...HEAD; git status --porcelain --untracked-files=no | cut -c4-; } | grep -vx raw.json || true)"
   if [ -n "$foreign" ]; then
     echo "Berhenti: ada perubahan lokal selain raw.json di folder ini:" >&2
     echo "$foreign" >&2
