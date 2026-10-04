@@ -81,6 +81,13 @@ td.title{min-width:220px}
 .badge{display:inline-block;font:500 11px var(--mono);border:1px solid var(--line);border-radius:4px;padding:0 6px;margin-left:6px;color:var(--ink-2);white-space:nowrap}
 .tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .count{color:var(--ink-2);font-size:13px}
+.setinfo{display:flex;flex-direction:column;gap:2px;margin:10px 0 2px}
+.setinfo h3{margin:0;font:600 18px/1.25 var(--display)}
+.setinfo h3 small{font:400 13px var(--body);color:var(--ink-2);margin-left:6px}
+.setinfo p{margin:0;color:var(--ink-2);font-size:13px}
+.chipgroup{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chipgroup .lab{font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin-right:2px}
+.chip small{color:inherit;opacity:.7;margin-left:4px}
 td.ph{width:52px;padding:4px 10px}
 td.ph img{display:block;width:44px;height:44px;object-fit:cover;border-radius:6px;background:var(--soft)}
 .chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 14px;font:500 13px var(--body);cursor:pointer}
@@ -128,7 +135,9 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
   </section>
 
   <section class="sec" id="rawonly" hidden>
-    <div class="sechead"><h2>RAW tanpa slab yang dipantau</h2><p>Kartu bahasa Indonesia yang belum di-slab dan belum punya slab di daftar pantau. Nama kartu dibaca dari judul listing, jadi bisa kurang rapi.</p></div>
+    <div class="sechead"><h2>Semua kartu RAW, per set</h2><p>Kartu bahasa Indonesia yang belum di-slab. Pilih set, atau cari nama atau nomor kartu di semua set. Nama kartu dibaca dari judul listing, jadi bisa kurang rapi.</p></div>
+    <div class="tools" id="rawonly-sets" role="group" aria-label="Pilih set"></div>
+    <div class="setinfo" id="rawonly-info"></div>
     <div class="tools" id="rawonly-tools"></div>
     <div class="panel"><div class="tablewrap" id="rawonly-body"></div></div>
   </section>
@@ -387,40 +396,86 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
   }
   $('#cards').append.apply($('#cards'), D.types.map(card));
 
-  if (D.raw_only.length) {
+  if (D.raw_cards && D.raw_cards.length) {
     $('#rawonly').hidden = false;
-    var ro = {q: '', all: false}, LIMIT = 60;
-    var roBox = $('#rawonly-body'), roCount = h('small', {'class': 'count'});
-    var roSearch = h('input', {type: 'search', placeholder: 'Cari nama atau nomor kartu (mis. Zoroark atau 112/193)', 'aria-label': 'Cari kartu RAW',
-      oninput: function(e){ ro.q = e.target.value.trim().toLowerCase(); ro.all = false; drawRawOnly(); }});
+    var LIMIT = 80;
+    var ro = {set: D.sets[0].code, q: '', all: false};
+    var bySet = {};
+    D.sets.forEach(function(m){ bySet[m.code] = m; });
+    var setsBox = $('#rawonly-sets'), infoBox = $('#rawonly-info'), roBox = $('#rawonly-body'), roCount = h('small', {'class': 'count'});
+    var setChips = [];
+    function setChip(label, code, n){
+      var c = h('button', {'class': 'chip', type: 'button', 'aria-pressed': String(ro.set === code), title: label,
+        onclick: function(){ ro.set = code; ro.all = false; draw(); }}, label, h('small', {text: String(n)}));
+      setChips.push({el: c, code: code}); return c;
+    }
+    var famLabel = {};
+    (D.families || []).forEach(function(f){ famLabel[f.id] = f.name; });
+    var groups = {};
+    D.sets.forEach(function(m){ (groups[m.family] = groups[m.family] || []).push(m); });
+    setsBox.append(h('div', {'class': 'chipgroup'}, setChip('Semua set', '*', D.raw_cards.length)));
+    Object.keys(groups).forEach(function(f){
+      setsBox.append(h('div', {'class': 'chipgroup'}, h('span', {'class': 'lab', text: famLabel[f] || f}),
+        groups[f].map(function(m){ return setChip(m.code + (m.name_id ? ' · ' + m.name_id : ''), m.code, m.cards); })));
+    });
+    var roSearch = h('input', {type: 'search', placeholder: 'Cari nama atau nomor kartu di semua set (mis. Zoroark atau 112/193)', 'aria-label': 'Cari kartu RAW',
+      oninput: function(e){ ro.q = e.target.value.trim().toLowerCase(); ro.all = false; draw(); }});
     $('#rawonly-tools').append(roSearch, roCount);
     function trendText(t){ return t ? (t.pct > 0 ? '↑ ' : t.pct < 0 ? '↓ ' : '') + Math.abs(t.pct).toLocaleString('id-ID') + '% / ' + t.days + ' hr' : '—'; }
-    function drawRawOnly(){
-      var rows = D.raw_only.filter(function(c){
-        return !ro.q || (c.name + ' ' + c.set + ' ' + c.number + ' ' + c.rarity).toLowerCase().indexOf(ro.q) >= 0; });
+    function dateLabel(m){ return m.released_label ? 'dirilis ' + m.released_label : null; }
+    function drawInfo(){
+      var m = bySet[ro.set];
+      if (ro.q) { infoBox.replaceChildren(h('p', {text: 'Hasil pencarian di semua set.'})); return; }
+      if (!m) { infoBox.replaceChildren(h('h3', {text: 'Semua set'}), h('p', {text: D.sets.length + ' set · ' + D.raw_cards.length + ' kartu punya harga RAW'})); return; }
+      var facts = [dateLabel(m)];
+      var denom = m.total || null;
+      facts.push(m.cards + (denom ? ' dari ' + denom + ' kartu' : ' kartu') + ' punya harga RAW (' + m.listings + ' listing)');
+      if (!denom) facts.push('nomor tercetak /' + m.base);
+      infoBox.replaceChildren(
+        h('h3', null, m.code + (m.name_id ? ' · ' + m.name_id : ' · nama belum diketahui'),
+          m.name_en && m.name_en !== m.name_id ? h('small', {text: m.name_en}) : null,
+          m.basis && m.basis !== 'pencarian web' ? h('span', {'class': 'badge', text: 'nama ' + m.basis, title: 'Nama ini belum dikonfirmasi dari sumber resmi'}) : null),
+        h('p', {text: facts.filter(Boolean).join(' · ')}),
+        m.note ? h('p', {text: m.note}) : null);
+    }
+    function draw(){
+      setChips.forEach(function(x){ x.el.setAttribute('aria-pressed', String(!ro.q && x.code === ro.set)); });
+      drawInfo();
+      var multi = !!ro.q || ro.set === '*';
+      var rows = D.raw_cards.filter(function(c){
+        if (ro.q) {
+          var m = bySet[c.set] || {};
+          return (c.name + ' ' + c.set + ' ' + c.number + ' ' + c.rarity + ' ' + (m.name_id || '')).toLowerCase().indexOf(ro.q) >= 0;
+        }
+        return ro.set === '*' || c.set === ro.set;
+      });
       var shown = ro.all ? rows : rows.slice(0, LIMIT);
-      roCount.textContent = shown.length + ' dari ' + rows.length + ' kartu' + (rows.length < D.raw_only.length ? ' (total ' + D.raw_only.length + ')' : '');
+      roCount.textContent = shown.length + ' dari ' + rows.length + ' kartu';
       if (!rows.length) { roBox.replaceChildren(h('div', {'class': 'empty', text: 'Tidak ada kartu yang cocok.'})); return; }
+      var heads = [D.photos ? 'Foto' : null, multi ? 'Set' : null, 'No', 'Kartu', 'Listing', 'Termurah', 'Median', 'Termahal', 'Tren', 'Slab EGS', '']
+        .filter(function(c){ return c !== null; });
       var nodes = [h('table', null,
-        h('thead', null, h('tr', null, [D.photos ? 'Foto' : null, 'Kartu', 'Set · No', 'Listing', 'Termurah', 'Median', 'Termahal', 'Tren', ''].filter(function(c){ return c !== null; }).map(function(c){ return h('th', {text: c}); }))),
+        h('thead', null, h('tr', null, heads.map(function(c){ return h('th', {text: c}); }))),
         h('tbody', null, shown.map(function(c){
           return h('tr', null,
             D.photos ? h('td', {'class': 'ph'}, c.photo ? h('img', {src: c.photo, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer', width: 44, height: 44,
               onerror: function(e){ e.target.remove(); }}) : null) : null,
-            h('td', {text: c.name + (c.rarity ? ' ' + c.rarity : '')}),
-            h('td', {'class': 'num', text: c.set + ' · ' + c.number}),
+            multi ? h('td', {'class': 'num', text: c.set}) : null,
+            h('td', {'class': 'num', text: c.number}),
+            h('td', null, c.name + (c.rarity ? ' ' + c.rarity : ''), c.tracked ? h('span', {'class': 'badge', text: 'dipantau'}) : null),
             h('td', {'class': 'num', text: String(c.n)}),
             h('td', {'class': 'num', text: rp(c.min)}),
             h('td', {'class': 'num', text: rp(c.median)}),
             h('td', {'class': 'num', text: rp(c.max)}),
             h('td', {'class': 'num', text: trendText(c.trend)}),
+            h('td', {'class': 'num'}, c.egs.length ? c.egs.map(function(e){ return h('div', {text: 'EGS ' + e.grade + ' ' + rp(e.ask)}); }) : '—'),
             h('td', null, c.url ? h('a', {href: c.url, target: '_blank', rel: 'noopener', text: 'Buka ↗'}) : null));
         })))];
       if (shown.length < rows.length) nodes.push(h('button', {'class': 'chip', type: 'button', text: 'Tampilkan semua ' + rows.length,
-        onclick: function(){ ro.all = true; drawRawOnly(); }}));
+        onclick: function(){ ro.all = true; draw(); }}));
       roBox.replaceChildren.apply(roBox, nodes);
     }
-    drawRawOnly();
+    draw();
   }
 
   var st = {grade: 'all', q: '', sort: 'desc'};

@@ -966,51 +966,78 @@ class BrowserRender(unittest.TestCase):
         self.assertIn("↑ 12% dalam 7 hari", text)
         self.assertEqual(bars, 2)
 
-    def test_board_raw_only_table_caps_rows_searches_and_expands(self):
+    def test_board_groups_raw_cards_by_set_with_names_search_and_egs(self):
         from playwright.sync_api import sync_playwright
         import copy
-        raw = good_raw()
+        raw = good_raw()  # the tracked Mega Venusaur ex MA1 173/126, which has an EGS 10 slab in tiny_latest()
         base = raw["cards"][0]
-        for i in range(1, 121):  # 120 catalog cards on top of the tracked one
+
+        def add(code, number, name, rarity="RR"):
             c = copy.deepcopy(base)
-            c.update(name=f"Karu {i}", set_code="MA3", card_number=f"{i}/193", catalog=True, rarity="RR")
+            c.update(name=name, set_code=code, card_number=number, catalog=True, rarity=rarity)
             for l in c["listings"]:
                 l["conf"] = "katalog"
-                l["url"] += f"-{i}"
-                l["photo"] = f"https://img.example/k-{i}.webp"
+                l["url"] += f"-{code}-{number.replace('/', '_')}"
+                l["photo"] = f"https://img.example/{code}-{number.replace('/', '_')}.webp"
             raw["cards"].append(c)
-        raw["coverage"].update(cards=len(raw["cards"]), listings_counted=3 * len(raw["cards"]), catalog_cards=120)
+        for i in range(130, 0, -1):  # added in reverse: the page must still show 1/193, 2/193, 3/193 first
+            add("MA3", f"{i}/193", f"Karu {i}")
+        for i in range(1, 6):
+            add("XY1", f"{i}/50", f"Baru {i}")  # a set that is not in sets.json
+        raw["coverage"].update(cards=len(raw["cards"]), listings_counted=3 * len(raw["cards"]), catalog_cards=135)
         self.assertEqual(validate_raw.validate(raw)[0], [])
-        html = build_site.render(build_site.build(tiny_latest(), raw), True)
+        data = build_site.build(tiny_latest(), raw)
+        self.assertEqual([m["code"] for m in data["sets"]], ["MA3", "MA1", "XY1"])  # MEGA family newest first, a set outside the known families last
+        html = build_site.render(data, True)
         path = os.path.join(tempfile.mkdtemp(), "board.html")
         with open(path, "w", encoding="utf-8") as fh:
             fh.write(html)
         errors = []
+        gif = bytes.fromhex("47494638396101000100800000000000ffffff21f90401000000002c00000000010001000002024401003b")
         with sync_playwright() as p:
             browser = p.chromium.launch(executable_path=chrome_path(), headless=True,
                                         args=["--no-sandbox"] if os.geteuid() == 0 else [])
             page = browser.new_page()
             page.on("pageerror", lambda e: errors.append(str(e)))
-            gif = bytes.fromhex("47494638396101000100800000000000ffffff21f90401000000002c00000000010001000002024401003b")
             page.route("https://img.example/**", lambda route: route.fulfill(status=200, content_type="image/gif", body=gif))
             page.goto("file://" + path)
             page.wait_for_timeout(300)
-            rows = lambda: page.evaluate("() => document.querySelectorAll('#rawonly-body tbody tr').length")
-            first = (rows(), page.evaluate("() => document.querySelector('#rawonly .count').textContent"))
-            photos = page.evaluate("() => [...document.querySelectorAll('#rawonly-body td.ph img')].map(i => i.getAttribute('src') + '|' + i.loading)")
-            links = page.evaluate("() => document.querySelectorAll('#rawonly-body tbody a').length")
+            ev = page.evaluate
+            rows = lambda: ev("() => document.querySelectorAll('#rawonly-body tbody tr').length")
+            cells = lambda i: ev("(i) => [...document.querySelectorAll('#rawonly-body tbody tr')[i].children].map(td => td.textContent)", i)
+            chips = ev("() => [...document.querySelectorAll('#rawonly-sets .chip')].map(c => c.textContent)")
+            first = {"info": ev("() => document.querySelector('#rawonly-info').innerText"), "rows": rows(),
+                     "numbers": [cells(i)[1] for i in range(3)],
+                     "count": ev("() => document.querySelector('#rawonly .count').textContent"),
+                     "photos": ev("() => document.querySelectorAll('#rawonly-body td.ph img').length")}
+            page.click("#rawonly-sets .chip:has-text('XY1')")
+            other = {"info": ev("() => document.querySelector('#rawonly-info').innerText"), "rows": rows(), "head": ev("() => [...document.querySelectorAll('#rawonly-body th')].map(t => t.textContent)")}
+            page.click("#rawonly-sets .chip:has-text('MA1 ')")
+            tracked = cells(0)
             page.fill("#rawonly-tools input", "karu 77")
-            searched = (rows(), page.evaluate("() => document.querySelector('#rawonly .count').textContent"))
+            searched = {"rows": rows(), "set": cells(0)[1], "info": ev("() => document.querySelector('#rawonly-info').innerText")}
             page.fill("#rawonly-tools input", "")
+            page.click("#rawonly-sets .chip:has-text('MA3')")
             page.click("#rawonly-body button")
             expanded = rows()
             browser.close()
         self.assertEqual(errors, [])
-        self.assertEqual(first, (60, "60 dari 120 kartu"))
-        self.assertEqual((len(photos), links), (60, 60))
-        self.assertEqual(photos[0], "https://img.example/k-1.webp|lazy")
-        self.assertEqual(searched[0], 1)
-        self.assertEqual(expanded, 120)
+        self.assertEqual(chips[0], "Semua set136")                                                    # 130 + 5 + the tracked one
+        self.assertTrue(any(c.startswith("MA3 · Evolusi Mega Impian ex") and c.endswith("130") for c in chips))
+        self.assertTrue(any(c.startswith("XY1") and "·" not in c for c in chips))
+        self.assertIn("MA3 · Evolusi Mega Impian ex", first["info"])
+        self.assertIn("dirilis 30 Jan 2026", first["info"])
+        self.assertIn("130 dari 250 kartu punya harga RAW", first["info"])
+        self.assertEqual((first["rows"], first["count"], first["photos"]), (80, "80 dari 130 kartu", 80))
+        self.assertEqual(first["numbers"], ["1/193", "2/193", "3/193"])
+        self.assertIn("nama belum diketahui", other["info"])
+        self.assertEqual(other["rows"], 5)
+        self.assertNotIn("Set", other["head"])
+        self.assertIn("dipantau", tracked[2])
+        self.assertIn("EGS 10 Rp650.000", tracked[8])
+        self.assertEqual((searched["rows"], searched["set"]), (1, "MA3"))
+        self.assertIn("Hasil pencarian", searched["info"])
+        self.assertEqual(expanded, 130)
 
     def test_browser_probe_reports_listings_data_requests_and_serial(self):
         script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "probe_toco_browser.py")

@@ -21,6 +21,7 @@ import json
 import os
 import re
 import sys
+from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from urllib.parse import quote_plus
 
@@ -137,7 +138,7 @@ def build(d, raw=None):
         "last_observed": wib_label(d["coverage"]["last_observed_at"]),
         "discovery": wib_label(d["discovery"]["generated_at"]),
         "types": types, "others": others, "hidden": hidden,
-        "raw_meta": None, "raw_only": [],
+        "raw_meta": None, "raw_only": [], "raw_cards": [], "sets": [], "families": [],
     }
     if raw:
         attach_raw(data, raw, gen)
@@ -160,6 +161,40 @@ def trend_of(history):
     if days <= 0 or not base["median"]:
         return None
     return {"days": days, "pct": round((last["median"] - base["median"]) / base["median"] * 100, 1)}
+
+
+SETS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sets.json")
+
+
+def load_sets(path=SETS_PATH):
+    """Set names from tools/sets.json (hand-kept, see its 'about'); a missing file just means no names."""
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+    except FileNotFoundError:
+        return {"families": [], "sets": []}
+
+
+def set_family(code, known):
+    if code in known:
+        return known[code]["family"]
+    m = re.match(r"[A-Z]+", code)
+    return m.group(0) if m and m.group(0) in ("MA", "SV", "AC") else "AC"
+
+
+def set_sort_key(meta, family_order):
+    num = re.search(r"\d+", meta["code"])
+    return (family_order.get(meta["family"], 99), -(int(num.group(0)) if num else 0), meta["code"])
+
+
+def egs_lowest(t):
+    """Lowest counted EGS ask per grade for one tracked type."""
+    best = {}
+    for r in t["rows"]:
+        if r["in_stock"] and r["lang"] == "ID" and (r["tracked"] or r["conf"] in ("nomor", "nama+set")):
+            n, low = best.get(r["grade"], (0, None))
+            best[r["grade"]] = (n + 1, r["ask"] if low is None else min(low, r["ask"]))
+    return [{"grade": g, "ask": low, "n": n} for g, (n, low) in sorted(best.items(), key=lambda kv: -float(kv[0]))]
 
 
 def attach_raw(data, raw, gen):
@@ -185,6 +220,42 @@ def attach_raw(data, raw, gen):
         key=lambda c: (-c["n"], c["set"], c["number"]))
     data["raw_meta"] = {"generated": wib_label(raw["generated_at"]), "cards": len(raw["cards"]),
                         "listings": raw["coverage"]["listings_counted"]}
+    attach_sets(data, raw)
+
+
+def attach_sets(data, raw):
+    """Every RAW card as a row, grouped by set code, with the set's name and how much of it we have priced."""
+    meta = load_sets()
+    known = {m["code"].upper(): m for m in meta["sets"]}
+    family_order = {f["id"]: i for i, f in enumerate(meta["families"])}
+    tracked = {card_key(t["set"], t["number"]): t for t in data["types"]}
+    rows, per_set = [], {}
+    for c in raw["cards"]:
+        code = c["set_code"].upper()
+        key = card_key(c["set_code"], c["card_number"])
+        num, den = (int(x) for x in c["card_number"].replace(" ", "").split("/"))
+        history = c.get("history") or []
+        photo = next((l["photo"] for l in c["listings"] if l.get("photo")), None)
+        t = tracked.get(key)
+        rows.append({"name": c["name"], "set": code, "number": c["card_number"], "num": num, "den": den,
+                     "rarity": c["rarity"], **c["stats"], "trend": trend_of(history),
+                     "url": c["listings"][0]["url"] if c["listings"] else None, "photo": photo,
+                     "tracked": t is not None, "egs": egs_lowest(t) if t else []})
+        per_set.setdefault(code, []).append(rows[-1])
+    sets = []
+    for code, cards in per_set.items():
+        m = known.get(code, {"code": code, "family": set_family(code, known), "name_id": None, "name_en": None,
+                             "released": None, "base": None, "total": None, "basis": None, "note": ""})
+        base = m.get("base") or Counter(c["den"] for c in cards).most_common(1)[0][0]
+        for c in cards:  # the set's own numbering first, then side series such as the n/30 Pikachu of MA6
+            c["sub"] = 0 if c["den"] == base else 1
+        sets.append({**m, "code": code, "base": base, "cards": len(cards), "listings": sum(c["n"] for c in cards),
+                     "released_label": (lambda d: f"{d.day} {MONTHS[d.month - 1]} {d.year}")(date.fromisoformat(m["released"]))
+                                       if m.get("released") else None})
+    sets.sort(key=lambda m: set_sort_key(m, family_order))
+    order = {m["code"]: i for i, m in enumerate(sets)}
+    rows.sort(key=lambda c: (order[c["set"]], c["sub"], c["den"], c["num"]))
+    data["raw_cards"], data["sets"], data["families"] = rows, sets, meta["families"]
 
 
 def render(data, standalone):
@@ -192,7 +263,8 @@ def render(data, standalone):
     with open(os.path.join(here, "site_template.html"), encoding="utf-8") as fh:
         page = fh.read()
     # card photos are loaded from the seller's image host: fine in a normal page, blocked in an Artifact
-    blob = json.dumps({**data, "photos": standalone}, ensure_ascii=False).replace("</", "<\\/")
+    blob = json.dumps({**{k: v for k, v in data.items() if k != "raw_only"}, "photos": standalone},
+                      ensure_ascii=False).replace("</", "<\\/")
     page = page.replace("/*__DATA__*/null", blob)
     if standalone:
         # private page: keep search engines out, and send no Referer to the photo host (the sellers' images)

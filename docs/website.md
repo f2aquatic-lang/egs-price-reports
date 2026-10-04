@@ -2,6 +2,12 @@
 
 Papan harga adalah satu halaman web: tiap kartu yang dipantau menampilkan harga RAW dan slab EGS berdampingan, di bawahnya tabel semua kartu RAW yang terdata (bisa dicari, ada foto dan tautan ke listing termurah, serta tren naik-turun). Halaman dibangun dari `latest.json` (bot EGS) dan `raw.json` (pengumpul RAW) dengan `tools/build_site.py`, dan diperbarui sendiri setiap kali `raw.json` terbit (tiap 6 jam).
 
+## Pengelompokan per set
+
+Tabel RAW dikelompokkan per set (MA1 sampai MA6, SV1S sampai SV11S, dan seterusnya) dengan pilihan set di atasnya, dikelompokkan per seri (MEGA, Scarlet & Violet, lainnya). Tiap set menampilkan nama Indonesia, nama Inggris, tanggal rilis, dan berapa kartu yang sudah punya harga. Kartu diurutkan menurut nomor; seri sampingan di dalam satu set (misalnya kartu Pikachu bernomor n/30 di MA6) ditaruh setelah nomor utama. Kotak cari mencari di semua set.
+
+Nama set ada di `tools/sets.json`, ditulis tangan dari hasil pencarian web dan dari judul listing. Kolom `basis` di berkas itu menunjukkan seberapa pasti: **pencarian web** (nama dan sebagian tanggal dari Bulbapedia, pokeunlimited, krystalkollectz; halamannya belum dibuka langsung), **judul listing** (nama Indonesia terbaca dari judul), **perkiraan**. Set yang belum ada di berkas itu tetap tampil dengan kodenya saja. Koreksi nama, tanggal, atau jumlah kartu langsung di `sets.json`; halaman memakainya pada putaran berikutnya.
+
 ## Cara kerja
 
 ```
