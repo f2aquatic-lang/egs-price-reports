@@ -90,14 +90,25 @@ Harus berakhir dengan `0 error(s)`. Hasilnya ditulis di `/opt/egs-raw/raw.json`,
 
 ## Langkah 6. Jadwalkan (sesudah pengumpul di-merge ke main dan Anda setuju)
 
-Skrip penerbit hanya mau jalan dari branch `main`, supaya tidak pernah mendorong pekerjaan yang belum di-merge:
+Penerbitan memakai **kunci SSH milik bot** yang sudah ada (`/opt/egs-price/.ssh/egs_report`, kunci deploy repo ini); pengguna `egsprice` tidak punya kunci bawaan, jadi tanpa kunci itu GitHub menjawab `Permission denied (publickey)`. Tidak ada kunci baru dan tidak ada yang ditulis ke repo.
+
+Uji dulu bahwa kunci itu bisa membaca repo (hanya baca):
 
 ```bash
-sudo -u egsprice -H git -C /opt/egs-raw/repo checkout main
-sudo -u egsprice -H git -C /opt/egs-raw/repo pull
+sudo -u egsprice -H env GIT_SSH_COMMAND="ssh -i /opt/egs-price/.ssh/egs_report -o IdentitiesOnly=yes -o UserKnownHostsFile=/opt/egs-price/.ssh/known_hosts" \
+  git ls-remote git@github.com:f2aquatic-lang/egs-price-reports.git HEAD
 ```
 
-Lalu satu layanan dan satu pemicu baru, sejalan dengan jadwal bot yang sudah ada:
+Harus mencetak satu baris berisi hash. Lalu ambil `main` ke folder baru (folder ZIP lama tidak disentuh). Sejak itu pembaruan kode cukup `git pull`, tanpa ZIP:
+
+```bash
+sudo -u egsprice -H env GIT_SSH_COMMAND="ssh -i /opt/egs-price/.ssh/egs_report -o IdentitiesOnly=yes -o UserKnownHostsFile=/opt/egs-price/.ssh/known_hosts" \
+  git clone -b main git@github.com:f2aquatic-lang/egs-price-reports.git /opt/egs-raw/main
+```
+
+Skrip penerbit hanya mau jalan dari branch `main` supaya tidak pernah mendorong pekerjaan yang belum di-merge. Ia menarik `main` dulu, menjalankan pengumpul, lalu hanya mendorong `raw.json`. Kalau bot mendorong `latest.json` pada saat yang sama, ia mencoba lagi sampai 3 kali.
+
+Berkas `/opt/egs-raw/env` bisa berisi `EGS_LANG_MODE=text` (tanpa kunci), atau kunci dan penyedia seperti di Langkah 3. Kalau memakai foto, tambahkan juga `PYTHON=/opt/egs-raw/venv/bin/python` di sana. Lalu satu layanan dan satu pemicu baru, sejalan dengan jadwal bot yang sudah ada:
 
 ```bash
 sudo tee /etc/systemd/system/egs-raw.service >/dev/null <<'EOF'
@@ -109,10 +120,9 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 User=egsprice
-WorkingDirectory=/opt/egs-raw/repo
-EnvironmentFile=/opt/egs-raw/env
-Environment=PYTHON=/opt/egs-raw/venv/bin/python
-ExecStart=/opt/egs-raw/repo/tools/publish_raw.sh --db /opt/egs-raw/raw.sqlite
+WorkingDirectory=/opt/egs-raw/main
+EnvironmentFile=-/opt/egs-raw/env
+ExecStart=/opt/egs-raw/main/tools/publish_raw.sh --db /opt/egs-raw/raw.sqlite
 TimeoutStartSec=3000
 EOF
 sudo tee /etc/systemd/system/egs-raw.timer >/dev/null <<'EOF'
