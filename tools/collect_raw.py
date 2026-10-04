@@ -660,6 +660,7 @@ def sample_check(cfg, post_fn, image_fn, classify_fn, log=print):
 
 
 def main(argv=None):
+    sys.stdout.reconfigure(line_buffering=True)  # progress shows up in journalctl while the run is going
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--latest", default="latest.json", help="daftar kartu yang dipantau")
     ap.add_argument("--out", default="raw.json")

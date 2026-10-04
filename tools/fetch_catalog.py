@@ -363,6 +363,7 @@ def _run(args, get, now, sleep, log):
 
 
 def main(argv=None):
+    sys.stdout.reconfigure(line_buffering=True)  # progress shows up in a redirected log or journalctl right away
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--db", default=os.path.expanduser("~/.egs-raw/catalog.sqlite"))
     ap.add_argument("--out", default="catalog.json")
