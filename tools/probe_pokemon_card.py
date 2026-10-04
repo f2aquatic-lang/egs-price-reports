@@ -188,7 +188,7 @@ def snippets(base, wait, out=print):
     return 0
 
 
-def probe_urls(urls, find, text_chars, wait, out=print):
+def probe_urls(urls, find, text_chars, wait, out=print, brief=False):
     """Any pages: the host's robots.txt (once), then the overview of each page and, with `find`, pieces of its source."""
     robots_done = set()
     for url in urls:
@@ -201,7 +201,11 @@ def probe_urls(urls, find, text_chars, wait, out=print):
             out(body[:900] if status == 200 else re.sub(r"\s+", " ", body)[:200])
             wait()
         status, ctype, body = get(url)
-        scan = describe(url, status, ctype, body, out)
+        if brief:  # only the pieces around the matches, not the overview of the page
+            out(f"\n=== {url}: status {status} | {len(body)} karakter")
+            scan = None
+        else:
+            scan = describe(url, status, ctype, body, out)
         if status == 200 and find:
             show(f"sumber di sekitar {find!r}", windows(body, find, 250, 350, 4), out)
         if scan and text_chars > 500:
@@ -218,11 +222,12 @@ def main(argv=None):
     ap.add_argument("--url", action="append", help="probe this page instead of the card database (repeatable)")
     ap.add_argument("--find", help="with --url: print pieces of the source around matches of this regular expression")
     ap.add_argument("--text", type=int, default=500, help="with --url: how many characters of page text to print")
+    ap.add_argument("--brief", action="store_true", help="with --url: skip the overview, print only the pieces around --find")
     a = ap.parse_args(argv)
     base = a.base.rstrip("/")
     wait = lambda: time.sleep(a.delay)
     if a.url:
-        return probe_urls(a.url, a.find, a.text, wait)
+        return probe_urls(a.url, a.find, a.text, wait, brief=a.brief)
     if a.snippets:
         return snippets(base, wait)
 

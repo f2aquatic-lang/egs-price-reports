@@ -995,6 +995,18 @@ class ProbePokemonCard(unittest.TestCase):
         self.assertIn("<b>12,800 円</b>", out)
         self.assertIn("002/193 RR Foo", out)
 
+    def test_brief_mode_prints_only_the_matches(self):
+        self.pages["/sell/poc/s/m02a"] = (200, "text/html", "<html><body><h3>SAR</h3><div>001/193 Pikachu 12,800 円</div></body></html>")
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            probe_pokemon_card.main(["--url", self.base + "/sell/poc/s/m02a", "--find", "SAR", "--brief", "--delay", "0"])
+        out = buf.getvalue()
+        self.assertIn("status 200", out)
+        self.assertIn("<h3>SAR</h3>", out)
+        self.assertNotIn("tautan:", out)                      # no overview of links and images
+
     def test_unreachable_site_is_reported_not_raised(self):
         out = self.run_probe("http://127.0.0.1:9")
         self.assertIn("status 0", out)
