@@ -32,7 +32,7 @@ ID_SETS = re.compile(r"evolusi mega|mega impian", re.I)
 NUMBER = re.compile(r"\b(\d{1,3})\s*/\s*(\d{2,3})\b")
 HASH_NO = re.compile(r"#\s?(\d{1,3})\b")
 SET_CODE = re.compile(r"\b(ma\d{1,2}|sv\d{1,2}[a-z]?|s\d{1,2}[a-z]{0,2}|m\d[a-z]?|ac\d[a-z]*)\b", re.I)
-RARITY = re.compile(r"\b(SAR|SR|AR|UR|HR|CSR|SSR|RRR|RR)\b")
+RARITY = re.compile(r"\b(SAR|SR|AR|UR|HR|CSR|SSR|RRR|RR|MUR|CHR|ACE)\b")
 CONDITION = re.compile(r"\b(near mint|nm|mint|lp|mp|hp|dmg|damaged)\b", re.I)
 GRADE = re.compile(
     r"\b(?:egs|psa|bgs|cgc)\W+(?:(?:grading|gem ?mint|gm|slab|grade|mint)\W+)*(10|9[.,]5|9|8[.,]5|8)\b", re.I)
@@ -93,7 +93,8 @@ def text_language(title, description=""):
 NAME_NOISE = re.compile(
     r"evolusi\s+mega(?:\s+impian)?(?:\s+ex)?|impian\s+mega(?:\s+ex)?|mega\s+evolusi|mega\s+impian|ledakan\s+peniada|"
     r"kartu|pokemon|pok\u00e9mon|\btcg\b|bahasa|indonesia\w*|indonesa|\bindo\b|\[id\]|\(id\)|\bid\b|"
-    r"original|asli|ori\b|ready|stok|murah|holo|foil|single|card|mint|near|\bnm\b|\blp\b|\bmp\b|\bma\b|\bi\b", re.I)
+    r"original|asli|ori\b|ready|stok|murah|holo|foil|single|card|mint|near|\bnm\b|\blp\b|\bmp\b|\bma\b|\bi\b|"
+    r"\b\d+\s?th\b|anniversary|classic(?:\s+collection)?|special", re.I)
 NAME_TRASH = re.compile(r"[^\w\s'\-]|\d", re.U)
 
 

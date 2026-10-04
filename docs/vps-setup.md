@@ -145,7 +145,7 @@ Jam di VPS memakai CST (UTC+8), jadi 01:20, 07:20, 13:20, dan 19:20 CST sama den
 
 ## Kartu lain (katalog)
 
-Bawaan: kartu di luar daftar pantau yang kode set dan nomornya terbaca di judul ikut didata (`catalog: true` di `raw.json`). Dengan pilihan C (teks saja) ini gratis dan langsung menambah ratusan kartu. Dengan foto (A atau B), tiap listing katalog dicek fotonya satu kali, jadi putaran awal bisa memakan banyak anggaran: batasi dengan `--max-checks` (bawaan 150, listing kartu yang dipantau didahulukan). Matikan dengan `--no-catalog`. Lihat `tools/db_report.py` untuk melihat kartu apa saja yang terdata.
+Bawaan: kartu di luar daftar pantau yang kode set dan nomornya terbaca di judul ikut didata (`catalog: true` di `raw.json`). Dengan pilihan C (teks saja) ini gratis dan langsung menambah ratusan kartu. Dengan foto (A atau B), tiap listing katalog dicek fotonya satu kali, jadi putaran awal bisa memakan banyak anggaran: batasi dengan `--max-checks` (bawaan 150, listing kartu yang dipantau didahulukan). Matikan dengan `--no-catalog`. Lihat `tools/db_report.py` untuk melihat kartu apa saja yang terdata. Pengumpul juga menelusuri set yang paling sering muncul (bawaan 8 set, paling banyak 400 permintaan pencarian per putaran, sekitar 10 menit); atur dengan `--sets`, `--set-budget`, `--set-pages`, atau matikan dengan `--sets 0`.
 
 ## Biaya
 

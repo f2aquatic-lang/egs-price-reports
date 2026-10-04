@@ -61,6 +61,10 @@ class Classify(unittest.TestCase):
             r = classify_title(title)
             self.assertEqual((r["kind"], r["lang"]), (kind, lang), title)
 
+    def test_secret_rarities_are_read(self):
+        self.assertEqual(classify_title("Mega Dragonite ex MUR 250/193 MA3")["rarity"], ["MUR"])
+        self.assertEqual(classify_title("Pikachu CHR 206/205 AC3A")["rarity"], ["CHR"])
+
     def test_ids_extracted(self):
         r = classify_title("Pikachu ex SAR 234/193 MA3 ID NM")
         self.assertEqual((r["number"], r["set"], r["condition"]), ("234/193", "MA3", "nm"))
@@ -85,6 +89,8 @@ GUESS_NAMES = [  # real toco titles (VPS run, 2026-10-04) -> the card name a hum
     ("Energi Tim Roket C MA3 193/193 Pokemon TCG Indonesia", "Energi Tim Roket"),
     ("Sinyal Mega U 158/193 MA3 Indo", "Sinyal Mega"),
     ("Reshiram N AR MA3 128/193 Indonesia", "Reshiram N"),
+    ("Pikachu ex SAR 155/130 MA6 30th Anniversary Indonesia", "Pikachu ex"),
+    ("Mega Dragonite ex MUR 250/193 MA3 Special Indonesia", "Mega Dragonite ex"),
 ]
 
 
@@ -552,6 +558,70 @@ class Collector(unittest.TestCase):
         self.assertEqual(collect_raw.catalog_key("Fez ex 114/193 RR", {"193": "MA3"}), ("MA3", "114/193"))
         self.assertIsNone(collect_raw.catalog_key("Fez ex 114/777 RR", {"193": "MA3"}))
         self.assertIsNone(collect_raw.catalog_key("Booster Box MA3 Indonesia", {}))
+
+    def test_set_crawl_pages_until_the_engine_runs_out_of_that_set(self):
+        calls, items = [], {}
+
+        def post(body):  # the first 90 results of every MA9 query name MA9, then the engine drifts to other cards
+            inner = body["body"]
+            calls.append((inner["query"], inner["from"]))
+            rows = [api_item(f"s-{i}", f"Card {i} ex MA9 | {i}/99 RR Indonesia" if i < 90 else f"Other card {i}", 1000 + i)
+                    for i in range(inner["from"], inner["from"] + inner["size"])]
+            return {"results": rows, "total": 5000}
+        used = collect_raw.crawl_sets(["MA9"], items, post, 45, 0, max_pages=25, budget=1000, min_share=0.3,
+                                      sleep=lambda s: None, log=lambda *a: None)
+        self.assertEqual(used, len(collect_raw.SET_SUFFIXES) * 3)            # pages 0, 1 relevant; page 2 irrelevant, then stop
+        self.assertEqual(len(items), 135)                                    # the same slugs from every query count once
+        self.assertEqual({q for q, _ in calls}, {f"MA9 {x}".strip() for x in collect_raw.SET_SUFFIXES})
+
+    def test_set_crawl_spreads_a_small_budget_over_all_queries(self):
+        calls = []
+
+        def post(body):
+            calls.append(body["body"]["query"])
+            return {"results": [api_item(f"b-{len(calls)}-{i}", f"Card MA9 {i}", 1000) for i in range(45)], "total": 5000}
+        used = collect_raw.crawl_sets(["MA9"], {}, post, 45, 0, max_pages=25, budget=5, min_share=0.3,
+                                      sleep=lambda s: None, log=lambda *a: None)
+        self.assertEqual((used, len(set(calls))), (5, 5))                    # five different queries, not five pages of one
+
+    def test_set_crawl_stops_on_the_page_limit_and_on_errors(self):
+        def failing(body):
+            raise collect_raw.FetchError("boom")
+        self.assertEqual(collect_raw.crawl_sets(["MA9"], {}, failing, 45, 0, 25, 100, 0.3, sleep=lambda s: None,
+                                                log=lambda *a: None), 0)
+        pages = []
+
+        def endless(body):
+            pages.append(body["body"]["from"])
+            return {"results": [api_item(f"e-{body['body']['from']}-{i}-{len(pages)}", "x MA9", 1000) for i in range(45)], "total": 9999}
+        collect_raw.crawl_sets(["MA9"], {}, endless, 45, 0, 4, 1000, 0.3, sleep=lambda s: None, log=lambda *a: None)
+        self.assertEqual(max(pages), 3 * 45)                                  # --set-pages 4 means pages 0..3
+
+    def test_top_sets_counts_indonesian_raw_cards_only(self):
+        listings = [{"title": t, "description": ""} for t in (
+            "A ex MA3 | 1/193 RR Indonesia", "B ex MA3 | 2/193 RR Indonesia", "C ex MA1 3/126 RR Indonesia",
+            "D ex MA1 4/126 RR Indonesia", "E ex M2a 5/193 Japanese", "F ex MA7 6/100 Indonesia",
+            "Booster Box MA3 Indonesia", "G EGS 10 MA3 Indonesia")]
+        self.assertEqual(collect_raw.top_sets(listings, 5), ["MA3", "MA1"])  # MA7 once; the box, the slab and the JP card do not count
+        self.assertEqual(collect_raw.top_sets(listings, 1), ["MA3"])
+
+    def test_run_with_set_crawl_finds_cards_the_tracked_queries_missed(self):
+        def post(body):
+            inner = body["body"]
+            self.posts.append(body)
+            pool = CATALOG_EXTRA if inner["query"].startswith("MA3") else API_CATALOG
+            return {"results": pool[inner["from"]:inner["from"] + inner["size"]], "total": len(pool)}
+        self.post_fn = post
+        raw, _ = self.go(lang_mode="text", catalog=True, sets=0)
+        self.assertEqual(self.catalog_cards(raw), {})
+        logs = []
+        self.cfg.lang_mode, self.cfg.catalog, self.cfg.sets = "text", True, 1
+        self.cfg.set_budget, self.cfg.set_pages, self.cfg.set_min_share = 50, 3, 0.3
+        raw, _ = collect_raw.run(self.cfg, post, self.image_fn, None, now=datetime(2026, 10, 3, 1, 0, tzinfo=timezone.utc),
+                                 sleep=lambda s: None, log=logs.append)
+        self.assertEqual(sorted(self.catalog_cards(raw)), [("MA3", "114/193"), ("MA3", "71/193"), ("MA4", "128/123")])
+        self.assertTrue(any("telusuri set: MA3" in l for l in logs))
+        self.assertEqual(validate_raw.validate(raw)[0], [])
 
     def test_no_listings_writes_nothing(self):
         self.catalog = []

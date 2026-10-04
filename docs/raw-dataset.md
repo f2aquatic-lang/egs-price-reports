@@ -73,6 +73,8 @@ Pencarian toco mengembalikan banyak kartu lain di samping kartu yang dipantau. S
 - Aturan bahasa sama dengan kartu yang dipantau. Listing kartu yang dipantau dicek foto lebih dulu, baru listing katalog, sehingga anggaran `--max-checks` yang pendek tidak mengorbankan kartu yang dipantau.
 - Kalau judulnya cocok dengan kartu yang dipantau (nomor yang sama), kartu itu tetap dihitung sebagai kartu yang dipantau.
 
+**Penelusuran set.** Kata kunci kartu yang dipantau hanya menemukan kartu lain secara kebetulan (sekitar separuh kartu per set di data pertama). Karena itu pengumpul juga menelusuri set yang paling sering muncul (`--sets`, bawaan 8). Untuk tiap kode set ada 7 kata kunci: kode saja, `indonesia`, dan tiap rarity (`RR`, `AR`, `SR`, `SAR`, `UR`), karena pencarian toco memakai AND sehingga tiap kata kunci mengembalikan potongan set yang berbeda. Halamannya dibaca bergantian antar kata kunci (supaya anggaran terbagi rata) sampai satu kata kunci kehabisan kartu set itu: satu halaman tanpa listing baru, atau kurang dari 30% judulnya menyebut kode set (`--set-min-share`). Dibatasi `--set-pages` (25 halaman) per kata kunci dan `--set-budget` (400 permintaan) per putaran, dengan jeda yang sama dengan pencarian lain. Matikan dengan `--sets 0`.
+
 ## Listing yang dihitung
 
 Sebuah listing masuk statistik kalau semua ini benar:

@@ -139,6 +139,62 @@ def to_listing(item):
     }
 
 
+SET_SUFFIXES = ("", "indonesia", "RR", "AR", "SR", "SAR", "UR")  # one query per slice of a set; AND search, so each is a different list
+
+
+def top_sets(listings, limit):
+    """Set codes that appear most among Indonesian raw cards in this run's results (at least twice)."""
+    counts = Counter()
+    for l in listings:
+        c = classify_title(l["title"])
+        if c["kind"] == "raw" and c["set"] and text_language(l["title"], l["description"]) == "ID":
+            counts[c["set"]] += 1
+    return [code for code, n in counts.most_common(limit) if n >= 2]
+
+
+def crawl_sets(codes, items, post_fn, size, delay, max_pages, budget, min_share, sleep=time.sleep, log=print):
+    """Page deep through every set code, round-robin across its queries, until the budget is spent.
+
+    A query stops when a page brings nothing new or fewer than `min_share` of its listings name the set,
+    which means the engine has run out of cards of that set. New listings are added to `items`.
+    """
+    state = {}
+    for code in codes:
+        for suffix in SET_SUFFIXES:
+            q = f"{code} {suffix}".strip()
+            state[q] = {"code": code, "re": re.compile(rf"\b{re.escape(code)}\b", re.I), "page": 0, "seen": set(),
+                        "total": None, "done": False, "relevant": 0}
+    requests = 0
+    while requests < budget and not all(st["done"] for st in state.values()):
+        for q, st in state.items():
+            if st["done"] or requests >= budget:
+                continue
+            try:
+                data = post_fn(search_body(q, st["page"] * size, size))
+            except FetchError as e:
+                log(f"  ! pencarian gagal: {e}")
+                st["done"] = True
+                continue
+            requests += 1
+            results = data.get("results") or []
+            new = [r for r in results if r.get("slug") and r["slug"] not in st["seen"]]
+            st["seen"].update(r["slug"] for r in new)
+            for r in new:
+                items.setdefault(r["slug"], r)
+            share = sum(1 for r in results if st["re"].search(r.get("title") or "")) / len(results) if results else 0
+            st["page"] += 1
+            st["relevant"] += sum(1 for r in new if st["re"].search(r.get("title") or ""))
+            st["total"] = data.get("total", st["total"])
+            if (not new or share < min_share or st["page"] >= max_pages
+                    or (st["total"] is not None and st["page"] * size >= st["total"])):
+                st["done"] = True
+            sleep(delay)
+    for q, st in state.items():
+        log(f"  {q!r}: {st['page']} halaman, {len(st['seen'])} listing ({st['relevant']} menyebut {st['code']})"
+            f"{'' if st['done'] else ' [anggaran habis]'}")
+    return requests
+
+
 # ---- language from the photo ---------------------------------------------------
 
 def sniff_media_type(data):
@@ -485,6 +541,12 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
     items, diag = crawl(queries, post_fn, cfg.pages, cfg.size, cfg.delay, cfg.save_json, sleep, log)
     for d in diag:
         log(f"  {d['query']!r}: {d['pages']} halaman, {d['listings']} listing dari total {d['total']}")
+    if items and getattr(cfg, "catalog", False) and getattr(cfg, "sets", 0) > 0:
+        codes = top_sets([to_listing(i) for i in items.values()], cfg.sets)
+        log(f"telusuri set: {', '.join(codes) or '(tidak ada)'} (anggaran {cfg.set_budget} permintaan)")
+        before = len(items)
+        used = crawl_sets(codes, items, post_fn, cfg.size, cfg.delay, cfg.set_pages, cfg.set_budget, cfg.set_min_share, sleep, log)
+        log(f"  {used} permintaan, {len(items) - before} listing baru")
     if not items:
         log("Tidak ada listing yang terbaca. raw.json TIDAK ditulis.")
         return None, {"listing_dibaca": 0}
@@ -571,6 +633,11 @@ def main(argv=None):
     ap.add_argument("--delay", type=float, default=1.5, help="jeda antar permintaan (detik)")
     ap.add_argument("--queries-limit", type=int, help="batasi jumlah kata kunci (untuk uji)")
     ap.add_argument("--max-checks", type=int, default=150, help="batas cek foto per putaran (membatasi biaya)")
+    ap.add_argument("--sets", type=int, default=8, help="telusuri paling banyak N set yang muncul (0 = matikan)")
+    ap.add_argument("--set-budget", type=int, default=400, help="batas permintaan pencarian untuk penelusuran set")
+    ap.add_argument("--set-pages", type=int, default=25, help="halaman terdalam per kata kunci set")
+    ap.add_argument("--set-min-share", type=float, default=0.3,
+                    help="berhenti kalau kurang dari bagian ini dari satu halaman menyebut kode set")
     ap.add_argument("--no-catalog", dest="catalog", action="store_false",
                     help="hanya kartu yang dipantau (bawaan: kartu lain yang nomornya terbaca di judul ikut didata)")
     ap.add_argument("--max-age-hours", type=float, default=36, help="listing dihitung kalau terlihat dalam rentang ini")
