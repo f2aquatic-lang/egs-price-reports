@@ -64,6 +64,12 @@ class Classify(unittest.TestCase):
             r = classify_title(title)
             self.assertEqual((r["kind"], r["lang"]), (kind, lang), title)
 
+    def test_zero_padded_set_codes_are_the_same_set(self):
+        self.assertEqual(classify_title("Iron Valiant ex 213/187 SV08A Indonesia")["set"], "SV8A")
+        self.assertEqual(classify_title("Pikachu ex MA03 234/193")["set"], "MA3")
+        self.assertEqual(classify_title("Zekrom N MA3 210/193")["set"], "MA3")
+        self.assertEqual(classify_title("Charizard ex SV10 sv08a")["set"], "SV10")            # a real 10 keeps its zero
+
     def test_secret_rarities_are_read(self):
         self.assertEqual(classify_title("Mega Dragonite ex MUR 250/193 MA3")["rarity"], ["MUR"])
         self.assertEqual(classify_title("Pikachu CHR 206/205 AC3A")["rarity"], ["CHR"])
@@ -1006,6 +1012,18 @@ class ProbePokemonCard(unittest.TestCase):
         self.assertIn("status 200", out)
         self.assertIn("<h3>SAR</h3>", out)
         self.assertNotIn("tautan:", out)                      # no overview of links and images
+
+    def test_find_can_look_further_back_and_show_fewer_matches(self):
+        header = "<h3 class='rarity'>SAR</h3>"
+        self.pages["/sell/poc/s/m02a"] = (200, "text/html", "<html><body>" + header + "<p>" + "x" * 900 + "</p><a href='/sell/poc/card/m02a/1'>card</a><a href='/sell/poc/card/m02a/2'>card</a></body></html>")
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            probe_pokemon_card.main(["--url", self.base + "/sell/poc/s/m02a", "--find", "sell/poc/card/m02a/", "--brief", "--before", "1200", "--after", "50", "--limit", "1", "--delay", "0"])
+        out = buf.getvalue()
+        self.assertIn(header, out)                                # the header 900+ characters before the card is in view
+        self.assertEqual(out.count("  > "), 1)                   # --limit 1
 
     def test_unreachable_site_is_reported_not_raised(self):
         out = self.run_probe("http://127.0.0.1:9")

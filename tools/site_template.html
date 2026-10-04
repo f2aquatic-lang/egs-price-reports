@@ -424,7 +424,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
     var hideBox = h('label', {'class': 'toggle'}, h('input', {type: 'checkbox', id: 'hide-unpriced',
       onchange: function(e){ ro.priced = e.target.checked; ro.all = false; draw(); }}), ' Sembunyikan kartu tanpa harga');
     $('#rawonly-tools').append(roSearch, hideBox, roCount);
-    function trendText(t){ return t ? (t.pct > 0 ? '↑ ' : t.pct < 0 ? '↓ ' : '') + Math.abs(t.pct).toLocaleString('id-ID') + '% / ' + t.days + ' hr' : '—'; }
+    function trendText(t){ return !t || (t.pct === 0 && t.days < 2) ? '—' : (t.pct > 0 ? '↑ ' : t.pct < 0 ? '↓ ' : '') + Math.abs(t.pct).toLocaleString('id-ID') + '% / ' + t.days + ' hari'; }
     function dateLabel(m){ return m.released_label ? 'dirilis ' + m.released_label : null; }
     function drawInfo(){
       var m = bySet[ro.set];

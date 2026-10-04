@@ -64,11 +64,12 @@ def classify_title(text):
     hno = HASH_NO.search(t)
     sc = SET_CODE.search(t)
     cond = CONDITION.search(t) if kind == "raw" else None
+    set_code = re.sub(r"^([A-Z]+)0+(?=\d)", r"\1", sc.group(1).upper()) if sc else None  # sellers write SV08A for SV8A
     return {
         "kind": kind, "lang": lang, "grade": grade,
         "number": f"{int(num.group(1))}/{num.group(2)}" if num else None,
         "card_no": hno.group(1) if hno else None,
-        "set": sc.group(1).upper() if sc else None,
+        "set": set_code,
         "rarity": sorted(set(RARITY.findall(t.upper()))),
         "condition": cond.group(1).lower() if cond else None,
     }

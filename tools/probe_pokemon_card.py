@@ -145,7 +145,7 @@ def windows(html, pattern, before, after, limit):
     out = []
     for m in re.finditer(pattern, html):
         piece = html[max(0, m.start() - before): m.end() + after]
-        out.append(re.sub(r"\s+", " ", piece)[:1100])
+        out.append(re.sub(r"\s+", " ", piece)[:max(1100, before + after + 100)])
         if len(out) >= limit:
             break
     return out
@@ -188,7 +188,7 @@ def snippets(base, wait, out=print):
     return 0
 
 
-def probe_urls(urls, find, text_chars, wait, out=print, brief=False):
+def probe_urls(urls, find, text_chars, wait, out=print, brief=False, before=250, after=350, limit=4):
     """Any pages: the host's robots.txt (once), then the overview of each page and, with `find`, pieces of its source."""
     robots_done = set()
     for url in urls:
@@ -207,7 +207,7 @@ def probe_urls(urls, find, text_chars, wait, out=print, brief=False):
         else:
             scan = describe(url, status, ctype, body, out)
         if status == 200 and find:
-            show(f"sumber di sekitar {find!r}", windows(body, find, 250, 350, 4), out)
+            show(f"sumber di sekitar {find!r}", windows(body, find, before, after, limit), out)
         if scan and text_chars > 500:
             out("teks (lebih panjang): " + re.sub(r"\s+", " ", " ".join(scan.text))[:text_chars])
         wait()
@@ -222,12 +222,15 @@ def main(argv=None):
     ap.add_argument("--url", action="append", help="probe this page instead of the card database (repeatable)")
     ap.add_argument("--find", help="with --url: print pieces of the source around matches of this regular expression")
     ap.add_argument("--text", type=int, default=500, help="with --url: how many characters of page text to print")
+    ap.add_argument("--before", type=int, default=250, help="with --find: characters of source before each match")
+    ap.add_argument("--after", type=int, default=350, help="with --find: characters of source after each match")
+    ap.add_argument("--limit", type=int, default=4, help="with --find: how many matches to show")
     ap.add_argument("--brief", action="store_true", help="with --url: skip the overview, print only the pieces around --find")
     a = ap.parse_args(argv)
     base = a.base.rstrip("/")
     wait = lambda: time.sleep(a.delay)
     if a.url:
-        return probe_urls(a.url, a.find, a.text, wait, brief=a.brief)
+        return probe_urls(a.url, a.find, a.text, wait, brief=a.brief, before=a.before, after=a.after, limit=a.limit)
     if a.snippets:
         return snippets(base, wait)
 
