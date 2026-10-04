@@ -178,9 +178,9 @@ def attach_raw(data, raw, gen):
              "text": l["title"], **age_fields(l["url"], gen)} for l in c["listings"]]}
     data["raw_only"] = sorted(
         ({"name": c["name"], "set": c["set_code"], "number": c["card_number"],
-          "rarity": c["rarity"], **c["stats"]}
+          "rarity": c["rarity"], **c["stats"], "trend": trend_of(c.get("history") or [])}
          for k, c in by.items() if k not in used),
-        key=lambda c: -c["n"])
+        key=lambda c: (-c["n"], c["set"], c["number"]))
     data["raw_meta"] = {"generated": wib_label(raw["generated_at"]), "cards": len(raw["cards"]),
                         "listings": raw["coverage"]["listings_counted"]}
 

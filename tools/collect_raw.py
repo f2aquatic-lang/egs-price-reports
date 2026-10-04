@@ -28,7 +28,7 @@ import re
 import sqlite3
 import sys
 import time
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 from urllib.request import Request, urlopen
 
@@ -36,7 +36,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_site  # noqa: E402
 import validate_raw  # noqa: E402
 import watch_queries  # noqa: E402
-from classify import classify_title, text_language  # noqa: E402
+from classify import classify_title, guess_name, text_language  # noqa: E402
 
 SITE = os.environ.get("EGS_TOCO_SITE", "https://toco.id")  # only changed in tests
 SEARCH_URL = SITE + "/api/toco-api/search"
@@ -51,6 +51,8 @@ LANG_PROMPT = (
 LANG_ALIASES = {"ID": "ID", "INDONESIAN": "ID", "INDONESIA": "ID", "JP": "JP", "JAPANESE": "JP",
                 "EN": "EN", "ENGLISH": "EN", "OTHER": "OTHER", "UNCLEAR": "UNCLEAR"}
 MATCHED = ("nomor", "nama+set")
+CATALOG = "katalog"  # not a tracked card: set code and card number are in the title, so the card is known by its number
+CATALOG_LISTINGS = 10  # per catalog card in raw.json (tracked cards keep 30)
 AGGREGATIONS = {"department_agg": {"terms": {"field": "department"}}, "category_agg": {"terms": {"field": "category"}},
                 "type_agg": {"terms": {"field": "type"}}, "price_agg": {"terms": {"field": "price"}},
                 "production_year_agg": {"terms": {"field": "production_year"}},
@@ -348,21 +350,57 @@ WIB = timezone(timedelta(hours=7))
 HISTORY_DAYS = 60
 
 
-def build_raw(db, types, now, max_age_hours, record=True):
+def denominator_sets(titles):
+    """Which set a card total belongs to (193 -> MA3), learned from Indonesian titles that show both."""
+    votes = defaultdict(Counter)
+    for title in titles:
+        c = classify_title(title)
+        if c["kind"] == "raw" and c["number"] and c["set"] and text_language(title) == "ID":
+            votes[c["number"].split("/")[1]][c["set"]] += 1
+    out = {}
+    for total, counter in votes.items():
+        (code, n), seen = counter.most_common(1)[0], sum(counter.values())
+        if n >= 3 and n / seen >= 0.9:
+            out[total] = code
+    return out
+
+
+def catalog_key(title, sets_by_total):
+    """(set, number) of an untracked raw card named only by what the title shows, else None."""
+    c = classify_title(title)
+    if c["kind"] != "raw" or not c["number"]:
+        return None
+    code = c["set"] or sets_by_total.get(c["number"].split("/")[1])
+    return (code, c["number"]) if code else None
+
+
+def majority(values):
+    """Most common non-empty value; ties go to the shortest, then alphabetical."""
+    counts = Counter(v for v in values if v)
+    return min(counts, key=lambda v: (-counts[v], len(v), v)) if counts else ""
+
+
+def build_raw(db, types, now, max_age_hours, record=True, catalog=False):
     cutoff = (now - timedelta(hours=max_age_hours)).isoformat()
     rows = db.execute(
         "SELECT l.url, l.title, l.ask_idr, l.city, l.stock, l.card_set, l.card_number, l.conf, l.last_seen, g.lang, g.lang_by, l.image_url "
         "FROM listing l LEFT JOIN lang g ON g.url = l.url WHERE l.last_seen >= ? AND l.kind = 'raw'", (cutoff,)).fetchall()
     by_type = {build_site.card_key(t["set"], t["number"]): [] for t in types}
+    found_catalog = defaultdict(list)
     unmatched = unverified = 0
     for url, title, ask, city, stock, cset, cnum, conf, seen, lang, lang_by, image in rows:
-        if conf not in MATCHED:
+        if conf not in MATCHED and not (catalog and conf == CATALOG):
             unmatched += 1
             continue
         if stock is not None and stock <= 0:
             continue
         if lang == "ID":
-            by_type[build_site.card_key(cset, cnum)].append((ask, url, title, city, seen, conf, lang_by, image))
+            key = build_site.card_key(cset, cnum)
+            row = (ask, url, title, city, seen, conf, lang_by, image)
+            if key in by_type:  # a catalog hit on a tracked card is that card
+                by_type[key].append(row[:5] + ("nomor",) + row[6:] if conf == CATALOG else row)
+            else:
+                found_catalog[key].append((row, cset, cnum))
         elif lang in (None, "UNCLEAR"):
             unverified += 1
     cards, newest = [], []
@@ -397,9 +435,41 @@ def build_raw(db, types, now, max_age_hours, record=True):
         cards.append({"name": t["name"], "set_code": t["set"], "card_number": t["number"], "rarity": t["rarity"],
                       "stats": stats, "history": history, "listings": listings})
     cards.sort(key=lambda c: -c["stats"]["n"])
+    extra = []
+    for key, items in found_catalog.items():
+        found = sorted(r for r, _, _ in items)
+        cset, cnum = items[0][1], items[0][2]
+        prices = [f[0] for f in found]
+        stats = {"n": len(prices), "min": prices[0], "p25": quantile(prices, .25),
+                 "median": quantile(prices, .5), "p75": quantile(prices, .75), "max": prices[-1]}
+        listings = []
+        for ask, url, title, city, seen, conf, lang_by, image in found[:CATALOG_LISTINGS]:
+            item = {"url": url, "ask_idr": ask, "city": city, "observed_at": seen, "conf": conf,
+                    "lang": "ID", "lang_by": lang_by, "title": title}
+            if image:
+                item["photo"] = image
+            listings.append(item)
+            newest.append(seen)
+        if record:
+            db.execute(
+                "INSERT INTO snapshot(day, card_set, card_number, n, median, min_idr, max_idr, taken_at) VALUES(?,?,?,?,?,?,?,?) "
+                "ON CONFLICT(day, card_set, card_number) DO UPDATE SET n=excluded.n, median=excluded.median, "
+                "min_idr=excluded.min_idr, max_idr=excluded.max_idr, taken_at=excluded.taken_at",
+                (now.astimezone(WIB).date().isoformat(), cset, cnum, stats["n"], stats["median"],
+                 stats["min"], stats["max"], now.isoformat()))
+        history = [{"date_wib": d, "n": n, "median": m, "min": lo} for d, n, m, lo in db.execute(
+            "SELECT day, n, median, min_idr FROM snapshot WHERE card_set=? AND card_number=? ORDER BY day DESC LIMIT ?",
+            (cset, cnum, HISTORY_DAYS))][::-1]
+        titles = [r[2] for r, _, _ in items]
+        extra.append({"name": majority(guess_name(t) for t in titles), "set_code": cset, "card_number": cnum,
+                      "rarity": majority((classify_title(t)["rarity"] or [""])[0] for t in titles),
+                      "catalog": True, "stats": stats, "history": history, "listings": listings})
+    extra.sort(key=lambda c: (-c["stats"]["n"], c["set_code"], c["card_number"]))
+    cards += extra
     return {"schema_version": 1, "kind": "RAW", "price_type": "OBSERVED_ASKING_ONLY", "language": "ID",
             "source": "toco_public", "generated_at": now.isoformat(),
-            "coverage": {"cards": len(cards), "listings_counted": sum(c["stats"]["n"] for c in cards),
+            "coverage": {"cards": len(cards), "catalog_cards": len(extra),
+                         "listings_counted": sum(c["stats"]["n"] for c in cards),
                          "last_observed_at": max(newest) if newest else now.isoformat()},
             "cards": cards, "unmatched": {"count": unmatched, "language_unverified": unverified}}
 
@@ -420,9 +490,10 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
         return None, {"listing_dibaca": 0}
 
     db = open_db(cfg.db)
-    ctr, to_check = Counter(), []
-    for item in items.values():
-        l = to_listing(item)
+    ctr, to_check, catalog_on = Counter(), [], getattr(cfg, "catalog", False)
+    listings = [l for l in map(to_listing, items.values())]
+    sets_by_total = denominator_sets(l["title"] for l in listings) if catalog_on else {}
+    for l in listings:
         if not l["ask"] or l["ask"] <= 0:
             ctr["tanpa_harga"] += 1
             continue
@@ -433,6 +504,10 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
             m = build_site.match_type(l["title"], types)
             if m:
                 conf, cset, cnum = m[1], types[m[0]]["set"], types[m[0]]["number"]
+            if conf not in MATCHED and catalog_on:
+                key = catalog_key(l["title"], sets_by_total)
+                if key:
+                    conf, (cset, cnum) = CATALOG, key
             ctr["cocok_" + (conf or "tidak")] += 1
         db.execute(
             "INSERT INTO listing(url,title,ask_idr,list_idr,city,stock,image_url,kind,card_set,card_number,conf,first_seen,last_seen) "
@@ -442,19 +517,19 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
             "card_number=excluded.card_number, conf=excluded.conf, last_seen=excluded.last_seen",
             (l["url"], l["title"], l["ask"], l["list"], l["city"], l["stock"], l["image"], kind, cset, cnum,
              conf, now.isoformat(), now.isoformat()))
-        if conf in MATCHED and l["stock"] != 0:
-            to_check.append(l)
+        if (conf in MATCHED or conf == CATALOG) and l["stock"] != 0:
+            to_check.append({**l, "tracked": conf in MATCHED})
     db.commit()
 
     # dry run: classify_fn is None, so only the free text filter runs and nothing is fetched or paid for
     checker = LangChecker(db, None if cfg.dry_run else classify_fn, image_fn, cfg.max_checks, now, cfg.delay / 2, sleep, log,
                           text_only=getattr(cfg, "lang_mode", "photo") == "text")
     # listings whose text already says "Indonesia" first, so a capped budget is spent on likely hits
-    to_check.sort(key=lambda l: text_language(l["title"], l["description"]) != "ID")
+    to_check.sort(key=lambda l: (not l["tracked"], text_language(l["title"], l["description"]) != "ID"))
     for l in to_check:
         checker.ensure(l)
     db.commit()
-    raw = build_raw(db, types, now, cfg.max_age_hours, record=not cfg.dry_run)
+    raw = build_raw(db, types, now, cfg.max_age_hours, record=not cfg.dry_run, catalog=catalog_on)
     db.commit()  # the daily snapshots written by build_raw must survive the run
     db.close()
     ctr.update({"listing_dibaca": len(items), "foto_dicek_sekarang": checker.calls})
@@ -496,6 +571,8 @@ def main(argv=None):
     ap.add_argument("--delay", type=float, default=1.5, help="jeda antar permintaan (detik)")
     ap.add_argument("--queries-limit", type=int, help="batasi jumlah kata kunci (untuk uji)")
     ap.add_argument("--max-checks", type=int, default=150, help="batas cek foto per putaran (membatasi biaya)")
+    ap.add_argument("--no-catalog", dest="catalog", action="store_false",
+                    help="hanya kartu yang dipantau (bawaan: kartu lain yang nomornya terbaca di judul ikut didata)")
     ap.add_argument("--max-age-hours", type=float, default=36, help="listing dihitung kalau terlihat dalam rentang ini")
     ap.add_argument("--provider", choices=("anthropic", "openai"), default=os.environ.get("EGS_LANG_PROVIDER", "anthropic"),
                     help="penyedia model foto (kunci: ANTHROPIC_API_KEY atau OPENAI_API_KEY)")

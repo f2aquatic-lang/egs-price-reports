@@ -54,13 +54,24 @@ Kartu EGS dan RAW digabung lewat `(set_code, card_number)`, huruf kecil dan tanp
 Aturan field:
 
 - `stats` dihitung dari semua listing yang dihitung, bukan hanya yang tercantum di `listings`. `n` boleh lebih besar dari jumlah `listings`.
-- `listings` memuat paling banyak 30 listing yang dihitung, yang termurah. Hanya listing yang dihitung yang dipublikasikan, jadi `conf` hanya `nomor` atau `nama+set`.
+- `listings` memuat paling banyak 30 listing yang dihitung, yang termurah. Hanya listing yang dihitung yang dipublikasikan, jadi `conf` hanya `nomor` atau `nama+set` (kartu yang dipantau) atau `katalog` (kartu katalog, lihat di bawah; paling banyak 10 listing per kartu).
 - Kuantil memakai interpolasi linear, dibulatkan ke rupiah. Urutannya `min <= p25 <= median <= p75 <= max`.
 - `unmatched.count` adalah listing RAW yang tidak cocok dengan kartu mana pun. `language_unverified` adalah listing yang cocok dengan kartu tetapi bahasanya belum terbukti Indonesia dari gambar (belum diperiksa, gambar gagal diambil, atau modelnya menjawab "tidak jelas"). Keduanya tidak dihitung.
 - `history` adalah riwayat median per kartu: satu titik per hari WIB (putaran terakhir hari itu yang dipakai), paling banyak 60 titik, yang tertua di depan. Pengumpul membangunnya dari database lokalnya di VPS, dan papan harga memakainya untuk tren naik-turun dan grafik batang kecil. Putaran yang dibatasi anggaran foto mencatat `n` yang lebih kecil untuk hari itu, jadi baca `n` bersama `median`.
 - `photo` (opsional) adalah alamat foto penuh listing (sekitar 900 piksel) untuk ditampilkan di website. Repo hanya menyimpan alamatnya, bukan fotonya. Foto adalah milik penjual: tampilkan untuk keperluan internal, dan minta izin atau pakai foto sendiri sebelum dipublikasikan.
 - `lang` pada listing yang dipublikasikan selalu `ID`. `lang_by` adalah `image` (dicek dari foto kartu, cara utama) atau `title` (penanda eksplisit di judul, hanya boleh kalau gambar tidak tersedia).
 - `observed_at` di tiap listing adalah waktu listing itu diambil. Semua waktu ISO dengan offset `+00:00`, seperti `latest.json`.
+
+## Katalog: kartu RAW di luar daftar pantau
+
+Pencarian toco mengembalikan banyak kartu lain di samping kartu yang dipantau. Supaya tiap kartu RAW punya harga, pengumpul juga mendata kartu **di luar daftar pantau** (matikan dengan `--no-catalog`):
+
+- Kartunya dikenali dari **kode set dan nomor kartu di judul**, misalnya `Zoroark ex (RR) - 112/193 - ... (MA3)` menjadi `MA3 · 112/193`. Listing tanpa nomor kartu tidak bisa didata sebagai kartu (di data pertama sekitar separuh listing RAW).
+- Kalau judul punya nomor tetapi tidak punya kode set, set dibaca dari angka total kartu (193 berarti MA3), hanya kalau minimal 3 judul berbahasa Indonesia menunjukkan hubungan itu dan 90% darinya sepakat.
+- Nama kartu **ditebak dari judul** (membuang nomor, set, rarity, kata toko), lalu dipilih nama yang paling sering muncul di antara listing kartu itu. Bisa kurang rapi; kuncinya tetap set dan nomor.
+- Di `raw.json`, kartu katalog punya `"catalog": true`, `conf: "katalog"`, dan `coverage.catalog_cards` mencatat jumlahnya. Kartu katalog boleh hanya punya 1 listing, jadi baca `stats.n`.
+- Aturan bahasa sama dengan kartu yang dipantau. Listing kartu yang dipantau dicek foto lebih dulu, baru listing katalog, sehingga anggaran `--max-checks` yang pendek tidak mengorbankan kartu yang dipantau.
+- Kalau judulnya cocok dengan kartu yang dipantau (nomor yang sama), kartu itu tetap dihitung sebagai kartu yang dipantau.
 
 ## Listing yang dihitung
 

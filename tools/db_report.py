@@ -15,8 +15,8 @@ from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from classify import classify_title, text_language  # noqa: E402
-from collect_raw import MATCHED, quantile  # noqa: E402
+from classify import classify_title, guess_name, text_language  # noqa: E402
+from collect_raw import CATALOG, MATCHED, majority, quantile  # noqa: E402
 
 
 def rupiah(n):
@@ -44,6 +44,17 @@ def report(db, hours, top, now=None, out=print):
     for url, title, ask, city, stock, kind, cset, cnum, conf, lang, lang_by in sorted(counted, key=lambda r: (r[6] or "", r[7] or "", r[2])):
         out(f"{cset} {cnum} | {rupiah(ask)} | {conf} | {lang_by} | {city} | {title[:70]}")
 
+    cat = defaultdict(list)
+    for r in raws:
+        if r[8] == CATALOG and r[9] == "ID":
+            cat[(r[6], r[7])].append(r)
+    out(f"\n== Katalog: {len(cat)} kartu lain dari {sum(len(v) for v in cat.values())} listing (bahasa Indonesia terbukti); {top} teratas ==")
+    out("set nomor | nama (tebakan dari judul) | listing | termurah-median-termahal")
+    for (cset, cnum), items in sorted(cat.items(), key=lambda kv: -len(kv[1]))[:top]:
+        prices = sorted(r[2] for r in items)
+        name = majority(guess_name(r[1]) for r in items)
+        out(f"{cset} {cnum} | {name} | {len(items)} | {rupiah(prices[0])} - {rupiah(quantile(prices, .5))} - {rupiah(prices[-1])}")
+
     named = [r for r in raws if r[8] == "nama"]
     out(f"\n== Cocok nama saja, tidak dihitung ({len(named)}); 10 contoh ==")
     for r in named[:10]:
@@ -52,7 +63,7 @@ def report(db, hours, top, now=None, out=print):
     groups = defaultdict(list)
     nonum = 0
     for r in raws:
-        if r[8] in MATCHED or text_language(r[1], "") == "foreign":
+        if r[8] in MATCHED or r[8] == CATALOG or text_language(r[1], "") == "foreign":
             continue
         c = classify_title(r[1])
         if not c["number"]:
@@ -60,7 +71,7 @@ def report(db, hours, top, now=None, out=print):
             continue
         groups[(c["set"] or "?", c["number"])].append((r[2], r[1], text_language(r[1], "")))
     total = sum(len(v) for v in groups.values())
-    out(f"\n== Kartu lain yang muncul (bukan kartu yang dipantau): {len(groups)} nomor kartu dari {total} listing; "
+    out(f"\n== Belum bisa didata sebagai kartu: {len(groups)} nomor kartu dari {total} listing tanpa kode set atau bahasa belum jelas; "
         f"{nonum} listing tanpa nomor kartu ==")
     out("set nomor | listing (teks bilang ID) | termurah-median-termahal | contoh judul")
     ranked = sorted(groups.items(), key=lambda kv: -len(kv[1]))[:top]
@@ -68,7 +79,7 @@ def report(db, hours, top, now=None, out=print):
         prices = sorted(p for p, _, _ in items)
         ids = sum(1 for *_, lg in items if lg == "ID")
         out(f"{cset} {number} | {len(items)} ({ids}) | {rupiah(prices[0])} - {rupiah(quantile(prices, .5))} - {rupiah(prices[-1])} | {items[0][1][:70]}")
-    return {"listings": len(rows), "counted": len(counted), "other_numbers": len(groups)}
+    return {"listings": len(rows), "counted": len(counted), "catalog_cards": len(cat), "other_numbers": len(groups)}
 
 
 def main(argv=None):

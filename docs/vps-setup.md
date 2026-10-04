@@ -133,6 +133,10 @@ systemctl list-timers egs-raw.timer --no-pager
 
 Jam di VPS memakai CST (UTC+8), jadi 01:20, 07:20, 13:20, dan 19:20 CST sama dengan 00:20, 06:20, 12:20, dan 18:20 WIB. Waktu itu sengaja jauh dari timer bot (observasi di menit 30, laporan di menit 10). Coba sekali dengan `sudo systemctl start egs-raw.service`, lalu lihat hasilnya dengan `journalctl -u egs-raw.service -n 50 --no-pager`. Untuk mematikannya: `sudo systemctl disable --now egs-raw.timer`.
 
+## Kartu lain (katalog)
+
+Bawaan: kartu di luar daftar pantau yang kode set dan nomornya terbaca di judul ikut didata (`catalog: true` di `raw.json`). Dengan pilihan C (teks saja) ini gratis dan langsung menambah ratusan kartu. Dengan foto (A atau B), tiap listing katalog dicek fotonya satu kali, jadi putaran awal bisa memakan banyak anggaran: batasi dengan `--max-checks` (bawaan 150, listing kartu yang dipantau didahulukan). Matikan dengan `--no-catalog`. Lihat `tools/db_report.py` untuk melihat kartu apa saja yang terdata.
+
 ## Biaya
 
 - Claude: model bawaan `claude-opus-5-5` (US$4 per juta token masukan, US$20 per juta token keluaran). Yang lebih murah, `claude-haiku-4-5` (US$1 dan US$5), dipilih dengan menambah satu baris `EGS_LANG_MODEL=claude-haiku-4-5` di `/opt/egs-raw/env`. Itu keputusan Anda. Kalau memakai yang murah, ulangi Langkah 4 dulu karena akurasinya belum diuji.

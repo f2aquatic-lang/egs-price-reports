@@ -80,6 +80,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:now
 td.title{min-width:220px}
 .badge{display:inline-block;font:500 11px var(--mono);border:1px solid var(--line);border-radius:4px;padding:0 6px;margin-left:6px;color:var(--ink-2);white-space:nowrap}
 .tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.count{color:var(--ink-2);font-size:13px}
 .chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 14px;font:500 13px var(--body);cursor:pointer}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:7px 12px;font:14px var(--body)}
@@ -125,7 +126,8 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
   </section>
 
   <section class="sec" id="rawonly" hidden>
-    <div class="sechead"><h2>RAW tanpa slab yang dipantau</h2><p>Kartu bahasa Indonesia yang belum di-slab dan belum punya slab di daftar pantau.</p></div>
+    <div class="sechead"><h2>RAW tanpa slab yang dipantau</h2><p>Kartu bahasa Indonesia yang belum di-slab dan belum punya slab di daftar pantau. Nama kartu dibaca dari judul listing, jadi bisa kurang rapi.</p></div>
+    <div class="tools" id="rawonly-tools"></div>
     <div class="panel"><div class="tablewrap" id="rawonly-body"></div></div>
   </section>
 
@@ -385,17 +387,35 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
 
   if (D.raw_only.length) {
     $('#rawonly').hidden = false;
-    $('#rawonly-body').append(h('table', null,
-      h('thead', null, h('tr', null, ['Kartu', 'Set · No', 'Listing', 'Termurah', 'Median', 'Termahal'].map(function(c){ return h('th', {text: c}); }))),
-      h('tbody', null, D.raw_only.map(function(c){
-        return h('tr', null,
-          h('td', {text: c.name + (c.rarity ? ' ' + c.rarity : '')}),
-          h('td', {'class': 'num', text: c.set + ' · ' + c.number}),
-          h('td', {'class': 'num', text: String(c.n)}),
-          h('td', {'class': 'num', text: rp(c.min)}),
-          h('td', {'class': 'num', text: rp(c.median)}),
-          h('td', {'class': 'num', text: rp(c.max)}));
-      }))));
+    var ro = {q: '', all: false}, LIMIT = 60;
+    var roBox = $('#rawonly-body'), roCount = h('small', {'class': 'count'});
+    var roSearch = h('input', {type: 'search', placeholder: 'Cari nama atau nomor kartu (mis. Zoroark atau 112/193)', 'aria-label': 'Cari kartu RAW',
+      oninput: function(e){ ro.q = e.target.value.trim().toLowerCase(); ro.all = false; drawRawOnly(); }});
+    $('#rawonly-tools').append(roSearch, roCount);
+    function trendText(t){ return t ? (t.pct > 0 ? '↑ ' : t.pct < 0 ? '↓ ' : '') + Math.abs(t.pct).toLocaleString('id-ID') + '% / ' + t.days + ' hr' : '—'; }
+    function drawRawOnly(){
+      var rows = D.raw_only.filter(function(c){
+        return !ro.q || (c.name + ' ' + c.set + ' ' + c.number + ' ' + c.rarity).toLowerCase().indexOf(ro.q) >= 0; });
+      var shown = ro.all ? rows : rows.slice(0, LIMIT);
+      roCount.textContent = shown.length + ' dari ' + rows.length + ' kartu' + (rows.length < D.raw_only.length ? ' (total ' + D.raw_only.length + ')' : '');
+      if (!rows.length) { roBox.replaceChildren(h('div', {'class': 'empty', text: 'Tidak ada kartu yang cocok.'})); return; }
+      var nodes = [h('table', null,
+        h('thead', null, h('tr', null, ['Kartu', 'Set · No', 'Listing', 'Termurah', 'Median', 'Termahal', 'Tren'].map(function(c){ return h('th', {text: c}); }))),
+        h('tbody', null, shown.map(function(c){
+          return h('tr', null,
+            h('td', {text: c.name + (c.rarity ? ' ' + c.rarity : '')}),
+            h('td', {'class': 'num', text: c.set + ' · ' + c.number}),
+            h('td', {'class': 'num', text: String(c.n)}),
+            h('td', {'class': 'num', text: rp(c.min)}),
+            h('td', {'class': 'num', text: rp(c.median)}),
+            h('td', {'class': 'num', text: rp(c.max)}),
+            h('td', {'class': 'num', text: trendText(c.trend)}));
+        })))];
+      if (shown.length < rows.length) nodes.push(h('button', {'class': 'chip', type: 'button', text: 'Tampilkan semua ' + rows.length,
+        onclick: function(){ ro.all = true; drawRawOnly(); }}));
+      roBox.replaceChildren.apply(roBox, nodes);
+    }
+    drawRawOnly();
   }
 
   var st = {grade: 'all', q: '', sort: 'desc'};

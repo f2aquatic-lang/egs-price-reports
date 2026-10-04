@@ -73,8 +73,10 @@ def validate(d):
                 err(f"{label}: listing lang_by {l['lang_by']!r} must be image or title")
             if "photo" in l and not str(l["photo"]).startswith(("http://", "https://")):
                 err(f"{label}: photo must be an http(s) address")
-            if l["conf"] not in ("nomor", "nama+set"):
-                err(f"{label}: listing conf {l['conf']!r} must be nomor or nama+set (only counted listings are published)")
+            allowed = ("katalog",) if c.get("catalog") else ("nomor", "nama+set")
+            if l["conf"] not in allowed:
+                err(f"{label}: listing conf {l['conf']!r} must be {' or '.join(allowed)} "
+                    f"({'a catalog card' if c.get('catalog') else 'a tracked card'}; only counted listings are published)")
             obs = datetime.fromisoformat(l["observed_at"])
             if obs > gen:
                 err(f"{label}: observed_at is after generated_at")
@@ -90,12 +92,15 @@ def validate(d):
                     break
                 if h["n"] < 1 or not (0 < h["min"] <= h["median"]):
                     err(f"{label}: history {h['date_wib']} must satisfy n >= 1 and 0 < min <= median")
-        if s["n"] < 5:
+        if s["n"] < 5 and not c.get("catalog"):
             warn(f"{label}: only {s['n']} counted listing(s)")
 
     cov = d["coverage"]
     if cov.get("cards") != len(d["cards"]):
         err(f"coverage.cards={cov.get('cards')} but {len(d['cards'])} cards")
+    catalog_cards = sum(1 for c in d["cards"] if c.get("catalog"))
+    if cov.get("catalog_cards", catalog_cards) != catalog_cards:
+        err(f"coverage.catalog_cards={cov.get('catalog_cards')} but {catalog_cards} cards have catalog=true")
     if cov.get("listings_counted") != counted:
         err(f"coverage.listings_counted={cov.get('listings_counted')} but stats.n sums to {counted}")
     if newest and cov.get("last_observed_at") != newest.isoformat():

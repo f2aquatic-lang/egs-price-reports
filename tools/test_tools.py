@@ -66,6 +66,32 @@ class Classify(unittest.TestCase):
         self.assertEqual((r["number"], r["set"], r["condition"]), ("234/193", "MA3", "nm"))
 
 
+GUESS_NAMES = [  # real toco titles (VPS run, 2026-10-04) -> the card name a human reads
+    ("Kartu Pokemon Fezandipiti ex 114/193 RR Evolusi Mega Impian ex MA3 Indonesia", "Fezandipiti ex"),
+    ("Mega Gardevoir ex (RR) - 060/126 - Mega Evolusi (MA1) - Pokemon TCG Indonesia", "Mega Gardevoir ex"),
+    ("MEGA EMBOAR EX RR MA4 I 028/123 LEDAKAN PENIADA", "Mega Emboar ex"),
+    ("Archaludon ex MA3 | 122/193 RR - Pokemon TCG Indonesia", "Archaludon ex"),
+    ("Kartu Pokemon Mega Mawile ex 094/126 RR Evolusi Mega MA1 Indonesia", "Mega Mawile ex"),
+    ("Salazzle 128/123 AR | MA4 Ledakan Peniada | Pokemon TCG Indonesia", "Salazzle"),
+    ("Ampharos MA5 | 173/164 AR - Pokemon TCG Indonesia", "Ampharos"),
+    ("Pokemon TCG Indonesian Ho-Oh Ethan ex MA3 021/193 RR Evolusi Mega Impian ex", "Ho-Oh Ethan ex"),
+    ("Drakloak AR MA3 212/193 POKEMON TCG INDONESA", "Drakloak"),
+    ("pokemon (ID) mega abomasnow ex - MA1 036/126 - RR", "Mega Abomasnow ex"),
+    ("Zoroark ex (RR) - 112/193 - Impian Mega ex (MA3) - Pokemon TCG Indonesia", "Zoroark ex"),
+    ("SCORBUNNY AR MA4 I 129/123 LEDAKAN PENIADA", "Scorbunny"),
+    ("TANGELA ERIKA AR MA4 I 124 / 123 INDONESIA", "Tangela Erika"),
+    ("kartu pokemon bahasa indonesia mega impian ma3 zekrom N", "Zekrom N"),
+    ("Mega Charizard X Ex MA ma3 kartu pokemon tcg indo", "Mega Charizard X ex"),
+]
+
+
+class GuessName(unittest.TestCase):
+    def test_real_titles(self):
+        from classify import guess_name
+        for title, name in GUESS_NAMES:
+            self.assertEqual(guess_name(title), name, title)
+
+
 class Match(unittest.TestCase):
     TYPES = [
         {"name": "Pikachu ex", "set": "SV8s", "number": "211/182", "rarity": "SR"},
@@ -169,6 +195,22 @@ class RawFormat(unittest.TestCase):
         d["cards"][0]["listings"][0]["photo"] = "https://img.example/a.webp"
         self.assertEqual(validate_raw.validate(d)[0], [])
 
+    def test_catalog_cards_use_their_own_conf_and_need_no_five_listings(self):
+        d = good_raw()
+        card = d["cards"][0]
+        card["catalog"] = True
+        self.assertEqual(len(validate_raw.validate(d)[0]), 3)  # tracked-style conf on a catalog card
+        for l in card["listings"]:
+            l["conf"] = "katalog"
+        d["coverage"]["catalog_cards"] = 1
+        errors, warnings = validate_raw.validate(d)
+        self.assertEqual((errors, warnings), ([], []))
+        d["coverage"]["catalog_cards"] = 0
+        self.assertTrue(any("catalog_cards" in e for e in validate_raw.validate(d)[0]))
+        d["cards"][0]["catalog"] = False
+        d["cards"][0]["listings"][0]["conf"] = "katalog"
+        self.assertTrue(any("tracked card" in e for e in validate_raw.validate(d)[0]))
+
     def test_non_indonesian_listing_is_rejected(self):
         d = good_raw()
         d["cards"][0]["listings"][0]["lang"] = "JP"
@@ -255,6 +297,19 @@ API_CATALOG = [
     api_item("a-7", "MEGA CHARIZARD X EX SR", 600000),
     api_item("a-8", "Pikachu ex SAR 234/193 MA3 Japanese", 250000),  # foreign by text: no photo needed
     api_item("a-9", "Pikachu ex 234/193 MA3 ID", 350000, stock=0),  # sold out
+]
+
+
+CATALOG_EXTRA = [  # cards we do not track; the card is known by the set and number in the title
+    api_item("k-1", "Kartu Pokemon Fezandipiti ex 114/193 RR Evolusi Mega Impian ex MA3 Indonesia", 15000),
+    api_item("k-2", "Fezandipiti ex MA3 | 114/193 RR - Pokemon TCG Indonesia", 18000),
+    api_item("k-3", "Fezandipiti ex 114/193 RR Pokemon TCG Indo", 12000),                 # no set code: 193 means MA3
+    api_item("k-4", "Salazzle 128/123 AR | MA4 Ledakan Peniada | Pokemon TCG Indonesia", 50000),
+    api_item("k-5", "Gardevoir ex MA3 | 71/193 RR Indonesia", 9000),
+    api_item("k-6", "Mega Venusaur ex 003/132 MEG en pokemon tcg english mega evolution", 30000),  # foreign by text
+    api_item("k-7", "Mega Absol ex MA1 086/126 RR", 8000),                                  # language only in the photo
+    api_item("k-8", "Mega Absol ex MA1 086/126 RR NM", 9500, photo="https://img.example/jp-8.webp"),  # Japanese photo
+    api_item("k-9", "Pokemon Pikachu ex SAR 234/193 MA3 Indo", 1100000, stock=0),            # sold out
 ]
 
 
@@ -418,7 +473,68 @@ class Collector(unittest.TestCase):
         text = "\n".join(lines)
         self.assertEqual((res["counted"], res["listings"]), (2, 9))
         self.assertIn("MA3 234/193 | Rp380.000 | nomor", text)
-        self.assertIn("== Kartu lain yang muncul", text)
+        self.assertIn("== Belum bisa didata", text)
+
+    def catalog_cards(self, raw):
+        return {(c["set_code"], c["card_number"]): c for c in raw["cards"] if c.get("catalog")}
+
+    def test_catalog_adds_untracked_cards_known_by_set_and_number(self):
+        self.catalog = API_CATALOG + CATALOG_EXTRA
+        raw, summary = self.go(lang_mode="text", catalog=True)
+        self.assertEqual(validate_raw.validate(raw)[0], [])
+        cards = self.catalog_cards(raw)
+        self.assertEqual(sorted(cards), [("MA3", "114/193"), ("MA3", "71/193"), ("MA4", "128/123")])
+        fez = cards[("MA3", "114/193")]
+        self.assertEqual((fez["name"], fez["rarity"], fez["stats"]["n"], fez["stats"]["min"], fez["stats"]["max"]),
+                         ("Fezandipiti ex", "RR", 3, 12000, 18000))
+        self.assertTrue(all(l["conf"] == "katalog" and l["lang_by"] == "title" for l in fez["listings"]))
+        self.assertEqual(raw["coverage"]["catalog_cards"], 3)
+        self.assertFalse(raw["cards"][0].get("catalog"))  # tracked cards come first
+        self.assertEqual(summary["cocok_katalog"], 7)     # k-1..k-5 and k-7/k-8; k-6 shows no set code and its total is unknown
+
+    def test_db_report_lists_catalog_cards_with_guessed_names(self):
+        self.catalog = API_CATALOG + CATALOG_EXTRA
+        self.go(lang_mode="text", catalog=True)
+        db = sqlite3.connect(self.cfg.db)
+        lines = []
+        try:
+            res = db_report.report(db, 48, 5, now=datetime(2026, 10, 3, 2, 0, tzinfo=timezone.utc), out=lines.append)
+        finally:
+            db.close()
+        self.assertEqual(res["catalog_cards"], 3)
+        self.assertIn("MA3 114/193 | Fezandipiti ex | 3 | Rp12.000 - Rp15.000 - Rp18.000", "\n".join(lines))
+
+    def test_catalog_off_keeps_only_tracked_cards(self):
+        self.catalog = API_CATALOG + CATALOG_EXTRA
+        raw, _ = self.go(lang_mode="text", catalog=False)
+        self.assertEqual(self.catalog_cards(raw), {})
+        self.assertEqual(raw["coverage"]["catalog_cards"], 0)
+
+    def test_catalog_listings_are_language_checked_from_the_photo(self):
+        self.catalog = API_CATALOG + CATALOG_EXTRA
+        raw, _ = self.go(catalog=True)
+        absol = self.catalog_cards(raw)[("MA1", "86/126")]
+        self.assertEqual([(l["ask_idr"], l["lang_by"]) for l in absol["listings"]], [(8000, "image")])  # the JP photo is dropped
+        self.assertEqual(validate_raw.validate(raw)[0], [])
+
+    def test_tracked_listings_are_checked_before_catalog_ones_when_the_budget_is_short(self):
+        self.catalog = API_CATALOG + CATALOG_EXTRA
+        raw, _ = self.go(catalog=True, max_checks=3)
+        self.assertEqual(raw["cards"][0]["stats"]["n"], 2)  # the tracked Pikachu got the three checks
+        self.assertEqual(self.catalog_cards(raw).get(("MA1", "86/126")), None)
+
+    def test_sold_out_catalog_listing_is_not_counted(self):
+        self.catalog = [CATALOG_EXTRA[-1]]
+        raw, _ = self.go(lang_mode="text", catalog=True)
+        self.assertEqual(raw["cards"], [])
+
+    def test_set_is_learned_from_the_card_total_only_when_it_is_unambiguous(self):
+        titles = ["A ex MA3 | 1/193 RR Indonesia", "B ex MA3 | 2/193 RR Indonesia", "C ex MA3 | 3/193 RR Indonesia",
+                  "D ex M2a 4/193 Japanese", "E ex MA9 5/200 Indonesia", "F ex MA8 6/200 Indonesia"]
+        self.assertEqual(collect_raw.denominator_sets(titles), {"193": "MA3"})
+        self.assertEqual(collect_raw.catalog_key("Fez ex 114/193 RR", {"193": "MA3"}), ("MA3", "114/193"))
+        self.assertIsNone(collect_raw.catalog_key("Fez ex 114/777 RR", {"193": "MA3"}))
+        self.assertIsNone(collect_raw.catalog_key("Booster Box MA3 Indonesia", {}))
 
     def test_no_listings_writes_nothing(self):
         self.catalog = []
@@ -762,6 +878,45 @@ class BrowserRender(unittest.TestCase):
         self.assertEqual(errors, [])
         self.assertIn("↑ 12% dalam 7 hari", text)
         self.assertEqual(bars, 2)
+
+    def test_board_raw_only_table_caps_rows_searches_and_expands(self):
+        from playwright.sync_api import sync_playwright
+        import copy
+        raw = good_raw()
+        base = raw["cards"][0]
+        for i in range(1, 121):  # 120 catalog cards on top of the tracked one
+            c = copy.deepcopy(base)
+            c.update(name=f"Karu {i}", set_code="MA3", card_number=f"{i}/193", catalog=True, rarity="RR")
+            for l in c["listings"]:
+                l["conf"] = "katalog"
+                l["url"] += f"-{i}"
+            raw["cards"].append(c)
+        raw["coverage"].update(cards=len(raw["cards"]), listings_counted=3 * len(raw["cards"]), catalog_cards=120)
+        self.assertEqual(validate_raw.validate(raw)[0], [])
+        html = build_site.render(build_site.build(tiny_latest(), raw), True)
+        path = os.path.join(tempfile.mkdtemp(), "board.html")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(html)
+        errors = []
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path=chrome_path(), headless=True,
+                                        args=["--no-sandbox"] if os.geteuid() == 0 else [])
+            page = browser.new_page()
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            page.goto("file://" + path)
+            page.wait_for_timeout(300)
+            rows = lambda: page.evaluate("() => document.querySelectorAll('#rawonly-body tbody tr').length")
+            first = (rows(), page.evaluate("() => document.querySelector('#rawonly .count').textContent"))
+            page.fill("#rawonly-tools input", "karu 77")
+            searched = (rows(), page.evaluate("() => document.querySelector('#rawonly .count').textContent"))
+            page.fill("#rawonly-tools input", "")
+            page.click("#rawonly-body button")
+            expanded = rows()
+            browser.close()
+        self.assertEqual(errors, [])
+        self.assertEqual(first, (60, "60 dari 120 kartu"))
+        self.assertEqual(searched[0], 1)
+        self.assertEqual(expanded, 120)
 
     def test_browser_probe_reports_listings_data_requests_and_serial(self):
         script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "probe_toco_browser.py")

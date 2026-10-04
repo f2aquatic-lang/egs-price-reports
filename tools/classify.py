@@ -90,6 +90,32 @@ def text_language(title, description=""):
     return "unknown"
 
 
+NAME_NOISE = re.compile(
+    r"evolusi\s+mega(?:\s+impian)?(?:\s+ex)?|impian\s+mega(?:\s+ex)?|mega\s+evolusi|mega\s+impian|ledakan\s+peniada|"
+    r"kartu|pokemon|pok\u00e9mon|\btcg\b|bahasa|indonesia\w*|indonesa|\bindo\b|\[id\]|\(id\)|\bid\b|"
+    r"original|asli|ori\b|ready|stok|murah|holo|foil|single|card|mint|near|\bnm\b|\blp\b|\bmp\b|\bma\b|\bi\b", re.I)
+NAME_TRASH = re.compile(r"[^\w\s'\-]|\d", re.U)
+
+
+def guess_name(title):
+    """Best-effort card name from a listing title: drop numbers, set, rarity, language and shop words.
+
+    Only meant for cards we do not track; the caller votes across listings of the same card.
+    """
+    t = re.sub(r"^Sisa \d+ ", "", title.strip())
+    t = NUMBER.sub(" ", t)
+    t = NAME_NOISE.sub(" ", t)
+    t = SET_CODE.sub(" ", t)
+    t = RARITY.sub(" ", t.upper() if t.isupper() else t)
+    t = NAME_TRASH.sub(" ", t)
+    out = []
+    for w in t.split():
+        if w.strip("-'") == "":
+            continue
+        out.append("ex" if w.lower() == "ex" else "-".join(p[:1].upper() + p[1:].lower() for p in w.split("-")))
+    return " ".join(out[:4])
+
+
 if __name__ == "__main__":
     for title in sys.argv[1:]:
         print(json.dumps(classify_title(title), ensure_ascii=False))
