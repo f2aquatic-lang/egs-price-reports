@@ -1146,6 +1146,18 @@ class FetchCatalog(unittest.TestCase):
         self.assertFalse(data["sets"][0]["complete"])
         self.assertTrue(any("status 404" in l for l in self.logs))
 
+    def test_only_one_fetch_per_database_at_a_time(self):
+        import fcntl
+        held = open(self.args.db + ".lock", "w")
+        fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:
+            self.assertIsNone(self.go(sets="MA6"))
+            self.assertTrue(any("Sudah ada pengambilan katalog yang berjalan" in l for l in self.logs))
+            self.assertEqual(self.calls, [])                                    # it did not touch the site either
+        finally:
+            held.close()
+        self.assertIsNotNone(self.go(sets="MA6"))                               # the lock is released with the process or file
+
     def test_default_include_takes_booster_sets_not_decks_or_promos(self):
         import re
         pick = lambda code: bool(re.search(fetch_catalog.DEFAULT_INCLUDE, code))

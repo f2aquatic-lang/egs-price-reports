@@ -16,6 +16,7 @@ Usage:
 Needs only the Python standard library.
 """
 import argparse
+import fcntl
 import html
 import json
 import os
@@ -142,7 +143,7 @@ def product_name(product):
 
 def open_db(path):
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-    db = sqlite3.connect(path)
+    db = sqlite3.connect(path, timeout=60)
     db.executescript("""
         CREATE TABLE IF NOT EXISTS expansion(code TEXT PRIMARY KEY, series TEXT, released TEXT, product TEXT, name TEXT,
             total INTEGER, pages INTEGER, listed_at TEXT, position INTEGER);
@@ -294,6 +295,21 @@ def export(db, codes, now):
 
 def run(args, get=http_get, now=None, sleep=time.sleep, log=print):
     now = now or datetime.now(timezone.utc)
+    os.makedirs(os.path.dirname(os.path.abspath(args.db)), exist_ok=True)
+    lock = open(args.db + ".lock", "w")  # one fetch at a time per database: two runs would fight over the same SQLite file
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        log(f"Sudah ada pengambilan katalog yang berjalan untuk {args.db}. Tunggu selesai, atau hentikan dengan: pkill -f fetch_catalog")
+        lock.close()
+        return None
+    try:
+        return _run(args, get, now, sleep, log)
+    finally:
+        lock.close()
+
+
+def _run(args, get, now, sleep, log):
     db = open_db(args.db)
     fx = Fetcher(get, args.delay, args.max_requests, sleep, log)
     try:
