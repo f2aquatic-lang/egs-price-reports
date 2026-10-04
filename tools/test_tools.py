@@ -22,6 +22,7 @@ from urllib.request import urlopen
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_site  # noqa: E402
 import collect_raw  # noqa: E402
+import db_report  # noqa: E402
 import probe_toco  # noqa: E402
 import probe_toco_fields  # noqa: E402
 import probe_toco_next  # noqa: E402
@@ -405,6 +406,19 @@ class Collector(unittest.TestCase):
         raw, _ = self.go(lang_mode="photo", now=datetime(2026, 10, 5, 1, 0, tzinfo=timezone.utc))
         self.assertEqual(self.api_calls, 3)  # a day later the two title-based answers are checked against their photos
         self.assertTrue(all(l["lang_by"] == "image" for l in raw["cards"][0]["listings"]))
+
+    def test_db_report_lists_counted_listings_and_other_card_numbers(self):
+        self.go(lang_mode="text")
+        db = sqlite3.connect(self.cfg.db)
+        lines = []
+        try:
+            res = db_report.report(db, 48, 5, now=datetime(2026, 10, 3, 2, 0, tzinfo=timezone.utc), out=lines.append)
+        finally:
+            db.close()
+        text = "\n".join(lines)
+        self.assertEqual((res["counted"], res["listings"]), (2, 9))
+        self.assertIn("MA3 234/193 | Rp380.000 | nomor", text)
+        self.assertIn("== Kartu lain yang muncul", text)
 
     def test_no_listings_writes_nothing(self):
         self.catalog = []
