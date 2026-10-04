@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_site  # noqa: E402
 import collect_raw  # noqa: E402
 import db_report  # noqa: E402
+import fetch_catalog  # noqa: E402
 import probe_pokemon_card  # noqa: E402
 import probe_toco  # noqa: E402
 import probe_toco_fields  # noqa: E402
@@ -874,6 +875,126 @@ class ProbePokemonCard(unittest.TestCase):
     def test_url_shapes(self):
         self.assertEqual(probe_pokemon_card.pattern("https://x/id/card-search/list/?pageNo=3&expansionCodes=MA1"),
                          "/id/card-search/list/?expansionCodes,pageNo")
+
+
+def official_site():
+    """Pages shaped like the real asia.pokemon-card.com markup seen on 2026-10-04 (home tiles, list items, card page)."""
+    def tile(code, series, date, name):
+        return (f'<li class="expansion"><a class="expansionLink" href="/id/card-search/list/?expansionCodes={code}">'
+                f'<div class="leftColumn"><div class="imageContainer"><img src="/id/card-img/products/{code}.png"></div></div>'
+                f'<div class="rightColumn"><div class="seriesBlock"><span class="series">{series}</span> <span class="name">{name}</span></div>'
+                f'<time class="relaseDate" datetime="{date}"><span>{date}</span></time></div></a></li>')
+    pages = {
+        "/id/card-search/": '<ul class="expansionList">' + tile("MA6", "Evolusi Mega", "09-16-2026", "30th CELEBRATION")
+                            + tile("SV8S", "Scarlet &amp; Violet", "11-01-2025", "Kilat Rasi") + '</ul>'
+                            '<ul class="pagination"><li class="paginationItem current"><span>1</span></li>'
+                            '<li class="paginationItem"><a href="/id/card-search/?pageNo=2">2</a></li></ul>',
+        "/id/card-search/?pageNo=2": '<ul class="expansionList">' + tile("SM1", "Sun &amp; Moon", "01-01-2017", "Lama") + '</ul>',
+    }
+
+    def card(cid):
+        return (f'<li class="card"> <a href="/id/card-search/detail/{cid}/"> <div class="imageContainer loading">'
+                f'<img class="lazy" src data-original="/id/card-img/id{cid:08d}.png" alt > </div> </a> </li>')
+
+    def listing(code, ids, page_no, total, pages):
+        chunk = ids[(page_no - 1) * 20: page_no * 20]
+        return (f'<div class="resultTotalPages"><p>Hasil Pencarian <span>{total}</span> buah <span>Halaman {page_no} / Total {pages} halaman</span></p></div>'
+                f'<ul class="list">{"".join(card(c) for c in chunk)}</ul>')
+
+    def detail(cid, name, number, code, product, extra=""):
+        num = f'<span class="alpha"> J </span> <span class="collectorNumber"> {number} </span>' if number else ""
+        return (f'<title>{name} | Situs Web Pelatih</title><h1 class="pageHeader cardDetail"> <span class="evolveMarker"> basic </span> {name} </h1>'
+                f'<div class="cardDetailPage"><section class="imageColumn"><div class="cardImage"> <img src="/id/card-img/id{cid:08d}.png"> </div></section>'
+                f'<section class="expansionColumn"><p><span class="expansionSymbol"><img src="/mark/x.png"></span> {num}</p></section>'
+                f'<section class="expansionLinkColumn"><h3>Ada di produk</h3>{extra}'
+                f'<a href="/id/card-search/list/?expansionCodes={code}"> Booster Pack &quot;{product}&quot; </a></section></div>')
+    ma6 = list(range(1000, 1025))  # 25 cards: two list pages
+    for i, cid in enumerate(ma6, 1):
+        # card 1002 is an energy without a collector number; card 1003 was also printed in another product (listed first)
+        pages[f"/id/card-search/detail/{cid}/"] = detail(
+            cid, f"Kartu {i}", None if cid == 1002 else f"{i:03d}/130", "MA6", "30th CELEBRATION",
+            extra='<a href="/id/card-search/list/?expansionCodes=MATL"> Booster Pack &quot;Lain&quot; </a>' if cid == 1003 else "")
+    for n in (1, 2):
+        pages[f"/id/card-search/list/?pageNo={n}&expansionCodes=MA6"] = listing("MA6", ma6, n, 25, 2)
+    sv = [2000, 2001]
+    pages["/id/card-search/list/?pageNo=1&expansionCodes=SV8S"] = listing("SV8S", sv, 1, 2, 1)
+    for i, cid in enumerate(sv, 1):
+        pages[f"/id/card-search/detail/{cid}/"] = detail(cid, f"Sv {i}", f"{i:03d}/182", "SV8S", "Kilat Rasi")
+    return pages
+
+
+class FetchCatalog(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.pages, self.calls = official_site(), []
+        self.args = argparse.Namespace(
+            db=os.path.join(self.tmp.name, "c.sqlite"), out=os.path.join(self.tmp.name, "catalog.json"), delay=0, max_requests=None,
+            sets=None, include=fetch_catalog.DEFAULT_INCLUDE, refresh_days=30, list_sets=False)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def get(self, url):
+        path = url.replace(fetch_catalog.BASE, "")
+        self.calls.append(path)
+        return (200, self.pages[path]) if path in self.pages else (404, "")
+
+    def go(self, **over):
+        for k, v in over.items():
+            setattr(self.args, k, v)
+        self.logs = []
+        return fetch_catalog.run(self.args, get=self.get, now=datetime(2026, 10, 4, 12, 0, tzinfo=timezone.utc),
+                                 sleep=lambda s: None, log=self.logs.append)
+
+    def test_home_tiles_give_code_series_and_release_date(self):
+        tiles, last = fetch_catalog.parse_home(self.pages["/id/card-search/"])
+        self.assertEqual((last, [(t["code"], t["series"], t["released"]) for t in tiles]),
+                         (2, [("MA6", "Evolusi Mega", "2026-09-16"), ("SV8S", "Scarlet & Violet", "2025-11-01")]))
+        self.assertIn("30th CELEBRATION", tiles[0]["texts"])
+
+    def test_list_sets_reads_every_home_page_and_nothing_else(self):
+        self.go(list_sets=True)
+        self.assertEqual(self.calls, ["/id/card-search/", "/id/card-search/?pageNo=2"])
+        self.assertTrue(any(l.startswith("SM1") and "2017-01-01" in l for l in self.logs))
+
+    def test_full_run_collects_names_numbers_images_and_set_names(self):
+        data = self.go()
+        sets = {s["code"]: s for s in data["sets"]}
+        self.assertEqual(sorted(sets), ["MA6", "SV8S"])                       # SM1 does not match the default --include
+        self.assertEqual((sets["MA6"]["name"], sets["MA6"]["released"], sets["MA6"]["total"], sets["MA6"]["complete"]),
+                         ("30th CELEBRATION", "2026-09-16", 25, True))        # product of MA6, not the other product on card 1003
+        ma6 = [c for c in data["cards"] if c["set"] == "MA6"]
+        self.assertEqual(len(ma6), 24)                                        # the card without a number is left out
+        self.assertEqual((ma6[0]["number"], ma6[0]["name"], ma6[0]["num"], ma6[0]["den"], ma6[0]["evolve"]), ("001/130", "Kartu 1", 1, 130, "basic"))
+        self.assertEqual(ma6[0]["image"], "/id/card-img/id00001000.png")
+        with open(self.args.out, encoding="utf-8") as fh:
+            self.assertEqual(json.load(fh)["cards"], data["cards"])
+
+    def test_a_stopped_run_continues_without_refetching(self):
+        first = self.go(sets="MA6", max_requests=8)                            # home 2 + list 2 + 4 cards
+        self.assertFalse(first["sets"][0]["complete"])
+        self.assertEqual(first["sets"][0]["fetched"], 4)
+        used_before = len(self.calls)
+        second = self.go(sets="MA6", max_requests=None)
+        self.assertTrue(second["sets"][0]["complete"])
+        detail_calls = [c for c in self.calls[used_before:] if "/detail/" in c]
+        self.assertEqual(len(detail_calls), 21)                                # only the 21 cards still missing
+        self.assertFalse(any("list/?pageNo" in c for c in self.calls[used_before:]))  # lists are fresh for 30 days
+
+    def test_detail_page_without_a_number_or_with_odd_markup_does_not_crash(self):
+        d = fetch_catalog.parse_detail("<html><h1 class='x'>nothing</h1></html>")
+        self.assertEqual((d["name"], d["number"], d["image"], d["products"]), (None, None, None, {}))
+
+    def test_a_missing_page_is_skipped_and_reported(self):
+        del self.pages["/id/card-search/detail/1005/"]
+        data = self.go(sets="MA6")
+        self.assertEqual(len([c for c in data["cards"] if c["set"] == "MA6"]), 23)
+        self.assertFalse(data["sets"][0]["complete"])
+        self.assertTrue(any("status 404" in l for l in self.logs))
+
+    def test_product_name_takes_the_quoted_part(self):
+        self.assertEqual(fetch_catalog.product_name('Booster Pack "Evolusi Mega"'), "Evolusi Mega")
+        self.assertEqual(fetch_catalog.product_name("Starter Deck"), "Starter Deck")
 
 
 class ProbeNext(unittest.TestCase):
