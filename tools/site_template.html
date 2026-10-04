@@ -81,6 +81,7 @@ td.title{min-width:220px}
 .badge{display:inline-block;font:500 11px var(--mono);border:1px solid var(--line);border-radius:4px;padding:0 6px;margin-left:6px;color:var(--ink-2);white-space:nowrap}
 .tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .count{color:var(--ink-2);font-size:13px}
+.toggle{display:inline-flex;align-items:center;gap:6px;color:var(--ink-2);font-size:13px;cursor:pointer}
 .setinfo{display:flex;flex-direction:column;gap:2px;margin:10px 0 2px}
 .setinfo h3{margin:0;font:600 18px/1.25 var(--display)}
 .setinfo h3 small{font:400 13px var(--body);color:var(--ink-2);margin-left:6px}
@@ -399,7 +400,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
   if (D.raw_cards && D.raw_cards.length) {
     $('#rawonly').hidden = false;
     var LIMIT = 80;
-    var ro = {set: D.sets[0].code, q: '', all: false};
+    var ro = {set: D.sets[0].code, q: '', all: false, priced: false};
     var bySet = {};
     D.sets.forEach(function(m){ bySet[m.code] = m; });
     var setsBox = $('#rawonly-sets'), infoBox = $('#rawonly-info'), roBox = $('#rawonly-body'), roCount = h('small', {'class': 'count'});
@@ -420,7 +421,9 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
     });
     var roSearch = h('input', {type: 'search', placeholder: 'Cari nama atau nomor kartu di semua set (mis. Zoroark atau 112/193)', 'aria-label': 'Cari kartu RAW',
       oninput: function(e){ ro.q = e.target.value.trim().toLowerCase(); ro.all = false; draw(); }});
-    $('#rawonly-tools').append(roSearch, roCount);
+    var hideBox = h('label', {'class': 'toggle'}, h('input', {type: 'checkbox', id: 'hide-unpriced',
+      onchange: function(e){ ro.priced = e.target.checked; ro.all = false; draw(); }}), ' Sembunyikan kartu tanpa harga');
+    $('#rawonly-tools').append(roSearch, hideBox, roCount);
     function trendText(t){ return t ? (t.pct > 0 ? '↑ ' : t.pct < 0 ? '↓ ' : '') + Math.abs(t.pct).toLocaleString('id-ID') + '% / ' + t.days + ' hr' : '—'; }
     function dateLabel(m){ return m.released_label ? 'dirilis ' + m.released_label : null; }
     function drawInfo(){
@@ -429,8 +432,12 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
       if (!m) { infoBox.replaceChildren(h('h3', {text: 'Semua set'}), h('p', {text: D.sets.length + ' set · ' + D.raw_cards.length + ' kartu punya harga RAW'})); return; }
       var facts = [dateLabel(m)];
       var denom = m.total || null;
-      facts.push(m.cards + (denom ? ' dari ' + denom + ' kartu' : ' kartu') + ' punya harga RAW (' + m.listings + ' listing)');
-      if (!denom) facts.push('nomor tercetak /' + m.base);
+      if (m.official && (m.base_priced || m.unpriced)) {
+        facts.push(m.cards + ' kartu resmi: ' + m.priced + ' punya listing RAW (' + m.listings + ' listing), ' + m.base_priced + ' harga dasar, ' + m.unpriced + ' belum ada listing');
+      } else {
+        facts.push(m.cards + (denom ? ' dari ' + denom + ' kartu' : ' kartu') + ' punya harga RAW (' + m.listings + ' listing)');
+        if (!denom) facts.push('nomor tercetak /' + m.base);
+      }
       infoBox.replaceChildren(
         h('h3', null, m.code + (m.name_id ? ' · ' + m.name_id : ' · nama belum diketahui'),
           m.name_en && m.name_en !== m.name_id ? h('small', {text: m.name_en}) : null,
@@ -448,7 +455,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
           return (c.name + ' ' + c.set + ' ' + c.number + ' ' + c.rarity + ' ' + (m.name_id || '')).toLowerCase().indexOf(ro.q) >= 0;
         }
         return ro.set === '*' || c.set === ro.set;
-      });
+      }).filter(function(c){ return !ro.priced || c.basis; });
       var shown = ro.all ? rows : rows.slice(0, LIMIT);
       roCount.textContent = shown.length + ' dari ' + rows.length + ' kartu';
       if (!rows.length) { roBox.replaceChildren(h('div', {'class': 'empty', text: 'Tidak ada kartu yang cocok.'})); return; }
@@ -458,15 +465,15 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
         h('thead', null, h('tr', null, heads.map(function(c){ return h('th', {text: c}); }))),
         h('tbody', null, shown.map(function(c){
           return h('tr', null,
-            D.photos ? h('td', {'class': 'ph'}, c.photo ? h('img', {src: c.photo, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer', width: 44, height: 44,
+            D.photos ? h('td', {'class': 'ph'}, (c.image || c.photo) ? h('img', {src: c.image || c.photo, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer', width: 44, height: 44,
               onerror: function(e){ e.target.remove(); }}) : null) : null,
             multi ? h('td', {'class': 'num', text: c.set}) : null,
             h('td', {'class': 'num', text: c.number}),
             h('td', null, c.name + (c.rarity ? ' ' + c.rarity : ''), c.tracked ? h('span', {'class': 'badge', text: 'dipantau'}) : null),
-            h('td', {'class': 'num', text: String(c.n)}),
-            h('td', {'class': 'num', text: rp(c.min)}),
-            h('td', {'class': 'num', text: rp(c.median)}),
-            h('td', {'class': 'num', text: rp(c.max)}),
+            h('td', {'class': 'num', text: c.basis === 'listing' ? String(c.n) : '—'}),
+            c.basis === 'listing' ? [h('td', {'class': 'num', text: rp(c.min)}), h('td', {'class': 'num', text: rp(c.median)}), h('td', {'class': 'num', text: rp(c.max)})]
+              : c.basis === 'default' ? [h('td', {'class': 'num', text: '—'}), h('td', {'class': 'num'}, rp(c.median), h('span', {'class': 'badge', text: 'harga dasar', title: 'Belum ada listing: harga dasar, bukan harga pasar'})), h('td', {'class': 'num', text: '—'})]
+              : h('td', {'class': 'nodata', colspan: 3, text: 'belum ada listing'}),
             h('td', {'class': 'num', text: trendText(c.trend)}),
             h('td', {'class': 'num'}, c.egs.length ? c.egs.map(function(e){ return h('div', {text: 'EGS ' + e.grade + ' ' + rp(e.ask)}); }) : '—'),
             h('td', null, c.url ? h('a', {href: c.url, target: '_blank', rel: 'noopener', text: 'Buka ↗'}) : null));

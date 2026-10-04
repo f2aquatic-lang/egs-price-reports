@@ -88,7 +88,9 @@ grep -q '^EGS_SITE_DIR=' "$ENV_FILE" || echo "EGS_SITE_DIR=$SITE_DIR" >> "$ENV_F
 
 # first build now, so the site is not empty until the next 6-hourly run
 if [ -f "$REPO/raw.json" ] && [ -f "$REPO/latest.json" ]; then
-  (cd "$REPO" && as_bot env PYTHONDONTWRITEBYTECODE=1 python3 tools/build_site.py latest.json --raw raw.json --standalone --out "$SITE_DIR/index.html") \
+  CATALOG_ARG=""
+  [ -f "$REPO/catalog.json" ] && CATALOG_ARG="--catalog catalog.json"
+  (cd "$REPO" && as_bot env PYTHONDONTWRITEBYTECODE=1 python3 tools/build_site.py latest.json --raw raw.json $CATALOG_ARG --standalone --out "$SITE_DIR/index.html") \
     && chmod 644 "$SITE_DIR/index.html" \
     && printf 'User-agent: *\nDisallow: /\n' > "$SITE_DIR/robots.txt" \
     || echo "PERINGATAN: halaman pertama gagal dibangun; akan dibangun pada putaran berikutnya."

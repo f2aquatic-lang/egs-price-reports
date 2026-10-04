@@ -35,7 +35,7 @@ def validate(d):
         err(f"language is {d['language']!r}, expected ID")
     gen = datetime.fromisoformat(d["generated_at"])
 
-    seen, urls, counted, newest = set(), set(), 0, None
+    seen, urls, counted, newest, defaults = set(), set(), 0, None, 0
     for c in d["cards"]:
         gone = [k for k in CARD if k not in c]
         if gone:
@@ -50,6 +50,15 @@ def validate(d):
             err(f"{label}: stats needs {', '.join(STATS)}")
             continue
         counted += s["n"]
+        basis = c.get("price_basis")
+        if basis not in (None, "default"):
+            err(f"{label}: price_basis {basis!r} must be absent or 'default'")
+        if basis == "default":
+            defaults += 1
+            if not c.get("catalog") or s["n"] != 0 or c["listings"] or c.get("history"):
+                err(f"{label}: a default-priced card must be a catalog card with n=0, no listings and no history")
+            if len({s["min"], s["p25"], s["median"], s["p75"], s["max"]}) != 1:
+                err(f"{label}: a default-priced card has one price for min, p25, median, p75 and max")
         order = [s["min"], s["p25"], s["median"], s["p75"], s["max"]]
         if order != sorted(order):
             err(f"{label}: stats must satisfy min <= p25 <= median <= p75 <= max")
@@ -92,7 +101,7 @@ def validate(d):
                     break
                 if h["n"] < 1 or not (0 < h["min"] <= h["median"]):
                     err(f"{label}: history {h['date_wib']} must satisfy n >= 1 and 0 < min <= median")
-        if s["n"] < 5 and not c.get("catalog"):
+        if s["n"] < 5 and not c.get("catalog") and basis != "default":
             warn(f"{label}: only {s['n']} counted listing(s)")
 
     cov = d["coverage"]
@@ -101,6 +110,8 @@ def validate(d):
     catalog_cards = sum(1 for c in d["cards"] if c.get("catalog"))
     if cov.get("catalog_cards", catalog_cards) != catalog_cards:
         err(f"coverage.catalog_cards={cov.get('catalog_cards')} but {catalog_cards} cards have catalog=true")
+    if cov.get("default_priced_cards", defaults) != defaults:
+        err(f"coverage.default_priced_cards={cov.get('default_priced_cards')} but {defaults} cards have price_basis=default")
     if cov.get("listings_counted") != counted:
         err(f"coverage.listings_counted={cov.get('listings_counted')} but stats.n sums to {counted}")
     if newest and cov.get("last_observed_at") != newest.isoformat():

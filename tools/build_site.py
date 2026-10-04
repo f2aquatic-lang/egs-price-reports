@@ -86,7 +86,7 @@ def match_type(text, types):
     return (best[1], best[2]) if best else None
 
 
-def build(d, raw=None):
+def build(d, raw=None, catalog=None):
     gen = datetime.fromisoformat(d["generated_at"])
     types, index = [], {}
     for l in d["listings"]:
@@ -141,12 +141,15 @@ def build(d, raw=None):
         "raw_meta": None, "raw_only": [], "raw_cards": [], "sets": [], "families": [],
     }
     if raw:
-        attach_raw(data, raw, gen)
+        attach_raw(data, raw, gen, catalog)
     return data
 
 
 def card_key(set_code, number):
-    return (set_code.lower(), number.replace(" ", "").lower())
+    """Join key of a card: set code and number, case and zero padding ignored (014/078 is 14/78)."""
+    n = number.replace(" ", "").lower()
+    m = re.fullmatch(r"(\d+)/(\d+)", n)
+    return (set_code.lower(), f"{int(m.group(1))}/{int(m.group(2))}" if m else n)
 
 
 def trend_of(history):
@@ -197,7 +200,7 @@ def egs_lowest(t):
     return [{"grade": g, "ask": low, "n": n} for g, (n, low) in sorted(best.items(), key=lambda kv: -float(kv[0]))]
 
 
-def attach_raw(data, raw, gen):
+def attach_raw(data, raw, gen, catalog=None):
     """Join raw.json cards to the tracked types on (set_code, card_number)."""
     by = {card_key(c["set_code"], c["card_number"]): c for c in raw["cards"]}
     used = set()
@@ -220,38 +223,63 @@ def attach_raw(data, raw, gen):
         key=lambda c: (-c["n"], c["set"], c["number"]))
     data["raw_meta"] = {"generated": wib_label(raw["generated_at"]), "cards": len(raw["cards"]),
                         "listings": raw["coverage"]["listings_counted"]}
-    attach_sets(data, raw)
+    attach_sets(data, raw, catalog)
 
 
-def attach_sets(data, raw):
-    """Every RAW card as a row, grouped by set code, with the set's name and how much of it we have priced."""
+def attach_sets(data, raw, catalog=None):
+    """Every card as a row, grouped by set code: priced from listings, base-priced, or (with the official catalog) unpriced."""
     meta = load_sets()
     known = {m["code"].upper(): m for m in meta["sets"]}
     family_order = {f["id"]: i for i, f in enumerate(meta["families"])}
     tracked = {card_key(t["set"], t["number"]): t for t in data["types"]}
-    rows, per_set = [], {}
+    official = {}
+    official_sets = {}
+    if catalog:
+        official = {card_key(c["set"], c["number"]): c for c in catalog["cards"] if c.get("number")}
+        official_sets = {x["code"].upper(): x for x in catalog["sets"] if x.get("fetched")}
+    rows, per_set, seen = [], {}, set()
+
+    def add(row):
+        rows.append(row)
+        per_set.setdefault(row["set"], []).append(row)
+
     for c in raw["cards"]:
         code = c["set_code"].upper()
         key = card_key(c["set_code"], c["card_number"])
+        seen.add(key)
         num, den = (int(x) for x in c["card_number"].replace(" ", "").split("/"))
         history = c.get("history") or []
         photo = next((l["photo"] for l in c["listings"] if l.get("photo")), None)
-        t = tracked.get(key)
-        rows.append({"name": c["name"], "set": code, "number": c["card_number"], "num": num, "den": den,
-                     "rarity": c["rarity"], **c["stats"], "trend": trend_of(history),
-                     "url": c["listings"][0]["url"] if c["listings"] else None, "photo": photo,
-                     "tracked": t is not None, "egs": egs_lowest(t) if t else []})
-        per_set.setdefault(code, []).append(rows[-1])
+        t, o = tracked.get(key), official.get(key)
+        base = c.get("price_basis") == "default"
+        add({"name": (o or c)["name"], "set": code, "number": c["card_number"], "num": num, "den": den,
+             "rarity": (o or {}).get("rarity") or c["rarity"], **c["stats"], "trend": trend_of(history),
+             "url": c["listings"][0]["url"] if c["listings"] else None, "photo": photo, "image": (o or {}).get("image"),
+             "basis": "default" if base else "listing", "tracked": t is not None, "egs": egs_lowest(t) if t else []})
+    for key, o in official.items():  # official cards nobody lists and that have no base price
+        if key not in seen and o["set"].upper() in official_sets and o.get("num") is not None:
+            add({"name": o["name"], "set": o["set"].upper(), "number": o["number"], "num": o["num"], "den": o["den"],
+                 "rarity": o.get("rarity"), "n": 0, "min": None, "p25": None, "median": None, "p75": None, "max": None,
+                 "trend": None, "url": None, "photo": None, "image": o.get("image"), "basis": None, "tracked": False, "egs": []})
     sets = []
     for code, cards in per_set.items():
+        o = official_sets.get(code, {})
         m = known.get(code, {"code": code, "family": set_family(code, known), "name_id": None, "name_en": None,
                              "released": None, "base": None, "total": None, "basis": None, "note": ""})
         base = m.get("base") or Counter(c["den"] for c in cards).most_common(1)[0][0]
         for c in cards:  # the set's own numbering first, then side series such as the n/30 Pikachu of MA6
             c["sub"] = 0 if c["den"] == base else 1
-        sets.append({**m, "code": code, "base": base, "cards": len(cards), "listings": sum(c["n"] for c in cards),
-                     "released_label": (lambda d: f"{d.day} {MONTHS[d.month - 1]} {d.year}")(date.fromisoformat(m["released"]))
-                                       if m.get("released") else None})
+        released = o.get("released") or m.get("released")
+        sets.append({**m, "code": code, "base": base, "cards": len(cards),
+                     "name_id": o.get("name") or m.get("name_id"), "total": o.get("total") or m.get("total"),
+                     "basis": "resmi" if o.get("name") else m.get("basis"), "official": bool(o),
+                     "priced": sum(1 for c in cards if c["basis"] == "listing"),
+                     "base_priced": sum(1 for c in cards if c["basis"] == "default"),
+                     "unpriced": sum(1 for c in cards if c["basis"] is None),
+                     "listings": sum(c["n"] for c in cards),
+                     "released": released,
+                     "released_label": (lambda d: f"{d.day} {MONTHS[d.month - 1]} {d.year}")(date.fromisoformat(released))
+                                       if released else None})
     sets.sort(key=lambda m: set_sort_key(m, family_order))
     order = {m["code"]: i for i, m in enumerate(sets)}
     rows.sort(key=lambda c: (order[c["set"]], c["sub"], c["den"], c["num"]))
@@ -280,6 +308,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("path", nargs="?", default="latest.json")
     ap.add_argument("--raw", help="raw.json with the RAW (ungraded) dataset")
+    ap.add_argument("--catalog", help="catalog.json from tools/fetch_catalog.py: every official card of each set, with its image")
     ap.add_argument("--out", default="-", help="output file (default: stdout)")
     ap.add_argument("--standalone", action="store_true", help="wrap in a full HTML document")
     a = ap.parse_args()
@@ -289,7 +318,11 @@ def main():
     if a.raw:
         with open(a.raw, encoding="utf-8") as fh:
             raw = json.load(fh)
-    html = render(build(latest, raw), a.standalone)
+    catalog = None
+    if a.catalog:
+        with open(a.catalog, encoding="utf-8") as fh:
+            catalog = json.load(fh)
+    html = render(build(latest, raw, catalog), a.standalone)
     if a.out == "-":
         sys.stdout.write(html)
     else:

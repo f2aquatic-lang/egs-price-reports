@@ -75,6 +75,18 @@ Pencarian toco mengembalikan banyak kartu lain di samping kartu yang dipantau. S
 
 **Penelusuran set.** Kata kunci kartu yang dipantau hanya menemukan kartu lain secara kebetulan (sekitar separuh kartu per set di data pertama). Karena itu pengumpul juga menelusuri set yang paling sering muncul (`--sets`, bawaan 8). Untuk tiap kode set ada 7 kata kunci: kode saja, `indonesia`, dan tiap rarity (`RR`, `AR`, `SR`, `SAR`, `UR`), karena pencarian toco memakai AND sehingga tiap kata kunci mengembalikan potongan set yang berbeda. Halamannya dibaca bergantian antar kata kunci (supaya anggaran terbagi rata) sampai satu kata kunci kehabisan kartu set itu: satu halaman tanpa listing baru, atau kurang dari 30% judulnya menyebut kode set (`--set-min-share`). Dibatasi `--set-pages` (25 halaman) per kata kunci dan `--set-budget` (400 permintaan) per putaran, dengan jeda yang sama dengan pencarian lain. Matikan dengan `--sets 0`.
 
+## Katalog resmi dan harga dasar
+
+`tools/fetch_catalog.py` mengambil katalog kartu resmi Indonesia (asia.pokemon-card.com/id/card-search) ke `catalog.json`: tiap set (kode, nama produk, tanggal rilis, jumlah kartu) dan tiap kartu (set, nomor, nama, rarity resmi, gambar). Katalog diambil jarang (set baru dan kartu baru), disimpan di VPS (`/opt/egs-raw/catalog.json`), dan diterbitkan ke repo bersama `raw.json`. Rinciannya ada di [vps-setup.md](vps-setup.md).
+
+Dengan `catalog.json`, pengumpul RAW melakukan tiga hal:
+
+- **Nama dan rarity resmi** menggantikan tebakan dari judul listing untuk kartu katalog.
+- **Harga dasar.** Kartu yang rarity resminya punya harga dasar di `tools/default_prices.json` (sekarang hanya `C` = Rp500) dan **belum punya listing** dimasukkan ke `raw.json` dengan `"price_basis": "default"`: `stats.n = 0`, `min = p25 = median = p75 = max = harga dasar`, `listings: []`, tanpa `history`. Begitu ada listing yang cocok, kartunya memakai harga listing dan tanda itu hilang. `coverage.default_priced_cards` mencatat jumlahnya. Harga dasar bukan harga pasar.
+- Kartu dengan rarity lain dan tanpa listing **tidak diberi harga karangan**; mereka hanya ada di `catalog.json` dan papan menulis "belum ada listing".
+
+Dengan begitu tidak ada kartu di `raw.json` yang berharga 0.
+
 ## Listing yang dihitung
 
 Sebuah listing masuk statistik kalau semua ini benar:

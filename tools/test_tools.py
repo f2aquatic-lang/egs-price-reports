@@ -223,6 +223,27 @@ class RawFormat(unittest.TestCase):
         d["cards"][0]["listings"][0]["conf"] = "katalog"
         self.assertTrue(any("tracked card" in e for e in validate_raw.validate(d)[0]))
 
+    def test_default_priced_cards(self):
+        d = good_raw()
+        base = {"name": "Foo", "set_code": "MA3", "card_number": "115/193", "rarity": "C", "catalog": True, "price_basis": "default",
+                "stats": {"n": 0, "min": 500, "p25": 500, "median": 500, "p75": 500, "max": 500}, "listings": []}
+        d["cards"].append(base)
+        d["coverage"].update(cards=2, default_priced_cards=1, catalog_cards=1)
+        errors, warnings = validate_raw.validate(d)
+        self.assertEqual(errors, [])
+        self.assertEqual(len(warnings), 1)                                      # only the tracked card's; none for the base price
+        self.assertIn("Mega Venusaur", warnings[0])
+        base["stats"]["n"] = 2
+        base["stats"]["max"] = 600
+        errors = validate_raw.validate(d)[0]
+        self.assertTrue(any("default-priced card must be" in e for e in errors) and any("one price" in e for e in errors))
+        base["stats"].update(n=0, max=500)
+        d["coverage"]["default_priced_cards"] = 0
+        self.assertTrue(any("default_priced_cards" in e for e in validate_raw.validate(d)[0]))
+        d["coverage"]["default_priced_cards"] = 1
+        base["price_basis"] = "guess"
+        self.assertTrue(any("price_basis" in e for e in validate_raw.validate(d)[0]))
+
     def test_non_indonesian_listing_is_rejected(self):
         d = good_raw()
         d["cards"][0]["listings"][0]["lang"] = "JP"
@@ -250,6 +271,28 @@ def tiny_latest():
     }
 
 
+def board_with_official_catalog():
+    """raw.json (the tracked MA1 card, one listed MA3 card, one base-priced MA3 common) + the official catalog of MA3."""
+    import copy
+    raw = good_raw()
+    listed = copy.deepcopy(raw["cards"][0])
+    listed.update(name="Fezandipiti ex", set_code="MA3", card_number="114/193", rarity="RR", catalog=True)
+    for l in listed["listings"]:
+        l["conf"] = "katalog"
+        l["url"] += "-114"
+        l["photo"] = "https://seller.example/114.webp"
+    base = {"name": "Foo", "set_code": "MA3", "card_number": "115/193", "rarity": "C", "catalog": True, "price_basis": "default",
+            "stats": {"n": 0, "min": 500, "p25": 500, "median": 500, "p75": 500, "max": 500}, "listings": []}
+    raw["cards"] += [listed, base]
+    raw["coverage"].update(cards=3, listings_counted=6, catalog_cards=2, default_priced_cards=1)
+    cards = [{"set": "MA3", "number": f"{n:03d}/193", "num": n, "den": 193, "name": name, "rarity": rar, "image": f"https://official.example/{n}.png", "id": n}
+             for n, name, rar in ((114, "Fezandipiti ex", "RR"), (115, "Foo", "C"), (117, "Rare Thing", "SAR"), (118, "Other Rare", "SR"))]
+    catalog = {"schema_version": 1, "generated_at": "2026-10-04T12:00:00+00:00", "cards": cards,
+               "sets": [{"code": "MA3", "series": "Evolusi Mega", "name": "Evolusi Mega Impian ex", "product": "High Class Booster Pack", "released": "2026-01-30",
+                         "total": 4, "fetched": 4, "complete": True}]}
+    return raw, catalog
+
+
 class Board(unittest.TestCase):
     def test_raw_joins_on_set_and_number(self):
         raw = good_raw()
@@ -264,6 +307,29 @@ class Board(unittest.TestCase):
         self.assertEqual(build_site.trend_of([h("2026-10-03", 100), h("2026-10-06", 110), h("2026-10-10", 120)]),
                          {"days": 7, "pct": 20.0})   # baseline is the 3 Oct entry, not the 6 Oct one
         self.assertEqual(build_site.trend_of([h("2026-10-08", 200), h("2026-10-10", 150)]), {"days": 2, "pct": -25.0})
+
+    def test_official_catalog_adds_every_card_of_a_set_priced_base_priced_or_not(self):
+        raw, catalog = board_with_official_catalog()
+        data = build_site.build(tiny_latest(), raw, catalog)
+        rows = {(c["set"], c["number"]): c for c in data["raw_cards"]}
+        self.assertEqual(sorted(k for k in rows if k[0] == "MA3"), [("MA3", "114/193"), ("MA3", "115/193"), ("MA3", "117/193"), ("MA3", "118/193")])
+        self.assertEqual([rows[("MA3", n)]["basis"] for n in ("114/193", "115/193", "117/193", "118/193")], ["listing", "default", None, None])
+        self.assertEqual((rows[("MA3", "115/193")]["median"], rows[("MA3", "117/193")]["median"]), (500, None))
+        self.assertEqual(rows[("MA3", "114/193")]["image"], "https://official.example/114.png")
+        self.assertEqual(rows[("MA3", "114/193")]["photo"], "https://seller.example/114.webp")
+        ma3 = next(m for m in data["sets"] if m["code"] == "MA3")
+        self.assertEqual((ma3["name_id"], ma3["released"], ma3["total"], ma3["cards"], ma3["priced"], ma3["base_priced"], ma3["unpriced"], ma3["basis"], ma3["official"]),
+                         ("Evolusi Mega Impian ex", "2026-01-30", 4, 4, 1, 1, 2, "resmi", True))
+        self.assertEqual([c["number"] for c in data["raw_cards"] if c["set"] == "MA3"], ["114/193", "115/193", "117/193", "118/193"])
+
+    def test_card_keys_ignore_zero_padding(self):
+        self.assertEqual(build_site.card_key("SV1S", "014/078"), build_site.card_key("sv1s", "14/78"))
+        self.assertEqual(build_site.card_key("MA6", "5 / 30"), ("ma6", "5/30"))
+
+    def test_without_a_catalog_every_row_is_priced_from_listings(self):
+        data = build_site.build(tiny_latest(), good_raw())
+        self.assertEqual({c["basis"] for c in data["raw_cards"]}, {"listing"})
+        self.assertTrue(all(m["unpriced"] == 0 and m["base_priced"] == 0 for m in data["sets"]))
 
     def test_photos_only_in_a_standalone_page(self):
         data = build_site.build(tiny_latest(), good_raw())
@@ -561,6 +627,53 @@ class Collector(unittest.TestCase):
         self.assertEqual(collect_raw.catalog_key("Fez ex 114/193 RR", {"193": "MA3"}), ("MA3", "114/193"))
         self.assertIsNone(collect_raw.catalog_key("Fez ex 114/777 RR", {"193": "MA3"}))
         self.assertIsNone(collect_raw.catalog_key("Booster Box MA3 Indonesia", {}))
+
+    def official_catalog(self):
+        """A catalog.json as tools/fetch_catalog.py writes it: MA3 cards 114 (listed), 115 and 116 (common), 117 (SAR), 71 (listed)."""
+        cards = [{"set": "MA3", "number": f"{n:03d}/193", "num": n, "den": 193, "name": name, "rarity": rarity, "image": f"https://o/{n}.png", "id": n}
+                 for n, name, rarity in ((114, "Fezandipiti ex", "RR"), (115, "Foo", "C"), (116, "Bar", "C"), (117, "Rare Thing", "SAR"),
+                                         (71, "Gardevoir ex Resmi", "RR"))]
+        path = os.path.join(self.tmp.name, "catalog.json")
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump({"schema_version": 1, "sets": [], "cards": cards}, fh)
+        prices = os.path.join(self.tmp.name, "default_prices.json")
+        with open(prices, "w", encoding="utf-8") as fh:
+            json.dump({"by_rarity": {"C": 500}}, fh)
+        return path, prices
+
+    def test_common_cards_without_a_listing_get_the_base_price_and_listed_ones_keep_theirs(self):
+        self.catalog = API_CATALOG + CATALOG_EXTRA + [api_item("k-10", "Bar MA3 | 116/193 C Pokemon TCG Indonesia", 3000)]
+        path, prices = self.official_catalog()
+        raw, _ = self.go(lang_mode="text", catalog=True, catalog_json=path, default_prices=prices)
+        self.assertEqual(validate_raw.validate(raw)[0], [])
+        cards = {(c["set_code"], c["card_number"]): c for c in raw["cards"]}
+        foo = cards[("MA3", "115/193")]
+        self.assertEqual((foo["name"], foo["rarity"], foo["price_basis"], foo["stats"], foo["listings"]),
+                         ("Foo", "C", "default", {"n": 0, "min": 500, "p25": 500, "median": 500, "p75": 500, "max": 500}, []))
+        bar = cards[("MA3", "116/193")]                       # a listing exists: its price, not the base price
+        self.assertEqual((bar["stats"]["median"], bar["stats"]["n"], "price_basis" in bar), (3000, 1, False))
+        self.assertNotIn(("MA3", "117/193"), cards)           # a SAR nobody lists gets no invented price
+        self.assertEqual(cards[("MA3", "71/193")]["name"], "Gardevoir ex Resmi")        # official name replaces the title guess
+        self.assertEqual(cards[("MA3", "114/193")]["rarity"], "RR")
+        self.assertEqual(raw["coverage"]["default_priced_cards"], 1)
+        self.assertEqual(raw["coverage"]["cards"], len(raw["cards"]))
+        self.assertTrue(all(c["stats"]["min"] > 0 for c in raw["cards"]))                 # nothing is priced at 0
+
+    def test_without_the_official_catalog_nothing_is_added(self):
+        self.catalog = API_CATALOG + CATALOG_EXTRA
+        raw, _ = self.go(lang_mode="text", catalog=True, catalog_json=None, default_prices=None)
+        self.assertEqual(raw["coverage"]["default_priced_cards"], 0)
+        self.assertFalse(any(c.get("price_basis") for c in raw["cards"]))
+
+    def test_the_base_price_does_not_enter_history_or_snapshots(self):
+        self.catalog = API_CATALOG + CATALOG_EXTRA
+        path, prices = self.official_catalog()
+        self.go(lang_mode="text", catalog=True, catalog_json=path, default_prices=prices)
+        db = sqlite3.connect(self.cfg.db)
+        try:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM snapshot WHERE card_number='115/193'").fetchone()[0], 0)
+        finally:
+            db.close()
 
     def test_set_crawl_pages_until_the_engine_runs_out_of_that_set(self):
         calls, items = [], {}
@@ -1307,6 +1420,41 @@ class BrowserRender(unittest.TestCase):
         self.assertEqual((searched["rows"], searched["set"]), (1, "MA3"))
         self.assertIn("Hasil pencarian", searched["info"])
         self.assertEqual(expanded, 130)
+
+    def test_board_shows_base_prices_missing_prices_official_images_and_can_hide_unpriced(self):
+        from playwright.sync_api import sync_playwright
+        raw, catalog = board_with_official_catalog()
+        html = build_site.render(build_site.build(tiny_latest(), raw, catalog), True)
+        path = os.path.join(tempfile.mkdtemp(), "board.html")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(html)
+        errors = []
+        gif = bytes.fromhex("47494638396101000100800000000000ffffff21f90401000000002c00000000010001000002024401003b")
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path=chrome_path(), headless=True,
+                                        args=["--no-sandbox"] if os.geteuid() == 0 else [])
+            page = browser.new_page()
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            page.route("https://**/*", lambda route: route.fulfill(status=200, content_type="image/gif", body=gif))
+            page.goto("file://" + path)
+            page.wait_for_timeout(300)
+            ev = page.evaluate
+            rows = lambda: ev("() => [...document.querySelectorAll('#rawonly-body tbody tr')].map(tr => tr.innerText.replace(/\\s+/g, ' ').trim())")
+            info = ev("() => document.querySelector('#rawonly-info').innerText")
+            shown = rows()
+            images = ev("() => [...document.querySelectorAll('#rawonly-body td.ph img')].map(i => i.getAttribute('src'))")
+            page.check("#hide-unpriced")
+            hidden = rows()
+            browser.close()
+        self.assertEqual(errors, [])
+        self.assertIn("4 kartu resmi: 1 punya listing RAW", info)
+        self.assertIn("1 harga dasar, 2 belum ada listing", info)
+        self.assertEqual(len(shown), 4)
+        self.assertTrue(any("115/193 Foo C" in r and "Rp500" in r and "harga dasar" in r for r in shown))
+        self.assertTrue(any("117/193 Rare Thing SAR" in r and "belum ada listing" in r for r in shown))
+        self.assertEqual(images[0], "https://official.example/114.png")          # the official image, not the seller's photo
+        self.assertEqual(len(hidden), 2)
+        self.assertFalse(any("belum ada listing" in r for r in hidden))
 
     def test_browser_probe_reports_listings_data_requests_and_serial(self):
         script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "probe_toco_browser.py")

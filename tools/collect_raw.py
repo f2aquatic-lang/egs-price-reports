@@ -430,13 +430,30 @@ def catalog_key(title, sets_by_total):
     return (code, c["number"]) if code else None
 
 
+def load_official(path):
+    """{card_key: official card} from catalog.json (tools/fetch_catalog.py); {} when there is no file."""
+    if not path or not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as fh:
+        data = json.load(fh)
+    return {build_site.card_key(c["set"], c["number"]): c for c in data["cards"] if c.get("number")}
+
+
+def load_defaults(path):
+    """{rarity: rupiah} base prices for cards without a listing (tools/default_prices.json)."""
+    if not path or not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as fh:
+        return {r: int(p) for r, p in json.load(fh).get("by_rarity", {}).items() if int(p) > 0}
+
+
 def majority(values):
     """Most common non-empty value; ties go to the shortest, then alphabetical."""
     counts = Counter(v for v in values if v)
     return min(counts, key=lambda v: (-counts[v], len(v), v)) if counts else ""
 
 
-def build_raw(db, types, now, max_age_hours, record=True, catalog=False):
+def build_raw(db, types, now, max_age_hours, record=True, catalog=False, official=None, defaults=None):
     cutoff = (now - timedelta(hours=max_age_hours)).isoformat()
     rows = db.execute(
         "SELECT l.url, l.title, l.ask_idr, l.city, l.stock, l.card_set, l.card_number, l.conf, l.last_seen, g.lang, g.lang_by, l.image_url "
@@ -520,11 +537,28 @@ def build_raw(db, types, now, max_age_hours, record=True, catalog=False):
         extra.append({"name": majority(guess_name(t) for t in titles), "set_code": cset, "card_number": cnum,
                       "rarity": majority((classify_title(t)["rarity"] or [""])[0] for t in titles),
                       "catalog": True, "stats": stats, "history": history, "listings": listings})
+    official = official or {}
+    for c in extra:  # the official name and rarity beat what could be guessed from a seller's title
+        o = official.get(build_site.card_key(c["set_code"], c["card_number"]))
+        if o:
+            c["name"], c["rarity"] = o["name"], o.get("rarity") or c["rarity"]
     extra.sort(key=lambda c: (-c["stats"]["n"], c["set_code"], c["card_number"]))
     cards += extra
+    # a card nobody lists yet still gets a price when its rarity has a base price (replaced as soon as a listing exists)
+    priced = {build_site.card_key(c["set_code"], c["card_number"]) for c in cards}
+    base_priced = []
+    for key, o in official.items():
+        price = (defaults or {}).get(o.get("rarity"))
+        if price and key not in priced:
+            base_priced.append({"name": o["name"], "set_code": o["set"].upper(), "card_number": re.sub(r"^0+(?=\d)", "", o["number"]),
+                                "rarity": o["rarity"], "catalog": True, "price_basis": "default",
+                                "stats": {"n": 0, "min": price, "p25": price, "median": price, "p75": price, "max": price},
+                                "listings": []})
+    base_priced.sort(key=lambda c: (c["set_code"], int(c["card_number"].split("/")[1]), int(c["card_number"].split("/")[0])))
+    cards += base_priced
     return {"schema_version": 1, "kind": "RAW", "price_type": "OBSERVED_ASKING_ONLY", "language": "ID",
             "source": "toco_public", "generated_at": now.isoformat(),
-            "coverage": {"cards": len(cards), "catalog_cards": len(extra),
+            "coverage": {"cards": len(cards), "catalog_cards": len(extra) + len(base_priced), "default_priced_cards": len(base_priced),
                          "listings_counted": sum(c["stats"]["n"] for c in cards),
                          "last_observed_at": max(newest) if newest else now.isoformat()},
             "cards": cards, "unmatched": {"count": unmatched, "language_unverified": unverified}}
@@ -591,7 +625,9 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
     for l in to_check:
         checker.ensure(l)
     db.commit()
-    raw = build_raw(db, types, now, cfg.max_age_hours, record=not cfg.dry_run, catalog=catalog_on)
+    raw = build_raw(db, types, now, cfg.max_age_hours, record=not cfg.dry_run, catalog=catalog_on,
+                    official=load_official(getattr(cfg, "catalog_json", None)),
+                    defaults=load_defaults(getattr(cfg, "default_prices", None)))
     db.commit()  # the daily snapshots written by build_raw must survive the run
     db.close()
     ctr.update({"listing_dibaca": len(items), "foto_dicek_sekarang": checker.calls})
@@ -638,6 +674,10 @@ def main(argv=None):
     ap.add_argument("--set-pages", type=int, default=25, help="halaman terdalam per kata kunci set")
     ap.add_argument("--set-min-share", type=float, default=0.3,
                     help="berhenti kalau kurang dari bagian ini dari satu halaman menyebut kode set")
+    ap.add_argument("--catalog-json", default="catalog.json" if os.path.exists("catalog.json") else None,
+                    help="katalog resmi (tools/fetch_catalog.py): nama dan rarity resmi, dan kartu tanpa listing")
+    ap.add_argument("--default-prices", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "default_prices.json"),
+                    help="harga dasar per rarity untuk kartu tanpa listing (hanya berlaku bersama --catalog-json)")
     ap.add_argument("--no-catalog", dest="catalog", action="store_false",
                     help="hanya kartu yang dipantau (bawaan: kartu lain yang nomornya terbaca di judul ikut didata)")
     ap.add_argument("--max-age-hours", type=float, default=36, help="listing dihitung kalau terlihat dalam rentang ini")

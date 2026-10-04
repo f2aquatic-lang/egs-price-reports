@@ -147,6 +147,51 @@ Jam di VPS memakai CST (UTC+8), jadi 01:20, 07:20, 13:20, dan 19:20 CST sama den
 
 Bawaan: kartu di luar daftar pantau yang kode set dan nomornya terbaca di judul ikut didata (`catalog: true` di `raw.json`). Dengan pilihan C (teks saja) ini gratis dan langsung menambah ratusan kartu. Dengan foto (A atau B), tiap listing katalog dicek fotonya satu kali, jadi putaran awal bisa memakan banyak anggaran: batasi dengan `--max-checks` (bawaan 150, listing kartu yang dipantau didahulukan). Matikan dengan `--no-catalog`. Lihat `tools/db_report.py` untuk melihat kartu apa saja yang terdata. Pengumpul juga menelusuri set yang paling sering muncul (bawaan 8 set, paling banyak 400 permintaan pencarian per putaran, sekitar 10 menit); atur dengan `--sets`, `--set-budget`, `--set-pages`, atau matikan dengan `--sets 0`.
 
+## Katalog resmi (nama, rarity, semua kartu per set)
+
+Katalog resmi diambil dari situs kartu Indonesia dengan `tools/fetch_catalog.py` (hanya pustaka standar Python, satu permintaan per detik, bisa dilanjutkan). Pengambilan pertama memakan sekitar satu sampai dua jam untuk sekitar 5.000 kartu; setelah itu hanya yang baru.
+
+```bash
+# percobaan kecil: daftar set, lalu satu set dengan batas permintaan
+python3 tools/fetch_catalog.py --list-sets
+python3 tools/fetch_catalog.py --db /tmp/catalog_test.sqlite --out /tmp/catalog_test.json --sets MA6 --max-requests 25
+
+# pengambilan penuh di latar belakang (melanjutkan kalau terputus)
+sudo -u egsprice -H nohup python3 /opt/egs-raw/main/tools/fetch_catalog.py \
+  --db /opt/egs-raw/catalog.sqlite --out /opt/egs-raw/catalog.json > /opt/egs-raw/catalog.log 2>&1 &
+tail -n 3 /opt/egs-raw/catalog.log
+```
+
+Bawaannya hanya set booster utama (`MA1`..`MA6`, `SV1S`..`SV11S`, `SV1A`/`SV2A`/`SV4A`/`SV8A`, `AC3A`/`AC3B`); ubah dengan `--include` (ekspresi reguler) atau `--sets KODE,KODE`. Tiap set juga menelusuri rarity (satu daftar tersaring per kode rarity); matikan dengan `--no-rarities`.
+
+Sesudah itu `publish_raw.sh` menyalin `/opt/egs-raw/catalog.json` ke repo dan membangun halaman dengannya, jadi papan menampilkan semua kartu tiap set. Untuk memperbarui katalog tiap minggu (set dan kartu baru), tambahkan layanan dan pemicu:
+
+```bash
+sudo tee /etc/systemd/system/egs-catalog.service >/dev/null <<'EOF'
+[Unit]
+Description=EGS official card catalog fetch
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=egsprice
+ExecStart=/usr/bin/python3 /opt/egs-raw/main/tools/fetch_catalog.py --db /opt/egs-raw/catalog.sqlite --out /opt/egs-raw/catalog.json
+TimeoutStartSec=14400
+EOF
+sudo tee /etc/systemd/system/egs-catalog.timer >/dev/null <<'EOF'
+[Unit]
+Description=EGS official card catalog, weekly
+
+[Timer]
+OnCalendar=Sun *-*-* 03:40:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+sudo systemctl daemon-reload && sudo systemctl enable --now egs-catalog.timer
+```
+
 ## Biaya
 
 - Claude: model bawaan `claude-opus-5-5` (US$4 per juta token masukan, US$20 per juta token keluaran). Yang lebih murah, `claude-haiku-4-5` (US$1 dan US$5), dipilih dengan menambah satu baris `EGS_LANG_MODEL=claude-haiku-4-5` di `/opt/egs-raw/env`. Itu keputusan Anda. Kalau memakai yang murah, ulangi Langkah 4 dulu karena akurasinya belum diuji.

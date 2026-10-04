@@ -33,20 +33,28 @@ main() {
   # This checkout only publishes raw.json. A failed earlier run can leave an unpushed commit or a half-done rebase:
   # start from origin/main again, but refuse to throw away anything other than raw.json.
   git fetch -q origin main
-  foreign="$( { git diff --name-only origin/main...HEAD; git status --porcelain --untracked-files=no | cut -c4-; } | grep -vx raw.json || true)"
+  foreign="$( { git diff --name-only origin/main...HEAD; git status --porcelain --untracked-files=no | cut -c4-; } | grep -vx -e raw.json -e catalog.json || true)"
   if [ -n "$foreign" ]; then
     echo "Berhenti: ada perubahan lokal selain raw.json di folder ini:" >&2
     echo "$foreign" >&2
     exit 1
   fi
   git reset -q --hard origin/main
+
+  # the official card catalog (tools/fetch_catalog.py) is fetched separately and changes rarely; publish it with raw.json
+  CATALOG="${EGS_CATALOG:-/opt/egs-raw/catalog.json}"
+  if [ -f "$CATALOG" ] && ! cmp -s "$CATALOG" catalog.json; then
+    cp "$CATALOG" catalog.json
+  fi
   "$PYTHON" tools/collect_raw.py "$@"
 
   # Optional website: rebuild the page from the checkout (latest.json from the bot, raw.json from this run).
   # A failure here must never stop raw.json from being published.
   build_site() {
     [ -n "${EGS_SITE_DIR:-}" ] || return 0
-    if "$PYTHON" tools/build_site.py latest.json --raw raw.json --standalone --out "$EGS_SITE_DIR/.index.html.new" \
+    local catalog_arg=""
+    [ -f catalog.json ] && catalog_arg="--catalog catalog.json"
+    if "$PYTHON" tools/build_site.py latest.json --raw raw.json $catalog_arg --standalone --out "$EGS_SITE_DIR/.index.html.new" \
         && chmod 644 "$EGS_SITE_DIR/.index.html.new" && mv -f "$EGS_SITE_DIR/.index.html.new" "$EGS_SITE_DIR/index.html"; then
       printf 'User-agent: *\nDisallow: /\n' > "$EGS_SITE_DIR/robots.txt"
       echo "situs diperbarui: $EGS_SITE_DIR/index.html"
@@ -55,12 +63,13 @@ main() {
     fi
   }
 
-  if [ -z "$(git status --porcelain -- raw.json)" ]; then
+  if [ -z "$(git status --porcelain -- raw.json catalog.json)" ]; then
     echo "raw.json tidak berubah"
     build_site
     exit 0
   fi
   git add raw.json
+  [ -f catalog.json ] && git add catalog.json
   git commit -q -m "Update RAW asking report"
   # the bot pushes latest.json to the same branch: on a lost race, take its commit and push again
   for attempt in 1 2 3; do
