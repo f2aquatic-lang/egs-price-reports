@@ -12,6 +12,8 @@ main() {
   cd "$(dirname "$0")/.."
   PYTHON="${PYTHON:-python3}"
 
+  # a rebase that died half-way (no identity, lost race) leaves HEAD detached: clear it before looking at the branch
+  git rebase --abort 2>/dev/null || true
   if [ "$(git rev-parse --abbrev-ref HEAD)" != "main" ]; then
     echo "Berhenti: folder ini tidak di branch main. Penerbitan hanya dari main." >&2
     exit 1
@@ -29,7 +31,6 @@ main() {
 
   # This checkout only publishes raw.json. A failed earlier run can leave an unpushed commit or a half-done rebase:
   # start from origin/main again, but refuse to throw away anything other than raw.json.
-  git rebase --abort 2>/dev/null || true
   git fetch -q origin main
   foreign="$( { git diff --name-only origin/main...HEAD; git status --porcelain | cut -c4-; } | grep -vx raw.json || true)"
   if [ -n "$foreign" ]; then
