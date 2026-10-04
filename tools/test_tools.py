@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_site  # noqa: E402
 import collect_raw  # noqa: E402
 import db_report  # noqa: E402
+import probe_pokemon_card  # noqa: E402
 import probe_toco  # noqa: E402
 import probe_toco_fields  # noqa: E402
 import probe_toco_next  # noqa: E402
@@ -784,6 +785,75 @@ class Probe(unittest.TestCase):
     def test_flags_challenge_page(self):
         code, text = self.run_probe(lambda url: (403, "<html><title>Just a moment...</title></html>", "HTTP 403"))
         self.assertIn("PERHATIAN", text)
+
+
+class ProbePokemonCard(unittest.TestCase):
+    PAGES = {
+        "/robots.txt": (200, "text/plain", "User-agent: *\nDisallow: /admin/\n"),
+        "/id/card-search/": (200, "text/html", """<html><head><title>Cari Kartu</title>
+            <script src="/static/app.js"></script>
+            <script>var expansionList = ["MA1","MA2"]; fetch('/api/cards/list.json');</script></head><body>
+            <form><input type="checkbox" name="expansionCodes" value="MA1"><input type="checkbox" name="expansionCodes" value="MA2">
+            <select name="rarity"><option value="all">Semua</option><option value="RR">RR</option></select></form>
+            <a href="/id/card-search/list/?pageNo=1&expansionCodes=MA1">Evolusi Mega</a></body></html>"""),
+        "/id/card-search/list/?pageNo=1": (200, "text/html", """<html><head><title>Daftar</title></head><body>
+            <a href="/id/card-search/detail/101/"><img src="/id/card-img/id00000101.png"></a>
+            <a href="/id/card-search/detail/102/"><img data-src="/id/card-img/id00000102.png"></a>
+            <a href="/id/card-search/list/?pageNo=2">2</a><p>Hasil 1 - 2 dari 184</p></body></html>"""),
+        "/id/card-search/list/?pageNo=2&expansionCodes=MA1": (404, "text/html", "<html>tidak ada</html>"),
+        "/id/card-search/detail/101/": (200, "text/html", "<html><title>Mega Gardevoir ex</title><body><h1>Mega Gardevoir ex</h1><p>060/126 RR</p></body></html>"),
+    }
+
+    def setUp(self):
+        pages = self.PAGES
+
+        class H(BaseHTTPRequestHandler):
+            def do_GET(self):
+                code, ctype, body = pages.get(self.path, (404, "text/plain", "no"))
+                data = body.encode()
+                self.send_response(code)
+                self.send_header("Content-Type", ctype)
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+
+            def log_message(self, *a):
+                pass
+        self.server = HTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        self.base = f"http://127.0.0.1:{self.server.server_port}"
+
+    def tearDown(self):
+        self.server.shutdown()
+
+    def run_probe(self, base=None):
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            probe_pokemon_card.main(["--base", base or self.base, "--delay", "0"])
+        return buf.getvalue()
+
+    def test_reports_links_images_controls_script_hints_and_a_card_page(self):
+        out = self.run_probe()
+        self.assertIn("robots.txt: status 200", out)
+        self.assertIn("Disallow: /admin/", out)
+        self.assertIn("/id/card-search/detail/N/", out)                 # link shape, numbers collapsed
+        self.assertIn("/id/card-img/idN.png", out)                      # image shape, src and data-src both read
+        self.assertIn("expansionCodes: 2 nilai, mis. ['MA1', 'MA2']", out)
+        self.assertIn("rarity: 2 nilai", out)
+        self.assertIn("petunjuk skrip: fetch('/api/cards/list.json')", out)
+        self.assertIn("status 404", out)                                # the filtered list variant is reported, not fatal
+        self.assertIn("Mega Gardevoir ex 060/126 RR", out)              # text of the card page that was opened
+
+    def test_unreachable_site_is_reported_not_raised(self):
+        out = self.run_probe("http://127.0.0.1:9")
+        self.assertIn("status 0", out)
+        self.assertIn("tidak ada tautan kartu", out)
+
+    def test_url_shapes(self):
+        self.assertEqual(probe_pokemon_card.pattern("https://x/id/card-search/list/?pageNo=3&expansionCodes=MA1"),
+                         "/id/card-search/list/?expansionCodes,pageNo")
 
 
 class ProbeNext(unittest.TestCase):
