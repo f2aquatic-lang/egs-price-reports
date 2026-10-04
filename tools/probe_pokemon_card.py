@@ -6,6 +6,9 @@ offer so the real fetcher can be written against facts: links, images, filter co
 hints of a JSON/API behind the page, and the text of one card page.
 
 Usage: python3 probe_pokemon_card.py [--base https://asia.pokemon-card.com] [--delay 1] [--snippets]
+       python3 probe_pokemon_card.py --url URL [--url URL ...] [--find REGEX] [--text 800]
+  --url      look at any page instead (for example a price list): robots.txt of its host, links, images, and the text;
+             with --find, pieces of the page source around every match of REGEX (for example '\\d[\\d,]*\\s*円')
   --snippets  instead of the overview, print short pieces of the page source (an expansion tile, a card in the
               list, the number / rarity / expansion parts of a card page) to see exactly how the data is marked up.
 Needs only the Python standard library.
@@ -185,14 +188,41 @@ def snippets(base, wait, out=print):
     return 0
 
 
+def probe_urls(urls, find, text_chars, wait, out=print):
+    """Any pages: the host's robots.txt (once), then the overview of each page and, with `find`, pieces of its source."""
+    robots_done = set()
+    for url in urls:
+        parts = urlsplit(url)
+        host = f"{parts.scheme}://{parts.netloc}"
+        if host not in robots_done:
+            robots_done.add(host)
+            status, _, body = get(host + "/robots.txt")
+            out(f"=== {host}/robots.txt: status {status}")
+            out(body[:900] if status == 200 else re.sub(r"\s+", " ", body)[:200])
+            wait()
+        status, ctype, body = get(url)
+        scan = describe(url, status, ctype, body, out)
+        if status == 200 and find:
+            show(f"sumber di sekitar {find!r}", windows(body, find, 250, 350, 4), out)
+        if scan and text_chars > 500:
+            out("teks (lebih panjang): " + re.sub(r"\s+", " ", " ".join(scan.text))[:text_chars])
+        wait()
+    return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--base", default=BASE)
     ap.add_argument("--delay", type=float, default=1.0)
     ap.add_argument("--snippets", action="store_true", help="print pieces of the page source instead of the overview")
+    ap.add_argument("--url", action="append", help="probe this page instead of the card database (repeatable)")
+    ap.add_argument("--find", help="with --url: print pieces of the source around matches of this regular expression")
+    ap.add_argument("--text", type=int, default=500, help="with --url: how many characters of page text to print")
     a = ap.parse_args(argv)
     base = a.base.rstrip("/")
     wait = lambda: time.sleep(a.delay)
+    if a.url:
+        return probe_urls(a.url, a.find, a.text, wait)
     if a.snippets:
         return snippets(base, wait)
 

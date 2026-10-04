@@ -981,6 +981,20 @@ class ProbePokemonCard(unittest.TestCase):
         self.assertIn('<span class="collectorNumber">060 / 126</span>', out)
         self.assertIn('alt="RR"', out)
 
+    def test_any_page_with_robots_and_matches_around_a_pattern(self):
+        self.pages["/sell/poc/s/m2a"] = (200, "text/html", "<html><title>Daftar</title><body><div class='card'>001/193 SAR Pikachu ex <b>12,800 円</b> 在庫 3</div>"
+                                         "<div class='card'>002/193 RR Foo <b>80 円</b></div></body></html>")
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            probe_pokemon_card.main(["--url", self.base + "/sell/poc/s/m2a", "--find", r"\d[\d,]*\s*円", "--delay", "0"])
+        out = buf.getvalue()
+        self.assertEqual(out.count("robots.txt: status"), 1)
+        self.assertIn("Disallow: /admin/", out)
+        self.assertIn("<b>12,800 円</b>", out)
+        self.assertIn("002/193 RR Foo", out)
+
     def test_unreachable_site_is_reported_not_raised(self):
         out = self.run_probe("http://127.0.0.1:9")
         self.assertIn("status 0", out)
