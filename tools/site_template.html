@@ -81,6 +81,8 @@ td.title{min-width:220px}
 .badge{display:inline-block;font:500 11px var(--mono);border:1px solid var(--line);border-radius:4px;padding:0 6px;margin-left:6px;color:var(--ink-2);white-space:nowrap}
 .tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .count{color:var(--ink-2);font-size:13px}
+td.ph{width:52px;padding:4px 10px}
+td.ph img{display:block;width:44px;height:44px;object-fit:cover;border-radius:6px;background:var(--soft)}
 .chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 14px;font:500 13px var(--body);cursor:pointer}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:7px 12px;font:14px var(--body)}
@@ -400,16 +402,19 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
       roCount.textContent = shown.length + ' dari ' + rows.length + ' kartu' + (rows.length < D.raw_only.length ? ' (total ' + D.raw_only.length + ')' : '');
       if (!rows.length) { roBox.replaceChildren(h('div', {'class': 'empty', text: 'Tidak ada kartu yang cocok.'})); return; }
       var nodes = [h('table', null,
-        h('thead', null, h('tr', null, ['Kartu', 'Set · No', 'Listing', 'Termurah', 'Median', 'Termahal', 'Tren'].map(function(c){ return h('th', {text: c}); }))),
+        h('thead', null, h('tr', null, [D.photos ? 'Foto' : null, 'Kartu', 'Set · No', 'Listing', 'Termurah', 'Median', 'Termahal', 'Tren', ''].filter(function(c){ return c !== null; }).map(function(c){ return h('th', {text: c}); }))),
         h('tbody', null, shown.map(function(c){
           return h('tr', null,
+            D.photos ? h('td', {'class': 'ph'}, c.photo ? h('img', {src: c.photo, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer', width: 44, height: 44,
+              onerror: function(e){ e.target.remove(); }}) : null) : null,
             h('td', {text: c.name + (c.rarity ? ' ' + c.rarity : '')}),
             h('td', {'class': 'num', text: c.set + ' · ' + c.number}),
             h('td', {'class': 'num', text: String(c.n)}),
             h('td', {'class': 'num', text: rp(c.min)}),
             h('td', {'class': 'num', text: rp(c.median)}),
             h('td', {'class': 'num', text: rp(c.max)}),
-            h('td', {'class': 'num', text: trendText(c.trend)}));
+            h('td', {'class': 'num', text: trendText(c.trend)}),
+            h('td', null, c.url ? h('a', {href: c.url, target: '_blank', rel: 'noopener', text: 'Buka ↗'}) : null));
         })))];
       if (shown.length < rows.length) nodes.push(h('button', {'class': 'chip', type: 'button', text: 'Tampilkan semua ' + rows.length,
         onclick: function(){ ro.all = true; drawRawOnly(); }}));

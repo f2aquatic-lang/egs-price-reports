@@ -82,6 +82,9 @@ GUESS_NAMES = [  # real toco titles (VPS run, 2026-10-04) -> the card name a hum
     ("TANGELA ERIKA AR MA4 I 124 / 123 INDONESIA", "Tangela Erika"),
     ("kartu pokemon bahasa indonesia mega impian ma3 zekrom N", "Zekrom N"),
     ("Mega Charizard X Ex MA ma3 kartu pokemon tcg indo", "Mega Charizard X ex"),
+    ("Energi Tim Roket C MA3 193/193 Pokemon TCG Indonesia", "Energi Tim Roket"),
+    ("Sinyal Mega U 158/193 MA3 Indo", "Sinyal Mega"),
+    ("Reshiram N AR MA3 128/193 Indonesia", "Reshiram N"),
 ]
 
 
@@ -252,6 +255,20 @@ class Board(unittest.TestCase):
         self.assertEqual(build_site.trend_of([h("2026-10-03", 100), h("2026-10-06", 110), h("2026-10-10", 120)]),
                          {"days": 7, "pct": 20.0})   # baseline is the 3 Oct entry, not the 6 Oct one
         self.assertEqual(build_site.trend_of([h("2026-10-08", 200), h("2026-10-10", 150)]), {"days": 2, "pct": -25.0})
+
+    def test_photos_only_in_a_standalone_page(self):
+        data = build_site.build(tiny_latest(), good_raw())
+        self.assertIn('"photos": true', build_site.render(data, True))
+        self.assertIn('"photos": false', build_site.render(data, False))
+
+    def test_raw_only_rows_carry_the_cheapest_listing_link_and_photo(self):
+        raw = good_raw()
+        raw["cards"][0].update(set_code="MA3", card_number="1/193", catalog=True)
+        for l in raw["cards"][0]["listings"]:
+            l["conf"] = "katalog"
+        raw["cards"][0]["listings"][0]["photo"] = "https://img.example/cheap.webp"
+        row = build_site.build(tiny_latest(), raw)["raw_only"][0]
+        self.assertEqual((row["url"], row["photo"]), (raw["cards"][0]["listings"][0]["url"], "https://img.example/cheap.webp"))
 
     def test_without_raw(self):
         data = build_site.build(tiny_latest())
@@ -890,6 +907,7 @@ class BrowserRender(unittest.TestCase):
             for l in c["listings"]:
                 l["conf"] = "katalog"
                 l["url"] += f"-{i}"
+                l["photo"] = f"https://img.example/k-{i}.webp"
             raw["cards"].append(c)
         raw["coverage"].update(cards=len(raw["cards"]), listings_counted=3 * len(raw["cards"]), catalog_cards=120)
         self.assertEqual(validate_raw.validate(raw)[0], [])
@@ -903,10 +921,14 @@ class BrowserRender(unittest.TestCase):
                                         args=["--no-sandbox"] if os.geteuid() == 0 else [])
             page = browser.new_page()
             page.on("pageerror", lambda e: errors.append(str(e)))
+            gif = bytes.fromhex("47494638396101000100800000000000ffffff21f90401000000002c00000000010001000002024401003b")
+            page.route("https://img.example/**", lambda route: route.fulfill(status=200, content_type="image/gif", body=gif))
             page.goto("file://" + path)
             page.wait_for_timeout(300)
             rows = lambda: page.evaluate("() => document.querySelectorAll('#rawonly-body tbody tr').length")
             first = (rows(), page.evaluate("() => document.querySelector('#rawonly .count').textContent"))
+            photos = page.evaluate("() => [...document.querySelectorAll('#rawonly-body td.ph img')].map(i => i.getAttribute('src') + '|' + i.loading)")
+            links = page.evaluate("() => document.querySelectorAll('#rawonly-body tbody a').length")
             page.fill("#rawonly-tools input", "karu 77")
             searched = (rows(), page.evaluate("() => document.querySelector('#rawonly .count').textContent"))
             page.fill("#rawonly-tools input", "")
@@ -915,6 +937,8 @@ class BrowserRender(unittest.TestCase):
             browser.close()
         self.assertEqual(errors, [])
         self.assertEqual(first, (60, "60 dari 120 kartu"))
+        self.assertEqual((len(photos), links), (60, 60))
+        self.assertEqual(photos[0], "https://img.example/k-1.webp|lazy")
         self.assertEqual(searched[0], 1)
         self.assertEqual(expanded, 120)
 

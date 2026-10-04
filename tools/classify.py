@@ -113,6 +113,8 @@ def guess_name(title):
         if w.strip("-'") == "":
             continue
         out.append("ex" if w.lower() == "ex" else "-".join(p[:1].upper() + p[1:].lower() for p in w.split("-")))
+    while len(out) > 1 and out[-1].lower() in ("c", "u", "r"):  # Common / Uncommon / Rare marks on trainers and energy
+        out.pop()
     return " ".join(out[:4])
 
 

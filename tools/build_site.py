@@ -178,7 +178,9 @@ def attach_raw(data, raw, gen):
              "text": l["title"], **age_fields(l["url"], gen)} for l in c["listings"]]}
     data["raw_only"] = sorted(
         ({"name": c["name"], "set": c["set_code"], "number": c["card_number"],
-          "rarity": c["rarity"], **c["stats"], "trend": trend_of(c.get("history") or [])}
+          "rarity": c["rarity"], **c["stats"], "trend": trend_of(c.get("history") or []),
+          "url": c["listings"][0]["url"] if c["listings"] else None,
+          "photo": next((l["photo"] for l in c["listings"] if l.get("photo")), None)}
          for k, c in by.items() if k not in used),
         key=lambda c: (-c["n"], c["set"], c["number"]))
     data["raw_meta"] = {"generated": wib_label(raw["generated_at"]), "cards": len(raw["cards"]),
@@ -189,7 +191,8 @@ def render(data, standalone):
     here = os.path.dirname(os.path.abspath(__file__))
     with open(os.path.join(here, "site_template.html"), encoding="utf-8") as fh:
         page = fh.read()
-    blob = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
+    # card photos are loaded from the seller's image host: fine in a normal page, blocked in an Artifact
+    blob = json.dumps({**data, "photos": standalone}, ensure_ascii=False).replace("</", "<\\/")
     page = page.replace("/*__DATA__*/null", blob)
     if standalone:
         page = ("<!doctype html><html lang=\"id\"><head><meta charset=\"utf-8\">"
