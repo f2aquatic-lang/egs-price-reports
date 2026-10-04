@@ -805,7 +805,7 @@ class ProbePokemonCard(unittest.TestCase):
     }
 
     def setUp(self):
-        pages = self.PAGES
+        self.pages = pages = dict(self.PAGES)  # a copy: a test may replace pages without touching the others
 
         class H(BaseHTTPRequestHandler):
             def do_GET(self):
@@ -845,6 +845,26 @@ class ProbePokemonCard(unittest.TestCase):
         self.assertIn("petunjuk skrip: fetch('/api/cards/list.json')", out)
         self.assertIn("status 404", out)                                # the filtered list variant is reported, not fatal
         self.assertIn("Mega Gardevoir ex 060/126 RR", out)              # text of the card page that was opened
+
+    def test_snippets_show_the_markup_around_the_data(self):
+        pages = self.pages
+        pages["/id/card-search/list/?pageNo=1&expansionCodes=MA1"] = (200, "text/html", """<html><body><p>Hasil Pencarian 184 buah</p>
+            <ul><li class="card"><a href="/id/card-search/detail/101/"><img data-original="/id/card-img/id00000101.png" alt="Mega Gardevoir ex"></a></li></ul></body></html>""")
+        pages["/id/card-search/detail/101/"] = (200, "text/html", """<html><title>Mega Gardevoir ex | Situs</title><body><h1>Mega Gardevoir ex</h1>
+            <span class="collectorNumber">060 / 126</span><span class="rarity"><img src="/rarity/RR.png" alt="RR"></span>
+            <a href="/id/card-search/list/?expansionCodes=MA1">Evolusi Mega</a><img src="/id/card-img/id00000101.png"></body></html>""")
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            probe_pokemon_card.main(["--base", self.base, "--delay", "0", "--snippets"])
+        out = buf.getvalue()
+        self.assertIn("kotak set", out)
+        self.assertIn('expansionCodes=MA1">Evolusi Mega', out)
+        self.assertIn('<li class="card"><a href="/id/card-search/detail/101/">', out)
+        self.assertIn("Hasil Pencarian 184 buah", out)
+        self.assertIn('<span class="collectorNumber">060 / 126</span>', out)
+        self.assertIn('alt="RR"', out)
 
     def test_unreachable_site_is_reported_not_raised(self):
         out = self.run_probe("http://127.0.0.1:9")

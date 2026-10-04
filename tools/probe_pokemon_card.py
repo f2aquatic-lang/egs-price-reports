@@ -5,7 +5,9 @@ Run it where the site is reachable (the VPS); it only reads, one request per sec
 offer so the real fetcher can be written against facts: links, images, filter controls (the expansion list),
 hints of a JSON/API behind the page, and the text of one card page.
 
-Usage: python3 probe_pokemon_card.py [--base https://asia.pokemon-card.com] [--delay 1]
+Usage: python3 probe_pokemon_card.py [--base https://asia.pokemon-card.com] [--delay 1] [--snippets]
+  --snippets  instead of the overview, print short pieces of the page source (an expansion tile, a card in the
+              list, the number / rarity / expansion parts of a card page) to see exactly how the data is marked up.
 Needs only the Python standard library.
 """
 import argparse
@@ -135,13 +137,64 @@ def describe(url, status, ctype, body, out=print):
     return scan
 
 
+def windows(html, pattern, before, after, limit):
+    """Up to `limit` pieces of source around matches of `pattern`, whitespace collapsed."""
+    out = []
+    for m in re.finditer(pattern, html):
+        piece = html[max(0, m.start() - before): m.end() + after]
+        out.append(re.sub(r"\s+", " ", piece)[:1100])
+        if len(out) >= limit:
+            break
+    return out
+
+
+def show(title, pieces, out=print):
+    out(f"\n--- {title} ({len(pieces)})")
+    for piece in pieces:
+        out("  > " + piece)
+    if not pieces:
+        out("  (tidak ditemukan)")
+
+
+def snippets(base, wait, out=print):
+    home, listing = base + "/id/card-search/", base + "/id/card-search/list/?pageNo=1&expansionCodes=MA1"
+    status, _, body = get(home)
+    out(f"=== {home}: status {status}")
+    if status == 200:
+        show("kotak set (tautan expansionCodes)", windows(body, r'expansionCodes=[A-Za-z0-9]+', 350, 450, 2), out)
+        show("pagination set (pageNo=2)", windows(body, r'\?pageNo=2', 200, 250, 1), out)
+    wait()
+    status, _, body = get(listing)
+    out(f"\n=== {listing}: status {status}")
+    detail = None
+    if status == 200:
+        show("satu kartu di daftar", windows(body, r'/detail/\d+/', 350, 550, 2), out)
+        show("jumlah hasil", windows(body, r'Hasil Pencarian\s*\d', 150, 300, 1), out)
+        m = re.search(r'/id/card-search/detail/\d+/', body)
+        detail = urljoin(listing, m.group(0)) if m else None
+    wait()
+    if detail:
+        status, _, body = get(detail)
+        out(f"\n=== {detail}: status {status}")
+        if status == 200:
+            show("judul dan h1", windows(body, r'<title>|<h1', 0, 300, 2), out)
+            show("nomor kartu", windows(body, r'\b\d{1,3}\s*/\s*\d{2,3}\b', 500, 450, 1), out)
+            show("kode set (expansionCodes)", windows(body, r'expansionCodes=', 350, 350, 1), out)
+            show("kata rarity", windows(body, r'(?i)rarity|kelangkaan|rare', 200, 300, 3), out)
+            show("gambar kartu", windows(body, r'card-img/', 250, 250, 1), out)
+    return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--base", default=BASE)
     ap.add_argument("--delay", type=float, default=1.0)
+    ap.add_argument("--snippets", action="store_true", help="print pieces of the page source instead of the overview")
     a = ap.parse_args(argv)
     base = a.base.rstrip("/")
     wait = lambda: time.sleep(a.delay)
+    if a.snippets:
+        return snippets(base, wait)
 
     status, ctype, body = get(base + "/robots.txt")
     print(f"=== robots.txt: status {status}")
