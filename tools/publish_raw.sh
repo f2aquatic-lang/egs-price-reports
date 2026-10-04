@@ -42,8 +42,22 @@ main() {
   git reset -q --hard origin/main
   "$PYTHON" tools/collect_raw.py "$@"
 
+  # Optional website: rebuild the page from the checkout (latest.json from the bot, raw.json from this run).
+  # A failure here must never stop raw.json from being published.
+  build_site() {
+    [ -n "${EGS_SITE_DIR:-}" ] || return 0
+    if "$PYTHON" tools/build_site.py latest.json --raw raw.json --standalone --out "$EGS_SITE_DIR/.index.html.new" \
+        && chmod 644 "$EGS_SITE_DIR/.index.html.new" && mv -f "$EGS_SITE_DIR/.index.html.new" "$EGS_SITE_DIR/index.html"; then
+      printf 'User-agent: *\nDisallow: /\n' > "$EGS_SITE_DIR/robots.txt"
+      echo "situs diperbarui: $EGS_SITE_DIR/index.html"
+    else
+      echo "PERINGATAN: situs gagal dibangun; penerbitan raw.json tidak terpengaruh" >&2
+    fi
+  }
+
   if [ -z "$(git status --porcelain -- raw.json)" ]; then
     echo "raw.json tidak berubah"
+    build_site
     exit 0
   fi
   git add raw.json
@@ -53,6 +67,7 @@ main() {
     git pull --rebase -q origin main
     if git push -q origin HEAD:main; then
       echo "raw.json dipublikasikan"
+      build_site
       exit 0
     fi
     echo "dorongan ke-$attempt bentrok dengan push lain, mencoba lagi" >&2

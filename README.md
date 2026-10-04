@@ -19,5 +19,5 @@ These scripts only read `latest.json`; they never write it and are not part of t
 ## Dataset RAW
 
 Dataset kedua untuk kartu bahasa Indonesia yang belum di-slab, supaya papan harga bisa menunjukkan RAW dan slab EGS berdampingan. Format, aturan hitung, dan alur pengumpul ada di [docs/raw-dataset.md](docs/raw-dataset.md). `latest.json` tidak berubah.
-- `python3 tools/collect_raw.py --dry-run` (di VPS) mengumpulkan listing RAW lewat pencarian toco dan menulis `raw.json`; `tools/run_raw.sh` menjalankannya dengan kunci API (Claude atau OpenAI; atau `--lang-mode text` tanpa kunci) dan venv-nya, dan `tools/publish_raw.sh` menerbitkannya ke `main` (hanya mau jalan dari branch `main`). Langkah pemasangan ada di [docs/vps-setup.md](docs/vps-setup.md).
+- `python3 tools/collect_raw.py --dry-run` (di VPS) mengumpulkan listing RAW lewat pencarian toco dan menulis `raw.json`; `tools/run_raw.sh` menjalankannya dengan kunci API (Claude atau OpenAI; atau `--lang-mode text` tanpa kunci) dan venv-nya, dan `tools/publish_raw.sh` menerbitkannya ke `main` (hanya mau jalan dari branch `main`). Langkah pemasangan ada di [docs/vps-setup.md](docs/vps-setup.md). Situs papan harga dengan kata sandi (Caddy, `tools/setup_site.sh`) dijelaskan di [docs/website.md](docs/website.md).
 - `tools/probe_toco*.py` adalah skrip diagnostik yang dipakai untuk mempelajari cara kerja toco.

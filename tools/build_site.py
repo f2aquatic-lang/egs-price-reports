@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the "Papan Harga Slab EGS" page from latest.json. Read-only on the data.
+"""Build the "Papan Harga Kartu Pokemon" page (RAW and EGS slab asking prices) from latest.json and raw.json. Read-only on the data.
 
 Usage: python3 tools/build_site.py [latest.json] [--raw raw.json] [--out FILE] [--standalone]
 
@@ -195,8 +195,11 @@ def render(data, standalone):
     blob = json.dumps({**data, "photos": standalone}, ensure_ascii=False).replace("</", "<\\/")
     page = page.replace("/*__DATA__*/null", blob)
     if standalone:
+        # private page: keep search engines out, and send no Referer to the photo host (the sellers' images)
         page = ("<!doctype html><html lang=\"id\"><head><meta charset=\"utf-8\">"
                 "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1,viewport-fit=cover\">"
+                "<meta name=\"robots\" content=\"noindex,nofollow\"><meta name=\"referrer\" content=\"no-referrer\">"
+                "<title>Papan Harga Kartu Pok\u00e9mon</title>"
                 "</head><body>" + page + "</body></html>")
     return page
 
