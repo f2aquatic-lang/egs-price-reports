@@ -30,8 +30,8 @@ from urllib.request import Request, urlopen
 
 BASE = "https://asia.pokemon-card.com"
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-# main booster sets: MA1..MA6, SV1S..SV11S, SV1A, SV2A, SV4A, SV8A, ... and the AC3 TAG TEAM sets; not decks or promos
-DEFAULT_INCLUDE = r"^(MA\d+|SV\d+[A-Z]|AC\d[A-Z])$"
+# main booster sets: MA1..MA6, SV1S..SV11S, SV1A, SV2A, SV4A, SV8A, ... and the AC3A/AC3B TAG TEAM sets; not decks or promos
+DEFAULT_INCLUDE = r"^(MA\d+|SV\d+[A-Z]|AC\d[AB])$"
 
 
 # rarity filter codes of the site (seen on 2026-10-04); the run re-reads them from the home page and falls back to these

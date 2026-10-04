@@ -436,7 +436,7 @@ def load_official(path):
         return {}
     with open(path, encoding="utf-8") as fh:
         data = json.load(fh)
-    return {build_site.card_key(c["set"], c["number"]): c for c in data["cards"] if c.get("number")}
+    return build_site.official_index(data["cards"], data.get("sets"))
 
 
 def load_defaults(path):
@@ -445,6 +445,27 @@ def load_defaults(path):
         return {}
     with open(path, encoding="utf-8") as fh:
         return {r: int(p) for r, p in json.load(fh).get("by_rarity", {}).items() if int(p) > 0}
+
+
+def reconcile(key, title, official, by_set_num):
+    """Put a (set, number) read from a title onto the official card when sellers wrote the wrong total.
+
+    '1/185' for a card that is 001/139 officially: same set, same number, and the official name appears in the
+    title. A number that is only a side series ('1/30' Pikachu next to 1/130 Exeggcute) stays as it is.
+    """
+    code, number = key
+    if build_site.card_key(code, number) in official:
+        return key
+    num = int(number.split("/")[0])
+    low = re.sub(r"[^a-z0-9 ]", " ", title.lower())
+    hits = []
+    for o in by_set_num.get((code.lower(), num), []):
+        words = [w for w in re.sub(r"[^a-z0-9 ]", " ", o["name"].lower()).split() if w != "ex"]
+        if words and all(w in low.split() for w in words):
+            hits.append(o)
+    if len(hits) == 1:
+        return code, re.sub(r"^0+(?=\d)", "", hits[0]["number"])
+    return key
 
 
 def majority(values):
@@ -547,11 +568,15 @@ def build_raw(db, types, now, max_age_hours, record=True, catalog=False, officia
     # a card nobody lists yet still gets a price when its rarity has a base price (replaced as soon as a listing exists)
     priced = {build_site.card_key(c["set_code"], c["card_number"]) for c in cards}
     base_priced = []
+    main_den = {code: Counter(o["den"] for o in official.values() if o["set"] == code and o.get("den")).most_common(1)[0][0]
+                for code in {o["set"] for o in official.values() if o.get("den")}}
     for key, o in official.items():
-        price = (defaults or {}).get(o.get("rarity"))
+        # "-" is the price of a card without a rarity mark, only inside the set's own numbering (not its n/30 Pikachu or secret rares)
+        no_mark_main = (not o.get("rarity") and o.get("den") == main_den.get(o["set"]) and (o.get("num") or 0) <= o["den"])
+        price = (defaults or {}).get(o.get("rarity")) if o.get("rarity") else (defaults or {}).get("-") if no_mark_main else None
         if price and key not in priced:
             base_priced.append({"name": o["name"], "set_code": o["set"].upper(), "card_number": re.sub(r"^0+(?=\d)", "", o["number"]),
-                                "rarity": o["rarity"], "catalog": True, "price_basis": "default",
+                                "rarity": o.get("rarity") or "", "catalog": True, "price_basis": "default",
                                 "stats": {"n": 0, "min": price, "p25": price, "median": price, "p75": price, "max": price},
                                 "listings": []})
     base_priced.sort(key=lambda c: (c["set_code"], int(c["card_number"].split("/")[1]), int(c["card_number"].split("/")[0])))
@@ -589,6 +614,11 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
     ctr, to_check, catalog_on = Counter(), [], getattr(cfg, "catalog", False)
     listings = [l for l in map(to_listing, items.values())]
     sets_by_total = denominator_sets(l["title"] for l in listings) if catalog_on else {}
+    official = load_official(getattr(cfg, "catalog_json", None)) if catalog_on else {}
+    by_set_num = defaultdict(list)
+    for o in official.values():
+        if o.get("num") is not None:
+            by_set_num[(o["set"].lower(), o["num"])].append(o)
     for l in listings:
         if not l["ask"] or l["ask"] <= 0:
             ctr["tanpa_harga"] += 1
@@ -603,7 +633,7 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
             if conf not in MATCHED and catalog_on:
                 key = catalog_key(l["title"], sets_by_total)
                 if key:
-                    conf, (cset, cnum) = CATALOG, key
+                    conf, (cset, cnum) = CATALOG, reconcile(key, l["title"], official, by_set_num)
             ctr["cocok_" + (conf or "tidak")] += 1
         db.execute(
             "INSERT INTO listing(url,title,ask_idr,list_idr,city,stock,image_url,kind,card_set,card_number,conf,first_seen,last_seen) "

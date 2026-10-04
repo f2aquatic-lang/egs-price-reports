@@ -25,6 +25,7 @@ import build_site  # noqa: E402
 import collect_raw  # noqa: E402
 import db_report  # noqa: E402
 import fetch_catalog  # noqa: E402
+import fetch_jp_prices  # noqa: E402
 import probe_pokemon_card  # noqa: E402
 import probe_toco  # noqa: E402
 import probe_toco_fields  # noqa: E402
@@ -327,6 +328,19 @@ class Board(unittest.TestCase):
         self.assertEqual((ma3["name_id"], ma3["released"], ma3["total"], ma3["cards"], ma3["priced"], ma3["base_priced"], ma3["unpriced"], ma3["basis"], ma3["official"]),
                          ("Evolusi Mega Impian ex", "2026-01-30", 4, 4, 1, 1, 2, "resmi", True))
         self.assertEqual([c["number"] for c in data["raw_cards"] if c["set"] == "MA3"], ["114/193", "115/193", "117/193", "118/193"])
+
+    def test_set_totals_count_distinct_numbers_and_deck_sets_are_left_out(self):
+        raw, catalog = board_with_official_catalog()
+        dup = dict(catalog["cards"][0], id=999)                                  # a second (foil) version of 114/193
+        deck = {"set": "AC3D", "number": "001/180", "num": 1, "den": 180, "name": "Deck card", "rarity": None, "image": "x", "id": 1000}
+        catalog["cards"] += [dup, deck]
+        catalog["sets"][0]["total"] = 5                                          # the site counts the foil version as a card
+        catalog["sets"].append({"code": "AC3D", "product": "Starter Deck GX", "released": "2020-07-10", "total": 1, "fetched": 1, "name": "Deck"})
+        data = build_site.build(tiny_latest(), raw, catalog)
+        ma3 = next(m for m in data["sets"] if m["code"] == "MA3")
+        self.assertEqual((ma3["total"], ma3["cards"]), (4, 4))                   # 4 distinct numbers, not the site's 5
+        self.assertNotIn("AC3D", [m["code"] for m in data["sets"]])
+        self.assertNotIn("AC3D", {c["set"] for c in data["raw_cards"]})
 
     def test_card_keys_ignore_zero_padding(self):
         self.assertEqual(build_site.card_key("SV1S", "014/078"), build_site.card_key("sv1s", "14/78"))
@@ -664,6 +678,50 @@ class Collector(unittest.TestCase):
         self.assertEqual(raw["coverage"]["default_priced_cards"], 1)
         self.assertEqual(raw["coverage"]["cards"], len(raw["cards"]))
         self.assertTrue(all(c["stats"]["min"] > 0 for c in raw["cards"]))                 # nothing is priced at 0
+
+    def test_foil_versions_of_one_number_count_once_and_unmarked_main_series_cards_get_the_base_price(self):
+        def card(set_, n, den, name, rarity, cid):
+            return {"set": set_, "number": f"{n:03d}/{den}", "num": n, "den": den, "name": name, "rarity": rarity, "image": f"https://o/{cid}.png", "id": cid}
+        cards = [card("MA3", 1, 193, "Pinsir", None, 1), card("MA3", 1, 193, "Pinsir", None, 2), card("MA3", 1, 193, "Pinsir", None, 3),  # base + two foil versions
+                 card("MA3", 2, 193, "Yanma", None, 4), card("MA3", 2, 193, "Yanma", "C", 5),                                         # a later version carries the rarity
+                 card("MA3", 250, 193, "Mega Dragonite ex", None, 6),                                                                 # above the printed total: a secret card
+                 card("MA6", 1, 130, "Exeggcute", None, 7), card("MA6", 5, 30, "Pikachu", None, 8),                                   # n/30 side series
+                 card("MA6", 2, 130, "Volbeat", "AR", 9), card("MA6", 3, 130, "Illumise", None, 10),
+                 card("AC3D", 1, 180, "Deck card", None, 11)]
+        sets = [{"code": "MA3", "product": "High Class Booster Pack", "fetched": 6}, {"code": "MA6", "product": "Booster Pack", "fetched": 4},
+                {"code": "AC3D", "product": "Starter Deck GX", "fetched": 1}]
+        idx = build_site.official_index(cards, sets)
+        self.assertEqual(sorted(idx), [("ma3", "1/193"), ("ma3", "2/193"), ("ma3", "250/193"), ("ma6", "1/130"), ("ma6", "2/130"), ("ma6", "3/130"), ("ma6", "5/30")])
+        self.assertEqual((idx[("ma3", "1/193")]["id"], idx[("ma3", "2/193")]["rarity"]), (1, "C"))
+        path = os.path.join(self.tmp.name, "catalog.json")
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump({"schema_version": 1, "sets": sets, "cards": cards}, fh)
+        prices = os.path.join(self.tmp.name, "default_prices.json")
+        with open(prices, "w", encoding="utf-8") as fh:
+            json.dump({"by_rarity": {"C": 500, "-": 400}}, fh)
+        self.catalog = API_CATALOG
+        raw, _ = self.go(lang_mode="text", catalog=True, catalog_json=path, default_prices=prices)
+        got = {(c["set_code"], c["card_number"]): c["stats"]["median"] for c in raw["cards"] if c.get("price_basis") == "default"}
+        self.assertEqual(got, {("MA3", "1/193"): 400, ("MA3", "2/193"): 500, ("MA6", "1/130"): 400, ("MA6", "3/130"): 400})
+        # not priced: the secret card, the n/30 Pikachu, the AR (no base price for AR), and the deck card
+        self.assertEqual(validate_raw.validate(raw)[0], [])
+
+    def test_a_seller_who_writes_the_wrong_total_still_lands_on_the_official_card(self):
+        cards = [{"set": "SV9S", "number": "001/139", "num": 1, "den": 139, "name": "Caterpie", "rarity": "C", "image": "i", "id": 1},
+                 {"set": "SV9S", "number": "002/139", "num": 2, "den": 139, "name": "Metapod", "rarity": "C", "image": "i", "id": 2},
+                 {"set": "MA6", "number": "001/130", "num": 1, "den": 130, "name": "Exeggcute", "rarity": None, "image": "i", "id": 3}]
+        path = os.path.join(self.tmp.name, "catalog.json")
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump({"schema_version": 1, "sets": [], "cards": cards}, fh)
+        self.catalog = API_CATALOG + [
+            api_item("w-1", "Caterpie 1/185 SV9S Pokemon TCG Indonesia", 4000),            # wrong total: official is 001/139
+            api_item("w-2", "Metapod 002/139 SV9S Pokemon TCG Indonesia", 3000),           # right total
+            api_item("w-3", "Pikachu 1/30 MA6 30th Anniversary Pokemon TCG Indonesia", 25000)]  # side series: not Exeggcute 001/130
+        raw, _ = self.go(lang_mode="text", catalog=True, catalog_json=path, default_prices=None)
+        found = {(c["set_code"], c["card_number"]): c for c in raw["cards"] if c.get("catalog")}
+        self.assertEqual(sorted(found), [("MA6", "1/30"), ("SV9S", "1/139"), ("SV9S", "2/139")])
+        self.assertEqual(found[("SV9S", "1/139")]["name"], "Caterpie")                      # one card, under the official number
+        self.assertEqual(found[("SV9S", "1/139")]["stats"]["median"], 4000)
 
     def test_without_the_official_catalog_nothing_is_added(self):
         self.catalog = API_CATALOG + CATALOG_EXTRA
@@ -1206,7 +1264,7 @@ class FetchCatalog(unittest.TestCase):
         import re
         pick = lambda code: bool(re.search(fetch_catalog.DEFAULT_INCLUDE, code))
         self.assertTrue(all(pick(c) for c in ("MA1", "MA6", "SV8S", "SV11S", "SV1A", "SV2A", "SV4A", "AC3A", "AC3B")))
-        self.assertFalse(any(pick(c) for c in ("MATL", "MAAL", "M", "SV", "SVM", "SVK", "SVTL", "SVDS", "S12A", "AS1A")))
+        self.assertFalse(any(pick(c) for c in ("MATL", "MAAL", "M", "SV", "SVM", "SVK", "SVTL", "SVDS", "S12A", "AS1A", "AC3D")))
 
     def test_rarity_filter_labels_from_label_tags_or_image_alt(self):
         page = ('<input type="checkbox" name="rarity[]" id="r12" value="12"><label for="r12"> <img src="x.png" alt="RR"> </label>'
@@ -1223,6 +1281,96 @@ class FetchCatalog(unittest.TestCase):
     def test_product_name_takes_the_quoted_part(self):
         self.assertEqual(fetch_catalog.product_name('Booster Pack "Evolusi Mega"'), "Evolusi Mega")
         self.assertEqual(fetch_catalog.product_name("Starter Deck"), "Starter Deck")
+
+
+def yuyutei_site():
+    """Pages shaped like the Yuyu-tei markup seen on 2026-10-05 (set checkboxes, rarity headers, card-product blocks)."""
+    def option(code, label):
+        return (f'<li><div class="p-0"> <input type="checkbox" class="versPhone" name="vers[]" value="{code}" id="{code}VersPhone" onClick="x()"> '
+                f'<label for="{code}VersPhone" class="label py-2 ps-2 pe-2">{label}</label></div></li>'
+                f'<li><div class="p-0"> <input type="checkbox" name="vers[]" value="{code}" id="{code}" onClick="y()"> <label for="{code}" class="label">{label}</label></div></li>')
+
+    def product(code, cid, number, rarity, name, yen, stock, sold_out=False):
+        return (f'<div class="col-md"><div class="card-product position-relative mt-4 {"sold-out" if sold_out else ""} ">'
+                f'<div class="starbtn"> <em></em> <img src="https://cdn.yuyu-tei.jp/images/star.svg" alt="Star"/></div> '
+                f'<a href="https://yuyu-tei.jp/sell/poc/card/{code}/{cid}"><div class="position-relative product-img"> '
+                f'<img src="https://card.yuyu-tei.jp/poc/100_140/{code}/{cid}.jpg" alt="{number} {rarity} {name}" class="card img-fluid"/></div> </a> '
+                f'<span class="d-block border border-dark p-1 w-100 text-center my-2">{number}</span> '
+                f'<a href="https://yuyu-tei.jp/sell/poc/card/{code}/{cid}"><h4 class="text-primary fw-bold">{name}</h4> </a> '
+                f'<strong class="d-block text-end "> {yen:,} 円 </strong><div class="form-check p-0"> '
+                f'<label class="form-check-label fw-bold float-start cart_sell_zaiko" for="flexRadioDefault1"> 在庫 : {stock} </label></div></div></div>')
+
+    def header(rarity):
+        return f'<h3 class="text-primary fs-4 shadow fw-bold"> <span class="py-2 d-inline-block px-2 me-2 text-white fw-bold">{rarity}</span> Card List</h3>'
+    m02a = ('<div class="filters"><span class="px-1">SAR</span></div><div class="py-4 cards-list" id="card-list3">' + header("MUR")
+            + '<div class="row mt-2" id="card-lits">' + product("m02a", 10486, "250/193", "MUR", "メガカイリューex", 24800, "×", sold_out=True) + '</div>'
+            + header("SAR") + '<div class="row mt-2">' + product("m02a", 10487, "249/193", "SAR", "ピカチュウex", 12800, "3 点")
+            + product("m02a", 10488, "248/193", "SAR", "ゼクロムN", 9800, "12 点") + '</div>'
+            + header("C") + '<div class="row mt-2">' + product("m02a", 10489, "001/193", "C", "ピンシア", 80, "20 点")
+            + '</div></div><div class="carousel">' + product("m06a", 10136, "136/103", "AR", "ピカチュウ", 6980, "5 点") + '</div>')
+    return {"/top/poc": "<html><form>" + option("m02a", "[M2a] ハイクラスパック MEGAドリームex") + option("m01l", "[M1L] 拡張パック メガブレイブ")
+                       + option("sv11b", "[SV11B] 拡張パック ブラックボルト") + option("s08a", "[S8a] 拡張パック 25th") + "</form></html>",
+            "/sell/poc/s/m02a": "<html>" + m02a + "</html>",
+            "/sell/poc/s/m01l": "<html><div id=\"card-list3\">" + header("RR") + product("m01l", 1, "001/063", "RR", "フシギバナex", 480, "7 点") + "</div></html>"}
+
+
+class FetchJpPrices(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.pages, self.calls = yuyutei_site(), []
+        self.args = argparse.Namespace(out=os.path.join(self.tmp.name, "jp.json"), delay=0, sets=None, include=fetch_jp_prices.DEFAULT_INCLUDE,
+                                       max_requests=None, list_sets=False)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def get(self, url):
+        path = url.replace(fetch_jp_prices.BASE, "")
+        self.calls.append(path)
+        return (200, self.pages[path]) if path in self.pages else (404, "")
+
+    def go(self, **over):
+        for k, v in over.items():
+            setattr(self.args, k, v)
+        self.logs = []
+        return fetch_jp_prices.run(self.args, get=self.get, now=datetime(2026, 10, 5, 0, 0, tzinfo=timezone.utc), sleep=lambda s: None, log=self.logs.append)
+
+    def test_set_list_has_codes_and_names_once_each(self):
+        sets = fetch_jp_prices.parse_set_list(self.pages["/top/poc"])
+        self.assertEqual([c for c, _ in sets], ["m02a", "m01l", "sv11b", "s08a"])
+        self.assertEqual(dict(sets)["m02a"], "[M2a] ハイクラスパック MEGAドリームex")
+
+    def test_cards_with_number_rarity_name_price_stock_and_links(self):
+        cards = fetch_jp_prices.parse_set_page(self.pages["/sell/poc/s/m02a"], "m02a")
+        self.assertEqual([(c["number"], c["rarity"], c["name"], c["yen"], c["stock"]) for c in cards],
+                         [("250/193", "MUR", "メガカイリューex", 24800, 0), ("249/193", "SAR", "ピカチュウex", 12800, 3),
+                          ("248/193", "SAR", "ゼクロムN", 9800, 12), ("001/193", "C", "ピンシア", 80, 20)])
+        self.assertEqual((cards[1]["url"], cards[1]["image"], cards[1]["id"]),
+                         ("https://yuyu-tei.jp/sell/poc/card/m02a/10487", "https://card.yuyu-tei.jp/poc/100_140/m02a/10487.jpg", 10487))
+
+    def test_cards_of_other_sets_shown_on_the_page_are_left_out(self):
+        cards = fetch_jp_prices.parse_set_page(self.pages["/sell/poc/s/m02a"], "m02a")
+        self.assertNotIn("m06a", {c["set"] for c in cards})
+
+    def test_default_run_takes_mega_and_sv_sets_not_the_old_s_series(self):
+        data = self.go()
+        self.assertEqual([s["code"] for s in data["sets"]], ["m02a", "m01l"])        # sv11b has no page in the fake site: reported, skipped
+        self.assertEqual(len(data["cards"]), 5)
+        self.assertTrue(any("sv11b: status 404" in l for l in self.logs))
+        self.assertNotIn("/sell/poc/s/s08a", self.calls)
+        with open(self.args.out, encoding="utf-8") as fh:
+            saved = json.load(fh)
+        self.assertEqual((saved["currency"], saved["condition"], saved["generated_at"][:10]), ("JPY", "傷無し", "2026-10-05"))
+
+    def test_list_sets_makes_one_request(self):
+        self.go(list_sets=True)
+        self.assertEqual(self.calls, ["/top/poc"])
+        self.assertTrue(any(l.startswith("m02a") and "MEGAドリームex" in l for l in self.logs))
+
+    def test_budget_and_explicit_sets(self):
+        data = self.go(sets="m02a,m01l", max_requests=1)
+        self.assertEqual([s["code"] for s in data["sets"]], ["m02a"])
+        self.assertTrue(any("anggaran permintaan habis" in l for l in self.logs))
 
 
 class ProbeNext(unittest.TestCase):

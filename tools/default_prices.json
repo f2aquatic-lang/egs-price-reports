@@ -1,6 +1,7 @@
 {
-  "about": "Harga dasar (rupiah) untuk kartu yang BELUM punya listing, per rarity resmi. Ini bukan harga pasar: kartunya ditandai 'harga dasar' di raw.json dan di papan, dan harga dasar langsung diganti harga listing begitu ada listing yang cocok. Rarity yang tidak ada di sini tidak diberi harga (papan menulis 'belum ada listing'). Tambahkan rarity lain kalau mau, mis. \"U\": 1000.",
+  "about": "Harga dasar (rupiah) untuk kartu yang BELUM punya listing. Ini bukan harga pasar: kartunya ditandai 'harga dasar' di raw.json dan di papan, dan harga dasar langsung diganti harga listing begitu ada listing yang cocok. Kunci: rarity resmi (C, U, R, ...). Kunci \"-\" adalah kartu tanpa tanda rarity (di set High Class seperti MA3 dan SV8A, kartu biasa tidak bertanda) dan hanya berlaku untuk nomor di dalam numerasi set itu sendiri, bukan kartu rahasia di atas nomor tercetak. Rarity yang tidak ada di sini tidak diberi harga (papan menulis 'belum ada listing'). Hapus satu baris untuk mematikannya, atau tambah rarity lain, mis. \"U\": 1000.",
   "by_rarity": {
-    "C": 500
+    "C": 500,
+    "-": 500
   }
 }

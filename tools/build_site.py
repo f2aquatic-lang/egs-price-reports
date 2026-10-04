@@ -152,6 +152,28 @@ def card_key(set_code, number):
     return (set_code.lower(), f"{int(m.group(1))}/{int(m.group(2))}" if m else n)
 
 
+def deck_sets(sets):
+    """Codes of official sets that are decks (starter and theme decks): not part of the card-price board."""
+    return {x["code"].upper() for x in sets or [] if re.search(r"deck", x.get("product") or "", re.I)}
+
+
+def official_index(cards, sets=None):
+    """{card_key: card} of the official catalog. A number can appear several times (the Poke Ball and Master Ball
+    foil versions of one card): the first one in the site's order stands for it, and takes the rarity of a
+    later version when it has none itself."""
+    out, skip = {}, deck_sets(sets)
+    for c in cards:
+        if not c.get("number") or c["set"].upper() in skip:
+            continue
+        key = card_key(c["set"], c["number"])
+        have = out.get(key)
+        if have is None:
+            out[key] = dict(c)
+        elif have.get("rarity") is None and c.get("rarity"):
+            have["rarity"] = c["rarity"]
+    return out
+
+
 def trend_of(history):
     """Change of the RAW median against the entry about 7 days earlier (or the oldest one we have)."""
     if len(history) < 2:
@@ -235,8 +257,8 @@ def attach_sets(data, raw, catalog=None):
     official = {}
     official_sets = {}
     if catalog:
-        official = {card_key(c["set"], c["number"]): c for c in catalog["cards"] if c.get("number")}
-        official_sets = {x["code"].upper(): x for x in catalog["sets"] if x.get("fetched")}
+        official = official_index(catalog["cards"], catalog["sets"])
+        official_sets = {x["code"].upper(): x for x in catalog["sets"] if x.get("fetched") and x["code"].upper() not in deck_sets(catalog["sets"])}
     rows, per_set, seen = [], {}, set()
 
     def add(row):
@@ -261,6 +283,7 @@ def attach_sets(data, raw, catalog=None):
             add({"name": o["name"], "set": o["set"].upper(), "number": o["number"], "num": o["num"], "den": o["den"],
                  "rarity": o.get("rarity"), "n": 0, "min": None, "p25": None, "median": None, "p75": None, "max": None,
                  "trend": None, "url": None, "photo": None, "image": o.get("image"), "basis": None, "tracked": False, "egs": []})
+    distinct_official = Counter(c["set"].upper() for c in official.values())
     sets = []
     for code, cards in per_set.items():
         o = official_sets.get(code, {})
@@ -271,7 +294,8 @@ def attach_sets(data, raw, catalog=None):
             c["sub"] = 0 if c["den"] == base else 1
         released = o.get("released") or m.get("released")
         sets.append({**m, "code": code, "base": base, "cards": len(cards),
-                     "name_id": o.get("name") or m.get("name_id"), "total": o.get("total") or m.get("total"),
+                     "name_id": o.get("name") or m.get("name_id"),
+                     "total": (distinct_official.get(code) or m.get("total")) if o else m.get("total"),
                      "basis": "resmi" if o.get("name") else m.get("basis"), "official": bool(o),
                      "priced": sum(1 for c in cards if c["basis"] == "listing"),
                      "base_priced": sum(1 for c in cards if c["basis"] == "default"),
