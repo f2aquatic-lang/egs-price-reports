@@ -929,7 +929,7 @@ class FetchCatalog(unittest.TestCase):
         self.pages, self.calls = official_site(), []
         self.args = argparse.Namespace(
             db=os.path.join(self.tmp.name, "c.sqlite"), out=os.path.join(self.tmp.name, "catalog.json"), delay=0, max_requests=None,
-            sets=None, include=fetch_catalog.DEFAULT_INCLUDE, refresh_days=30, list_sets=False)
+            sets=None, include=fetch_catalog.DEFAULT_INCLUDE, refresh_days=30, list_sets=False, list_rarities=False)
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -991,6 +991,24 @@ class FetchCatalog(unittest.TestCase):
         self.assertEqual(len([c for c in data["cards"] if c["set"] == "MA6"]), 23)
         self.assertFalse(data["sets"][0]["complete"])
         self.assertTrue(any("status 404" in l for l in self.logs))
+
+    def test_default_include_takes_booster_sets_not_decks_or_promos(self):
+        import re
+        pick = lambda code: bool(re.search(fetch_catalog.DEFAULT_INCLUDE, code))
+        self.assertTrue(all(pick(c) for c in ("MA1", "MA6", "SV8S", "SV11S", "SV1A", "SV2A", "SV4A", "AC3A", "AC3B")))
+        self.assertFalse(any(pick(c) for c in ("MATL", "MAAL", "M", "SV", "SVM", "SVK", "SVTL", "SVDS", "S12A", "AS1A")))
+
+    def test_rarity_filter_labels_from_label_tags_or_image_alt(self):
+        page = ('<input type="checkbox" name="rarity[]" id="r12" value="12"><label for="r12"> <img src="x.png" alt="RR"> </label>'
+                '<input type="checkbox" name="rarity[]" id="r1" value="1"><label for="r1">Common</label>'
+                '<input type="checkbox" name="rarity[]" value="22"><span>SAR</span> <input type="checkbox" name="other" value="5">')
+        got = [(c, l) for c, l, _ in fetch_catalog.parse_rarity_filter(page)]
+        self.assertEqual(got, [("12", "RR"), ("1", "Common"), ("22", "SAR")])
+
+    def test_list_rarities_prints_codes_and_pieces(self):
+        self.pages["/id/card-search/"] += '<input type="checkbox" name="rarity[]" id="r1" value="1"><label for="r1">Common</label>'
+        self.go(list_rarities=True)
+        self.assertTrue(any("rarity kode '1': label 'Common'" in l for l in self.logs))
 
     def test_product_name_takes_the_quoted_part(self):
         self.assertEqual(fetch_catalog.product_name('Booster Pack "Evolusi Mega"'), "Evolusi Mega")

@@ -29,7 +29,8 @@ from urllib.request import Request, urlopen
 
 BASE = "https://asia.pokemon-card.com"
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-DEFAULT_INCLUDE = r"^(MA|SV)"
+# main booster sets: MA1..MA6, SV1S..SV11S, SV1A, SV2A, SV4A, SV8A, ... and the AC3 TAG TEAM sets; not decks or promos
+DEFAULT_INCLUDE = r"^(MA\d+|SV\d+[A-Z]|AC\d[A-Z])$"
 
 
 class Budget(Exception):
@@ -97,6 +98,31 @@ def parse_detail(page):
             "number": re.sub(r"\s+", "", text_of(num.group(1))) if num else None,
             "image": img.group(1) if img else None,
             "products": products}  # a card reprinted in several products lists them all: {code: 'Booster Pack "..."'}
+
+
+def parse_rarity_filter(page):
+    """[(code, label, source piece)] of the rarity checkboxes of the search form (label is a best guess)."""
+    out = []
+    for m in re.finditer(r'<input[^>]*name="rarity(?:\[\]|%5B%5D)"[^>]*>', page):
+        tag = m.group(0)
+        value = re.search(r'value="([^"]*)"', tag)
+        ident = re.search(r'\bid="([^"]+)"', tag)
+        piece = page[m.start(): m.end() + 350]
+        label = None
+        if ident:
+            lab = re.search(rf'<label[^>]*for="{re.escape(ident.group(1))}"[^>]*>(.*?)</label>', page, re.S)
+            if lab:
+                piece = lab.group(0)
+                label = text_of(lab.group(1)) or None
+                alt = re.search(r'alt="([^"]+)"', lab.group(1))
+                label = label or (alt.group(1) if alt else None)
+        if label is None:  # the text or the image alt right after the checkbox
+            after = page[m.end(): m.end() + 350]
+            nxt = re.split(r"<input", after)[0]
+            alt = re.search(r'(?:alt|title)="([^"]+)"', nxt)
+            label = text_of(nxt)[:30] or (alt.group(1) if alt else None)
+        out.append((value.group(1) if value else None, label, re.sub(r"\s+", " ", piece)[:300]))
+    return out
 
 
 def product_name(product):
@@ -224,6 +250,13 @@ def run(args, get=http_get, now=None, sleep=time.sleep, log=print):
         if not tiles:
             tiles = [{"code": r[0], "series": r[1], "released": r[2], "texts": []} for r in
                      db.execute("SELECT code, series, released FROM expansion ORDER BY position")]
+        if args.list_rarities:
+            text = fx.page(f"{BASE}/id/card-search/")
+            for code, label, piece in parse_rarity_filter(text or ""):
+                log(f"rarity kode {code!r}: label {label!r}")
+            for code, label, piece in parse_rarity_filter(text or "")[:3]:
+                log(f"  potongan kode {code!r}: {piece}")
+            return None
         if args.list_sets:
             for t in tiles:
                 log(f"{t['code']:8} | {t['series']} | {t['released']} | {' / '.join(t['texts'])[:110]}")
@@ -262,6 +295,7 @@ def main(argv=None):
     ap.add_argument("--include", default=DEFAULT_INCLUDE, help="ekspresi reguler kode set yang diambil")
     ap.add_argument("--refresh-days", type=int, default=30, help="daftar kartu sebuah set dibaca ulang setelah sekian hari")
     ap.add_argument("--list-sets", action="store_true", help="hanya tampilkan set di situs, lalu selesai")
+    ap.add_argument("--list-rarities", action="store_true", help="hanya tampilkan kode dan nama rarity di filter situs, lalu selesai")
     args = ap.parse_args(argv)
     run(args)
     return 0
