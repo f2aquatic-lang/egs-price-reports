@@ -765,8 +765,7 @@ class Collector(unittest.TestCase):
         self.assertFalse(idx[("sv2a", "5/187", "")].get("extra"))
         from_file = build_site.official_index(cards, [])                                                                  # tools/sets.json: the owner's rules for SV8A and SV2A
         self.assertEqual({k for k in from_file if k[0] == "sv8a" and k[1] == "1/187"}, {("sv8a", "1/187", ""), ("sv8a", "1/187", "poke_ball"), ("sv8a", "1/187", "master_ball")})
-        self.assertEqual({k[2] for k in from_file if k[:2] == ("sv2a", "5/187")}, {"", "poke_ball", "master_ball"})
-        self.assertEqual({k[2] for k in from_file if k[:2] == ("sv2a", "6/187")}, {""})
+        self.assertEqual({k[2] for k in from_file if k[:2] == ("sv2a", "5/187")}, {""})                                   # SV2A follows the official site until the owner is sure which cards
 
     def test_an_added_version_is_a_row_without_listing_and_takes_a_listing_when_a_seller_names_it(self):
         cards = [{"set": "SV8A", "number": "013/187", "num": 13, "den": 187, "name": "Rellor", "rarity": None, "image": f"https://o/{i}.png", "id": i} for i in (1, 2)]
