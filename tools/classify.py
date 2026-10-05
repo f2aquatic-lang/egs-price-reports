@@ -38,6 +38,22 @@ GRADE = re.compile(
     r"\b(?:egs|psa|bgs|cgc)\W+(?:(?:grading|gem ?mint|gm|slab|grade|mint)\W+)*(10|9[.,]5|9|8[.,]5|8)\b", re.I)
 
 
+MASTER_BALL = re.compile(r"master\s*-?\s*ball|masterball|\bm\.?\s?ball\b", re.I)
+POKE_BALL = re.compile(r"pok[e\u00e9]\s*-?\s*ball|pokeball|monster\s*ball|\bp\.?\s?ball\b", re.I)
+
+
+def variant_of(title):
+    """Foil pattern a seller names in a title: 'master_ball', 'poke_ball', or '' (the regular card or no pattern named).
+
+    The Poke Ball and Master Ball holo versions of one card number are different cards with different prices.
+    """
+    if MASTER_BALL.search(title):
+        return "master_ball"
+    if POKE_BALL.search(title):
+        return "poke_ball"
+    return ""
+
+
 def classify_title(text):
     t = re.sub(r"^Sisa \d+ ", "", text.strip())
     if NON_POKEMON.search(t):
@@ -72,6 +88,7 @@ def classify_title(text):
         "set": set_code,
         "rarity": sorted(set(RARITY.findall(t.upper()))),
         "condition": cond.group(1).lower() if cond else None,
+        "variant": variant_of(t),
     }
 
 

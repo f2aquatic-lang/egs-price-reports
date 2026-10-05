@@ -15,8 +15,11 @@ STATS = ("n", "min", "p25", "median", "p75", "max")
 LISTING = ("url", "ask_idr", "city", "observed_at", "conf", "lang", "lang_by", "title")
 
 
+VARIANTS = ("poke_ball", "master_ball")
+
+
 def key(c):
-    return (c["set_code"].lower(), c["card_number"].replace(" ", "").lower())
+    return (c["set_code"].lower(), c["card_number"].replace(" ", "").lower(), c.get("variant", ""))
 
 
 def validate(d):
@@ -41,9 +44,11 @@ def validate(d):
         if gone:
             err(f"card {c.get('name', '?')}: missing keys {', '.join(gone)}")
             continue
-        label = f"{c['name']} {c['set_code']} {c['card_number']}"
+        label = f"{c['name']} {c['set_code']} {c['card_number']}" + (f" ({c['variant']})" if c.get("variant") else "")
+        if c.get("variant") and (c["variant"] not in VARIANTS and not c["variant"].startswith("v") or not c.get("catalog")):
+            err(f"{label}: variant {c['variant']!r} must be one of {', '.join(VARIANTS)} (or vN) and only on catalog cards")
         if key(c) in seen:
-            err(f"{label}: duplicate card (set_code + card_number)")
+            err(f"{label}: duplicate card (set_code + card_number + variant)")
         seen.add(key(c))
         s = c["stats"]
         if any(k not in s for k in STATS):

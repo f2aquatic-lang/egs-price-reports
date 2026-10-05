@@ -373,13 +373,15 @@ def open_db(path):
     db.executescript("""
         CREATE TABLE IF NOT EXISTS listing(
             url TEXT PRIMARY KEY, title TEXT, ask_idr INTEGER, list_idr INTEGER, city TEXT, stock INTEGER,
-            image_url TEXT, kind TEXT, card_set TEXT, card_number TEXT, conf TEXT, first_seen TEXT, last_seen TEXT);
+            image_url TEXT, kind TEXT, card_set TEXT, card_number TEXT, conf TEXT, first_seen TEXT, last_seen TEXT, variant TEXT);
         CREATE TABLE IF NOT EXISTS lang(
             url TEXT PRIMARY KEY, lang TEXT, lang_by TEXT, image_url TEXT, checked_at TEXT);
         CREATE TABLE IF NOT EXISTS snapshot(
             day TEXT, card_set TEXT, card_number TEXT, n INTEGER, median INTEGER, min_idr INTEGER, max_idr INTEGER,
             taken_at TEXT, PRIMARY KEY(day, card_set, card_number));
     """)
+    if "variant" not in {r[1] for r in db.execute("PRAGMA table_info(listing)")}:  # databases made before foil versions
+        db.execute("ALTER TABLE listing ADD COLUMN variant TEXT")
     return db
 
 
@@ -477,24 +479,25 @@ def majority(values):
 def build_raw(db, types, now, max_age_hours, record=True, catalog=False, official=None, defaults=None):
     cutoff = (now - timedelta(hours=max_age_hours)).isoformat()
     rows = db.execute(
-        "SELECT l.url, l.title, l.ask_idr, l.city, l.stock, l.card_set, l.card_number, l.conf, l.last_seen, g.lang, g.lang_by, l.image_url "
+        "SELECT l.url, l.title, l.ask_idr, l.city, l.stock, l.card_set, l.card_number, l.conf, l.last_seen, g.lang, g.lang_by, l.image_url, l.variant "
         "FROM listing l LEFT JOIN lang g ON g.url = l.url WHERE l.last_seen >= ? AND l.kind = 'raw'", (cutoff,)).fetchall()
     by_type = {build_site.card_key(t["set"], t["number"]): [] for t in types}
     found_catalog = defaultdict(list)
     unmatched = unverified = 0
-    for url, title, ask, city, stock, cset, cnum, conf, seen, lang, lang_by, image in rows:
+    for url, title, ask, city, stock, cset, cnum, conf, seen, lang, lang_by, image, variant in rows:
+        variant = variant or ""
         if conf not in MATCHED and not (catalog and conf == CATALOG):
             unmatched += 1
             continue
         if stock is not None and stock <= 0:
             continue
         if lang == "ID":
-            key = build_site.card_key(cset, cnum)
+            key = build_site.card_key(cset, cnum, variant if conf == CATALOG else "")
             row = (ask, url, title, city, seen, conf, lang_by, image)
             if key in by_type:  # a catalog hit on a tracked card is that card
                 by_type[key].append(row[:5] + ("nomor",) + row[6:] if conf == CATALOG else row)
             else:
-                found_catalog[key].append((row, cset, cnum))
+                found_catalog[key].append((row, cset, cnum, variant))
         elif lang in (None, "UNCLEAR"):
             unverified += 1
     cards, newest = [], []
@@ -531,8 +534,9 @@ def build_raw(db, types, now, max_age_hours, record=True, catalog=False, officia
     cards.sort(key=lambda c: -c["stats"]["n"])
     extra = []
     for key, items in found_catalog.items():
-        found = sorted(r for r, _, _ in items)
-        cset, cnum = items[0][1], items[0][2]
+        found = sorted(r for r, _, _, _ in items)
+        cset, cnum, variant = items[0][1], items[0][2], items[0][3]
+        snap_no = f"{cnum}#{variant}" if variant else cnum  # a foil version has its own history
         prices = [f[0] for f in found]
         stats = {"n": len(prices), "min": prices[0], "p25": quantile(prices, .25),
                  "median": quantile(prices, .5), "p75": quantile(prices, .75), "max": prices[-1]}
@@ -549,28 +553,32 @@ def build_raw(db, types, now, max_age_hours, record=True, catalog=False, officia
                 "INSERT INTO snapshot(day, card_set, card_number, n, median, min_idr, max_idr, taken_at) VALUES(?,?,?,?,?,?,?,?) "
                 "ON CONFLICT(day, card_set, card_number) DO UPDATE SET n=excluded.n, median=excluded.median, "
                 "min_idr=excluded.min_idr, max_idr=excluded.max_idr, taken_at=excluded.taken_at",
-                (now.astimezone(WIB).date().isoformat(), cset, cnum, stats["n"], stats["median"],
+                (now.astimezone(WIB).date().isoformat(), cset, snap_no, stats["n"], stats["median"],
                  stats["min"], stats["max"], now.isoformat()))
         history = [{"date_wib": d, "n": n, "median": m, "min": lo} for d, n, m, lo in db.execute(
             "SELECT day, n, median, min_idr FROM snapshot WHERE card_set=? AND card_number=? ORDER BY day DESC LIMIT ?",
-            (cset, cnum, HISTORY_DAYS))][::-1]
-        titles = [r[2] for r, _, _ in items]
+            (cset, snap_no, HISTORY_DAYS))][::-1]
+        titles = [r[2] for r, _, _, _ in items]
         extra.append({"name": majority(guess_name(t) for t in titles), "set_code": cset, "card_number": cnum,
                       "rarity": majority((classify_title(t)["rarity"] or [""])[0] for t in titles),
                       "catalog": True, "stats": stats, "history": history, "listings": listings})
+        if variant:
+            extra[-1]["variant"] = variant
     official = official or {}
     for c in extra:  # the official name and rarity beat what could be guessed from a seller's title
-        o = official.get(build_site.card_key(c["set_code"], c["card_number"]))
+        o = official.get(build_site.card_key(c["set_code"], c["card_number"], c.get("variant", ""))) \
+            or official.get(build_site.card_key(c["set_code"], c["card_number"]))
         if o:
             c["name"], c["rarity"] = o["name"], o.get("rarity") or c["rarity"]
     extra.sort(key=lambda c: (-c["stats"]["n"], c["set_code"], c["card_number"]))
     cards += extra
     # a card nobody lists yet still gets a price when its rarity has a base price (replaced as soon as a listing exists)
-    priced = {build_site.card_key(c["set_code"], c["card_number"]) for c in cards}
+    priced = {build_site.card_key(c["set_code"], c["card_number"], c.get("variant", "")) for c in cards}
     base_priced = []
-    main_den = {code: Counter(o["den"] for o in official.values() if o["set"] == code and o.get("den")).most_common(1)[0][0]
-                for code in {o["set"] for o in official.values() if o.get("den")}}
-    for key, o in official.items():
+    regular = {key: o for key, o in official.items() if not o["variant"]}  # only the regular card gets a base price, not its holo versions
+    main_den = {code: Counter(o["den"] for o in regular.values() if o["set"] == code and o.get("den")).most_common(1)[0][0]
+                for code in {o["set"] for o in regular.values() if o.get("den")}}
+    for key, o in regular.items():
         # "-" is the price of a card without a rarity mark, only inside the set's own numbering (not its n/30 Pikachu or secret rares)
         no_mark_main = (not o.get("rarity") and o.get("den") == main_den.get(o["set"]) and (o.get("num") or 0) <= o["den"])
         price = (defaults or {}).get(o.get("rarity")) if o.get("rarity") else (defaults or {}).get("-") if no_mark_main else None
@@ -617,7 +625,7 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
     official = load_official(getattr(cfg, "catalog_json", None)) if catalog_on else {}
     by_set_num = defaultdict(list)
     for o in official.values():
-        if o.get("num") is not None:
+        if o.get("num") is not None and not o["variant"]:
             by_set_num[(o["set"].lower(), o["num"])].append(o)
     for l in listings:
         if not l["ask"] or l["ask"] <= 0:
@@ -626,6 +634,7 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
         kind = classify_title(l["title"])["kind"]
         ctr["jenis_" + kind] += 1
         conf = cset = cnum = None
+        variant = None
         if kind == "raw":
             m = build_site.match_type(l["title"], types)
             if m:
@@ -634,15 +643,19 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
                 key = catalog_key(l["title"], sets_by_total)
                 if key:
                     conf, (cset, cnum) = CATALOG, reconcile(key, l["title"], official, by_set_num)
+                    variant = classify_title(l["title"])["variant"]
+                    regular_card = official.get(build_site.card_key(cset, cnum))
+                    if regular_card and re.search(r"\bball\b", regular_card["name"], re.I):
+                        variant = ""  # the trainer card "Poke Ball" is not a Poke Ball holo version of something
             ctr["cocok_" + (conf or "tidak")] += 1
         db.execute(
-            "INSERT INTO listing(url,title,ask_idr,list_idr,city,stock,image_url,kind,card_set,card_number,conf,first_seen,last_seen) "
-            "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(url) DO UPDATE SET title=excluded.title, "
+            "INSERT INTO listing(url,title,ask_idr,list_idr,city,stock,image_url,kind,card_set,card_number,conf,first_seen,last_seen,variant) "
+            "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(url) DO UPDATE SET title=excluded.title, "
             "ask_idr=excluded.ask_idr, list_idr=excluded.list_idr, city=excluded.city, stock=excluded.stock, "
             "image_url=COALESCE(excluded.image_url, listing.image_url), kind=excluded.kind, card_set=excluded.card_set, "
-            "card_number=excluded.card_number, conf=excluded.conf, last_seen=excluded.last_seen",
+            "card_number=excluded.card_number, conf=excluded.conf, last_seen=excluded.last_seen, variant=excluded.variant",
             (l["url"], l["title"], l["ask"], l["list"], l["city"], l["stock"], l["image"], kind, cset, cnum,
-             conf, now.isoformat(), now.isoformat()))
+             conf, now.isoformat(), now.isoformat(), variant or None))
         if (conf in MATCHED or conf == CATALOG) and l["stock"] != 0:
             to_check.append({**l, "tracked": conf in MATCHED})
     db.commit()

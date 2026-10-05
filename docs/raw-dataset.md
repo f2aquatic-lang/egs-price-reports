@@ -87,6 +87,12 @@ Dengan `catalog.json`, pengumpul RAW melakukan tiga hal:
 
 Dengan begitu tidak ada kartu di `raw.json` yang berharga 0.
 
+**Versi foil (Poké Ball dan Master Ball).** Di set High Class (MA3, SV8A) satu nomor kartu muncul dua atau tiga kali di situs resmi: kartu biasa dan versi holo berpola Poké Ball dan Master Ball. Itu kartu yang berbeda dengan harga yang berbeda, jadi tiap versi adalah kartu sendiri di data: kuncinya `(set_code, card_number, variant)`, dengan `variant` kosong (kartu biasa), `"poke_ball"`, atau `"master_ball"`.
+- Urutan di situs resmi dipakai untuk memberi nama: entri pertama sebuah nomor kartu biasa, yang kedua Poké Ball, yang ketiga Master Ball. **Urutan ini asumsi** dan perlu dicek dengan gambar di situs resmi.
+- Listing diarahkan ke versinya dari judul (`pokeball`, `poke ball`, `master ball`, `masterball`, `monster ball`); judul tanpa penyebutan dianggap kartu biasa. Kartu trainer yang namanya memang memuat "Ball" tidak dianggap versi foil.
+- Tiap versi punya statistik, riwayat, dan harga sendiri. Harga dasar hanya untuk kartu biasa; versi holo tanpa listing menulis "belum ada listing".
+- Di `raw.json` kartu versi foil punya field `variant` dan `catalog: true`; kartu biasa tidak punya field itu.
+
 ## Listing yang dihitung
 
 Sebuah listing masuk statistik kalau semua ini benar:

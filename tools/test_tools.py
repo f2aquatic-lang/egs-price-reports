@@ -65,6 +65,16 @@ class Classify(unittest.TestCase):
             r = classify_title(title)
             self.assertEqual((r["kind"], r["lang"]), (kind, lang), title)
 
+    def test_ball_pattern_versions_from_real_titles(self):
+        from classify import variant_of
+        cases = [("Budew Pokeball - 001/187 - Festival Terastal EX (SV8a)", "poke_ball"), ("pokemon (ID) budew - SV8a 001/187 - Master Ball", "master_ball"),
+                 ("PAWNIARD HOLO MASTERBALL ma3 116/193 POKEMON CARD TCG INDONESIA", "master_ball"),
+                 ("Kartu Pokemon TCG Magearna ma3 I 120/193 Holo Pokeball Indonesia", "poke_ball"),
+                 ("Pokemon TCG Indonesia - Magearna Holo (MA3 120/193) ~ Evolusi Mega Impian", ""), ("Pikachu ex SAR 234/193 MA3 Indo", "")]
+        for title, expected in cases:
+            self.assertEqual(variant_of(title), expected, title)
+            self.assertEqual(classify_title(title)["variant"], expected)
+
     def test_zero_padded_set_codes_are_the_same_set(self):
         self.assertEqual(classify_title("Iron Valiant ex 213/187 SV08A Indonesia")["set"], "SV8A")
         self.assertEqual(classify_title("Pikachu ex MA03 234/193")["set"], "MA3")
@@ -230,6 +240,24 @@ class RawFormat(unittest.TestCase):
         d["cards"][0]["listings"][0]["conf"] = "katalog"
         self.assertTrue(any("tracked card" in e for e in validate_raw.validate(d)[0]))
 
+    def test_variant_rules(self):
+        d = good_raw()
+        import copy
+        v = copy.deepcopy(d["cards"][0])
+        v.update(catalog=True, variant="master_ball")
+        for l in v["listings"]:
+            l["conf"] = "katalog"
+            l["url"] += "-m"
+        d["cards"].append(v)
+        d["coverage"].update(cards=2, listings_counted=6, catalog_cards=1)
+        self.assertEqual(validate_raw.validate(d)[0], [])                       # same number and set as the tracked card, another version
+        v["variant"] = "gold_ball"
+        self.assertTrue(any("variant" in e for e in validate_raw.validate(d)[0]))
+        v["variant"] = "master_ball"
+        d["cards"].append(copy.deepcopy(v))
+        d["coverage"].update(cards=3)
+        self.assertTrue(any("duplicate card" in e for e in validate_raw.validate(d)[0]))
+
     def test_default_priced_cards(self):
         d = good_raw()
         base = {"name": "Foo", "set_code": "MA3", "card_number": "115/193", "rarity": "C", "catalog": True, "price_basis": "default",
@@ -329,22 +357,25 @@ class Board(unittest.TestCase):
                          ("Evolusi Mega Impian ex", "2026-01-30", 4, 4, 1, 1, 2, "resmi", True))
         self.assertEqual([c["number"] for c in data["raw_cards"] if c["set"] == "MA3"], ["114/193", "115/193", "117/193", "118/193"])
 
-    def test_set_totals_count_distinct_numbers_and_deck_sets_are_left_out(self):
+    def test_foil_versions_are_cards_of_their_own_and_deck_sets_are_left_out(self):
         raw, catalog = board_with_official_catalog()
-        dup = dict(catalog["cards"][0], id=999)                                  # a second (foil) version of 114/193
+        dup = dict(catalog["cards"][0], id=999, image="https://official.example/999.png")      # the Poke Ball holo version of 114/193
         deck = {"set": "AC3D", "number": "001/180", "num": 1, "den": 180, "name": "Deck card", "rarity": None, "image": "x", "id": 1000}
         catalog["cards"] += [dup, deck]
-        catalog["sets"][0]["total"] = 5                                          # the site counts the foil version as a card
+        catalog["sets"][0]["total"] = 5
         catalog["sets"].append({"code": "AC3D", "product": "Starter Deck GX", "released": "2020-07-10", "total": 1, "fetched": 1, "name": "Deck"})
         data = build_site.build(tiny_latest(), raw, catalog)
         ma3 = next(m for m in data["sets"] if m["code"] == "MA3")
-        self.assertEqual((ma3["total"], ma3["cards"]), (4, 4))                   # 4 distinct numbers, not the site's 5
+        self.assertEqual((ma3["total"], ma3["cards"]), (5, 5))                                   # 4 numbers, one of them in two versions
+        rows = [(c["number"], c["variant"], c["image"]) for c in data["raw_cards"] if c["set"] == "MA3"]
+        self.assertEqual(rows[:2], [("114/193", "", "https://official.example/114.png"), ("114/193", "poke_ball", "https://official.example/999.png")])
         self.assertNotIn("AC3D", [m["code"] for m in data["sets"]])
         self.assertNotIn("AC3D", {c["set"] for c in data["raw_cards"]})
 
     def test_card_keys_ignore_zero_padding(self):
         self.assertEqual(build_site.card_key("SV1S", "014/078"), build_site.card_key("sv1s", "14/78"))
-        self.assertEqual(build_site.card_key("MA6", "5 / 30"), ("ma6", "5/30"))
+        self.assertEqual(build_site.card_key("MA6", "5 / 30"), ("ma6", "5/30", ""))
+        self.assertNotEqual(build_site.card_key("MA3", "1/193"), build_site.card_key("MA3", "1/193", "master_ball"))
 
     def test_without_a_catalog_every_row_is_priced_from_listings(self):
         data = build_site.build(tiny_latest(), good_raw())
@@ -679,11 +710,11 @@ class Collector(unittest.TestCase):
         self.assertEqual(raw["coverage"]["cards"], len(raw["cards"]))
         self.assertTrue(all(c["stats"]["min"] > 0 for c in raw["cards"]))                 # nothing is priced at 0
 
-    def test_foil_versions_of_one_number_count_once_and_unmarked_main_series_cards_get_the_base_price(self):
+    def test_foil_versions_are_separate_cards_and_only_the_regular_card_gets_the_base_price(self):
         def card(set_, n, den, name, rarity, cid):
             return {"set": set_, "number": f"{n:03d}/{den}", "num": n, "den": den, "name": name, "rarity": rarity, "image": f"https://o/{cid}.png", "id": cid}
-        cards = [card("MA3", 1, 193, "Pinsir", None, 1), card("MA3", 1, 193, "Pinsir", None, 2), card("MA3", 1, 193, "Pinsir", None, 3),  # base + two foil versions
-                 card("MA3", 2, 193, "Yanma", None, 4), card("MA3", 2, 193, "Yanma", "C", 5),                                         # a later version carries the rarity
+        cards = [card("MA3", 1, 193, "Pinsir", None, 1), card("MA3", 1, 193, "Pinsir", None, 2), card("MA3", 1, 193, "Pinsir", None, 3),  # regular + two holo versions
+                 card("MA3", 2, 193, "Yanma", None, 4), card("MA3", 2, 193, "Yanma", "C", 5),                                         # a later entry carries the rarity
                  card("MA3", 250, 193, "Mega Dragonite ex", None, 6),                                                                 # above the printed total: a secret card
                  card("MA6", 1, 130, "Exeggcute", None, 7), card("MA6", 5, 30, "Pikachu", None, 8),                                   # n/30 side series
                  card("MA6", 2, 130, "Volbeat", "AR", 9), card("MA6", 3, 130, "Illumise", None, 10),
@@ -691,8 +722,11 @@ class Collector(unittest.TestCase):
         sets = [{"code": "MA3", "product": "High Class Booster Pack", "fetched": 6}, {"code": "MA6", "product": "Booster Pack", "fetched": 4},
                 {"code": "AC3D", "product": "Starter Deck GX", "fetched": 1}]
         idx = build_site.official_index(cards, sets)
-        self.assertEqual(sorted(idx), [("ma3", "1/193"), ("ma3", "2/193"), ("ma3", "250/193"), ("ma6", "1/130"), ("ma6", "2/130"), ("ma6", "3/130"), ("ma6", "5/30")])
-        self.assertEqual((idx[("ma3", "1/193")]["id"], idx[("ma3", "2/193")]["rarity"]), (1, "C"))
+        self.assertEqual(sorted(idx), [("ma3", "1/193", ""), ("ma3", "1/193", "master_ball"), ("ma3", "1/193", "poke_ball"), ("ma3", "2/193", ""),
+                                       ("ma3", "2/193", "poke_ball"), ("ma3", "250/193", ""), ("ma6", "1/130", ""), ("ma6", "2/130", ""),
+                                       ("ma6", "3/130", ""), ("ma6", "5/30", "")])
+        self.assertEqual((idx[("ma3", "1/193", "poke_ball")]["id"], idx[("ma3", "1/193", "master_ball")]["id"]), (2, 3))   # the site's order: regular, Poke Ball, Master Ball
+        self.assertEqual(idx[("ma3", "2/193", "")]["rarity"], "C")                                                              # inherited from the later entry
         path = os.path.join(self.tmp.name, "catalog.json")
         with open(path, "w", encoding="utf-8") as fh:
             json.dump({"schema_version": 1, "sets": sets, "cards": cards}, fh)
@@ -703,8 +737,33 @@ class Collector(unittest.TestCase):
         raw, _ = self.go(lang_mode="text", catalog=True, catalog_json=path, default_prices=prices)
         got = {(c["set_code"], c["card_number"]): c["stats"]["median"] for c in raw["cards"] if c.get("price_basis") == "default"}
         self.assertEqual(got, {("MA3", "1/193"): 400, ("MA3", "2/193"): 500, ("MA6", "1/130"): 400, ("MA6", "3/130"): 400})
-        # not priced: the secret card, the n/30 Pikachu, the AR (no base price for AR), and the deck card
+        self.assertFalse(any(c.get("variant") for c in raw["cards"] if c.get("price_basis")))   # a holo version is never base-priced
         self.assertEqual(validate_raw.validate(raw)[0], [])
+
+    def test_a_listing_that_names_the_ball_pattern_is_its_own_card_with_its_own_price_and_history(self):
+        cards = [{"set": "MA3", "number": "002/193", "num": 2, "den": 193, "name": "Yanma", "rarity": None, "image": "https://o/1.png", "id": 1},
+                 {"set": "MA3", "number": "002/193", "num": 2, "den": 193, "name": "Yanma", "rarity": None, "image": "https://o/2.png", "id": 2},
+                 {"set": "MA3", "number": "002/193", "num": 2, "den": 193, "name": "Yanma", "rarity": None, "image": "https://o/3.png", "id": 3},
+                 {"set": "MA3", "number": "010/193", "num": 10, "den": 193, "name": "Poke Ball", "rarity": "U", "image": "https://o/4.png", "id": 4}]
+        path = os.path.join(self.tmp.name, "catalog.json")
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump({"schema_version": 1, "sets": [{"code": "MA3", "product": "High Class", "fetched": 4}], "cards": cards}, fh)
+        self.catalog = API_CATALOG + [
+            api_item("v-1", "Yanma MA3 002/193 Kartu Pokemon Indonesia", 3000),
+            api_item("v-2", "Yanma MA3 002/193 Holo Pokeball Indonesia", 10000),
+            api_item("v-3", "Yanma MA3 002/193 HOLO MASTERBALL Indonesia", 40000),
+            api_item("v-4", "Poke Ball MA3 010/193 Indonesia Trainer", 2000)]    # the trainer card Poke Ball: not a foil version of anything
+        raw, _ = self.go(lang_mode="text", catalog=True, catalog_json=path, default_prices=None)
+        found = {(c["set_code"], c["card_number"], c.get("variant", "")): c for c in raw["cards"] if c.get("catalog")}
+        self.assertEqual(sorted(found), [("MA3", "10/193", ""), ("MA3", "2/193", ""), ("MA3", "2/193", "master_ball"), ("MA3", "2/193", "poke_ball")])
+        self.assertEqual([found[("MA3", "2/193", v)]["stats"]["median"] for v in ("", "poke_ball", "master_ball")], [3000, 10000, 40000])
+        self.assertEqual(validate_raw.validate(raw)[0], [])
+        db = sqlite3.connect(self.cfg.db)
+        try:
+            days = {r[0] for r in db.execute("SELECT card_number FROM snapshot WHERE card_set='MA3'")}
+        finally:
+            db.close()
+        self.assertIn("2/193#master_ball", days)                                  # each version keeps its own history
 
     def test_a_seller_who_writes_the_wrong_total_still_lands_on_the_official_card(self):
         cards = [{"set": "SV9S", "number": "001/139", "num": 1, "den": 139, "name": "Caterpie", "rarity": "C", "image": "i", "id": 1},
@@ -1652,6 +1711,7 @@ class BrowserRender(unittest.TestCase):
             hidden = rows()
             browser.close()
         self.assertEqual(errors, [])
+        self.assertNotIn("null", info)                                       # a set without a note shows no stray text
         self.assertIn("4 kartu resmi: 1 punya listing RAW", info)
         self.assertIn("1 harga dasar, 2 belum ada listing", info)
         self.assertEqual(len(shown), 4)

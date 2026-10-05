@@ -145,11 +145,14 @@ def build(d, raw=None, catalog=None):
     return data
 
 
-def card_key(set_code, number):
-    """Join key of a card: set code and number, case and zero padding ignored (014/078 is 14/78)."""
+VARIANTS = ("", "poke_ball", "master_ball")  # the order of a number's entries on the official site: regular, then the foil versions
+
+
+def card_key(set_code, number, variant=""):
+    """Join key of a card: set code, number and foil version, case and zero padding ignored (014/078 is 14/78)."""
     n = number.replace(" ", "").lower()
     m = re.fullmatch(r"(\d+)/(\d+)", n)
-    return (set_code.lower(), f"{int(m.group(1))}/{int(m.group(2))}" if m else n)
+    return (set_code.lower(), f"{int(m.group(1))}/{int(m.group(2))}" if m else n, variant or "")
 
 
 def deck_sets(sets):
@@ -158,19 +161,23 @@ def deck_sets(sets):
 
 
 def official_index(cards, sets=None):
-    """{card_key: card} of the official catalog. A number can appear several times (the Poke Ball and Master Ball
-    foil versions of one card): the first one in the site's order stands for it, and takes the rarity of a
-    later version when it has none itself."""
-    out, skip = {}, deck_sets(sets)
+    """{card_key: card} of the official catalog, one entry per card AND foil version.
+
+    A number can appear two or three times on the site (regular, Poke Ball holo, Master Ball holo): they are
+    different cards with different prices. The entries of a number come in that order, so the first is the
+    regular card and the next ones take the variants "poke_ball" and "master_ball". They share the rarity of the
+    first entry that has one."""
+    skip, groups = deck_sets(sets), {}
     for c in cards:
         if not c.get("number") or c["set"].upper() in skip:
             continue
-        key = card_key(c["set"], c["number"])
-        have = out.get(key)
-        if have is None:
-            out[key] = dict(c)
-        elif have.get("rarity") is None and c.get("rarity"):
-            have["rarity"] = c["rarity"]
+        groups.setdefault(card_key(c["set"], c["number"]), []).append(c)
+    out = {}
+    for (code, number, _), entries in groups.items():
+        rarity = next((e["rarity"] for e in entries if e.get("rarity")), None)
+        for i, e in enumerate(entries):
+            variant = VARIANTS[i] if i < len(VARIANTS) else f"v{i + 1}"
+            out[card_key(e["set"], e["number"], variant)] = {**e, "rarity": rarity, "variant": variant}
     return out
 
 
@@ -224,7 +231,7 @@ def egs_lowest(t):
 
 def attach_raw(data, raw, gen, catalog=None):
     """Join raw.json cards to the tracked types on (set_code, card_number)."""
-    by = {card_key(c["set_code"], c["card_number"]): c for c in raw["cards"]}
+    by = {card_key(c["set_code"], c["card_number"], c.get("variant", "")): c for c in raw["cards"]}
     used = set()
     for t in data["types"]:
         k = card_key(t["set"], t["number"])
@@ -267,23 +274,24 @@ def attach_sets(data, raw, catalog=None):
 
     for c in raw["cards"]:
         code = c["set_code"].upper()
-        key = card_key(c["set_code"], c["card_number"])
+        variant = c.get("variant", "")
+        key = card_key(c["set_code"], c["card_number"], variant)
         seen.add(key)
         num, den = (int(x) for x in c["card_number"].replace(" ", "").split("/"))
         history = c.get("history") or []
         photo = next((l["photo"] for l in c["listings"] if l.get("photo")), None)
-        t, o = tracked.get(key), official.get(key)
+        t, o = (tracked.get(key) if not variant else None), official.get(key) or official.get(card_key(c["set_code"], c["card_number"]))
         base = c.get("price_basis") == "default"
-        add({"name": (o or c)["name"], "set": code, "number": c["card_number"], "num": num, "den": den,
+        add({"name": (o or c)["name"], "set": code, "number": (o or c)["number"] if o else c["card_number"], "num": num, "den": den, "variant": variant,
              "rarity": (o or {}).get("rarity") or c["rarity"], **c["stats"], "trend": trend_of(history),
-             "url": c["listings"][0]["url"] if c["listings"] else None, "photo": photo, "image": (o or {}).get("image"),
+             "url": c["listings"][0]["url"] if c["listings"] else None, "photo": photo,
+             "image": official[key].get("image") if key in official else None,  # an unofficial version shows the seller's photo
              "basis": "default" if base else "listing", "tracked": t is not None, "egs": egs_lowest(t) if t else []})
     for key, o in official.items():  # official cards nobody lists and that have no base price
         if key not in seen and o["set"].upper() in official_sets and o.get("num") is not None:
-            add({"name": o["name"], "set": o["set"].upper(), "number": o["number"], "num": o["num"], "den": o["den"],
+            add({"name": o["name"], "set": o["set"].upper(), "number": o["number"], "num": o["num"], "den": o["den"], "variant": o["variant"],
                  "rarity": o.get("rarity"), "n": 0, "min": None, "p25": None, "median": None, "p75": None, "max": None,
                  "trend": None, "url": None, "photo": None, "image": o.get("image"), "basis": None, "tracked": False, "egs": []})
-    distinct_official = Counter(c["set"].upper() for c in official.values())
     sets = []
     for code, cards in per_set.items():
         o = official_sets.get(code, {})
@@ -295,7 +303,7 @@ def attach_sets(data, raw, catalog=None):
         released = o.get("released") or m.get("released")
         sets.append({**m, "code": code, "base": base, "cards": len(cards),
                      "name_id": o.get("name") or m.get("name_id"),
-                     "total": (distinct_official.get(code) or m.get("total")) if o else m.get("total"),
+                     "total": (o.get("total") or m.get("total")) if o else m.get("total"),
                      "basis": "resmi" if o.get("name") else m.get("basis"), "official": bool(o),
                      "priced": sum(1 for c in cards if c["basis"] == "listing"),
                      "base_priced": sum(1 for c in cards if c["basis"] == "default"),
@@ -306,7 +314,8 @@ def attach_sets(data, raw, catalog=None):
                                        if released else None})
     sets.sort(key=lambda m: set_sort_key(m, family_order))
     order = {m["code"]: i for i, m in enumerate(sets)}
-    rows.sort(key=lambda c: (order[c["set"]], c["sub"], c["den"], c["num"]))
+    vorder = {v: i for i, v in enumerate(VARIANTS)}
+    rows.sort(key=lambda c: (order[c["set"]], c["sub"], c["den"], c["num"], vorder.get(c["variant"], 9)))
     data["raw_cards"], data["sets"], data["families"] = rows, sets, meta["families"]
 
 

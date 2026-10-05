@@ -81,6 +81,7 @@ td.title{min-width:220px}
 .badge{display:inline-block;font:500 11px var(--mono);border:1px solid var(--line);border-radius:4px;padding:0 6px;margin-left:6px;color:var(--ink-2);white-space:nowrap}
 .tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .count{color:var(--ink-2);font-size:13px}
+.badge.variant{border-color:var(--tracked);color:var(--tracked)}
 .toggle{display:inline-flex;align-items:center;gap:6px;color:var(--ink-2);font-size:13px;cursor:pointer}
 .setinfo{display:flex;flex-direction:column;gap:2px;margin:10px 0 2px}
 .setinfo h3{margin:0;font:600 18px/1.25 var(--display)}
@@ -399,7 +400,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
 
   if (D.raw_cards && D.raw_cards.length) {
     $('#rawonly').hidden = false;
-    var LIMIT = 80;
+    var LIMIT = 80, VARIANT_LABEL = {poke_ball: 'Poké Ball', master_ball: 'Master Ball'};
     var ro = {set: D.sets[0].code, q: '', all: false, priced: false};
     var bySet = {};
     D.sets.forEach(function(m){ bySet[m.code] = m; });
@@ -438,12 +439,12 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
         facts.push(m.cards + (denom ? ' dari ' + denom + ' kartu' : ' kartu') + ' punya harga RAW (' + m.listings + ' listing)');
         if (!denom) facts.push('nomor tercetak /' + m.base);
       }
-      infoBox.replaceChildren(
+      infoBox.replaceChildren.apply(infoBox, [
         h('h3', null, m.code + (m.name_id ? ' · ' + m.name_id : ' · nama belum diketahui'),
           m.name_en && m.name_en !== m.name_id ? h('small', {text: m.name_en}) : null,
-          m.basis && m.basis !== 'pencarian web' ? h('span', {'class': 'badge', text: 'nama ' + m.basis, title: 'Nama ini belum dikonfirmasi dari sumber resmi'}) : null),
+          m.basis && m.basis !== 'pencarian web' && m.basis !== 'resmi' ? h('span', {'class': 'badge', text: 'nama ' + m.basis, title: 'Nama ini belum dikonfirmasi dari sumber resmi'}) : null),
         h('p', {text: facts.filter(Boolean).join(' · ')}),
-        m.note ? h('p', {text: m.note}) : null);
+        m.note ? h('p', {text: m.note}) : null].filter(Boolean));
     }
     function draw(){
       setChips.forEach(function(x){ x.el.setAttribute('aria-pressed', String(!ro.q && x.code === ro.set)); });
@@ -452,7 +453,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
       var rows = D.raw_cards.filter(function(c){
         if (ro.q) {
           var m = bySet[c.set] || {};
-          return (c.name + ' ' + c.set + ' ' + c.number + ' ' + c.rarity + ' ' + (m.name_id || '')).toLowerCase().indexOf(ro.q) >= 0;
+          return (c.name + ' ' + c.set + ' ' + c.number + ' ' + c.rarity + ' ' + (m.name_id || '') + ' ' + (VARIANT_LABEL[c.variant] || '')).toLowerCase().indexOf(ro.q) >= 0;
         }
         return ro.set === '*' || c.set === ro.set;
       }).filter(function(c){ return !ro.priced || c.basis; });
@@ -469,7 +470,9 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
               onerror: function(e){ e.target.remove(); }}) : null) : null,
             multi ? h('td', {'class': 'num', text: c.set}) : null,
             h('td', {'class': 'num', text: c.number}),
-            h('td', null, c.name + (c.rarity ? ' ' + c.rarity : ''), c.tracked ? h('span', {'class': 'badge', text: 'dipantau'}) : null),
+            h('td', null, c.name + (c.rarity ? ' ' + c.rarity : ''),
+              c.variant ? h('span', {'class': 'badge variant', text: VARIANT_LABEL[c.variant] || c.variant, title: 'Versi foil yang berbeda dari kartu biasa dengan nomor yang sama; harganya sendiri'}) : null,
+              c.tracked ? h('span', {'class': 'badge', text: 'dipantau'}) : null),
             h('td', {'class': 'num', text: c.basis === 'listing' ? String(c.n) : '—'}),
             c.basis === 'listing' ? [h('td', {'class': 'num', text: rp(c.min)}), h('td', {'class': 'num', text: rp(c.median)}), h('td', {'class': 'num', text: rp(c.max)})]
               : c.basis === 'default' ? [h('td', {'class': 'num', text: '—'}), h('td', {'class': 'num'}, rp(c.median), h('span', {'class': 'badge', text: 'harga dasar', title: 'Belum ada listing: harga dasar, bukan harga pasar'})), h('td', {'class': 'num', text: '—'})]
