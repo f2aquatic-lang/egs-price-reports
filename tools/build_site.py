@@ -165,15 +165,24 @@ def variant_orders():
     return {m["code"].upper(): m["variants"] for m in load_sets()["sets"] if m.get("variants")}
 
 
-def official_index(cards, sets=None, orders=None):
+def extra_variants():
+    """{set code: {"rarities": [...], "variants": [...]}} from 'extra_variants' in tools/sets.json: foil versions that exist
+    as cards but that the official site does not list, for the cards of those rarities ("-" = no rarity mark)."""
+    return {m["code"].upper(): m["extra_variants"] for m in load_sets()["sets"] if m.get("extra_variants")}
+
+
+def official_index(cards, sets=None, orders=None, extras=None):
     """{card_key: card} of the official catalog, one entry per card AND foil version.
 
     A number can appear two or three times on the site (regular, Poke Ball holo, Master Ball holo): they are
     different cards with different prices. The entries of a number come in that order, so the first is the
     regular card and the next ones take the variants "poke_ball" and "master_ball" unless tools/sets.json says
-    otherwise for that set (MA3: regular, poke_ball, element). They share the rarity of the first entry that has one."""
+    otherwise for that set (MA3: regular, poke_ball, element). They share the rarity of the first entry that has one.
+    Versions the site does not list at all (SV2A's Poke Ball and Master Ball commons, SV8A's Master Ball) are added
+    from 'extra_variants' in tools/sets.json; they have no official image and stay unpriced until a seller lists them."""
     skip, groups = deck_sets(sets), {}
     orders = variant_orders() if orders is None else orders
+    extras = extra_variants() if extras is None else extras
     for c in cards:
         if not c.get("number") or c["set"].upper() in skip:
             continue
@@ -185,6 +194,12 @@ def official_index(cards, sets=None, orders=None):
         for i, e in enumerate(entries):
             variant = order[i] if i < len(order) else f"v{i + 1}"
             out[card_key(e["set"], e["number"], variant)] = {**e, "rarity": rarity, "variant": variant}
+        extra = extras.get(code.upper())
+        if extra and (rarity or "-") in extra["rarities"]:
+            for variant in extra["variants"]:
+                key = card_key(entries[0]["set"], entries[0]["number"], variant)
+                if key not in out:
+                    out[key] = {**entries[0], "rarity": rarity, "variant": variant, "image": None, "id": None, "extra": True}
     return out
 
 

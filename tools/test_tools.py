@@ -750,6 +750,36 @@ class Collector(unittest.TestCase):
         from_file = build_site.official_index(cards, [])                                                                    # tools/sets.json says MA3 is regular, Poke Ball, Elemen
         self.assertEqual({v for (_, _, v) in from_file}, {"", "poke_ball", "element"})
 
+    def test_versions_missing_on_the_official_site_are_added_for_the_configured_rarities(self):
+        def card(set_, n, cid, rarity=None):
+            return {"set": set_, "number": f"{n:03d}/187", "num": n, "den": 187, "name": f"Card {n}", "rarity": rarity, "image": f"https://o/{cid}.png", "id": cid}
+        cards = [card("SV8A", 1, 1), card("SV8A", 1, 2), card("SV8A", 2, 3, "RR"),                      # unmarked: regular + Poke Ball on the site; RR: one entry
+                 card("SV2A", 5, 4, "C"), card("SV2A", 6, 5, "U"), card("MA3", 1, 6)]
+        extras = {"SV8A": {"rarities": ["-"], "variants": ["master_ball"]}, "SV2A": {"rarities": ["C"], "variants": ["poke_ball", "master_ball"]}}
+        idx = build_site.official_index(cards, [], {"SV8A": ["", "poke_ball"]}, extras)
+        self.assertEqual(sorted(idx), [("ma3", "1/187", ""), ("sv2a", "5/187", ""), ("sv2a", "5/187", "master_ball"), ("sv2a", "5/187", "poke_ball"),
+                                       ("sv2a", "6/187", ""), ("sv8a", "1/187", ""), ("sv8a", "1/187", "master_ball"), ("sv8a", "1/187", "poke_ball"),
+                                       ("sv8a", "2/187", "")])
+        added = idx[("sv8a", "1/187", "master_ball")]
+        self.assertEqual((added["image"], added["extra"], idx[("sv8a", "1/187", "poke_ball")]["id"]), (None, True, 2))   # the listed Poke Ball is the official entry
+        self.assertFalse(idx[("sv2a", "5/187", "")].get("extra"))
+        from_file = build_site.official_index(cards, [])                                                                  # tools/sets.json: the owner's rules for SV8A and SV2A
+        self.assertEqual({k for k in from_file if k[0] == "sv8a" and k[1] == "1/187"}, {("sv8a", "1/187", ""), ("sv8a", "1/187", "poke_ball"), ("sv8a", "1/187", "master_ball")})
+        self.assertEqual({k[2] for k in from_file if k[:2] == ("sv2a", "5/187")}, {"", "poke_ball", "master_ball"})
+        self.assertEqual({k[2] for k in from_file if k[:2] == ("sv2a", "6/187")}, {""})
+
+    def test_an_added_version_is_a_row_without_listing_and_takes_a_listing_when_a_seller_names_it(self):
+        cards = [{"set": "SV8A", "number": "013/187", "num": 13, "den": 187, "name": "Rellor", "rarity": None, "image": f"https://o/{i}.png", "id": i} for i in (1, 2)]
+        path = os.path.join(self.tmp.name, "catalog.json")
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump({"schema_version": 1, "sets": [{"code": "SV8A", "product": "High Class", "fetched": 2}], "cards": cards}, fh)
+        raw = good_raw()
+        raw["cards"] = []
+        data = build_site.build(tiny_latest(), raw, json.load(open(path, encoding="utf-8")))
+        rows = {r["variant"]: r for r in data["raw_cards"] if r["number"] == "013/187"}
+        self.assertEqual(sorted(rows), ["", "master_ball", "poke_ball"])
+        self.assertEqual((rows["master_ball"]["basis"], rows["master_ball"]["n"], rows["master_ball"]["image"]), (None, 0, None))
+
     def test_a_listing_that_names_the_ball_pattern_is_its_own_card_with_its_own_price_and_history(self):
         cards = [{"set": "MA3", "number": "002/193", "num": 2, "den": 193, "name": "Yanma", "rarity": None, "image": "https://o/1.png", "id": 1},
                  {"set": "MA3", "number": "002/193", "num": 2, "den": 193, "name": "Yanma", "rarity": None, "image": "https://o/2.png", "id": 2},
@@ -1430,6 +1460,30 @@ class FetchJpPrices(unittest.TestCase):
         with open(self.args.out, encoding="utf-8") as fh:
             saved = json.load(fh)
         self.assertEqual((saved["currency"], saved["condition"], saved["generated_at"][:10]), ("JPY", "傷無し", "2026-10-05"))
+
+    def test_a_set_page_that_answers_under_the_short_code_is_found_there(self):
+        self.pages["/sell/poc/s/m2a"] = self.pages["/sell/poc/s/m02a"]
+        self.pages["/sell/poc/s/m02a"] = "<html><div>Tidak ada</div></html>"        # answers 200 but lists nothing, as seen on the real site
+        data = self.go(sets="m02a")
+        self.assertEqual([(s["code"], s["cards"]) for s in data["sets"]], [("m02a", 4)])
+        self.assertEqual(self.calls, ["/top/poc", "/sell/poc/s/m02a", "/sell/poc/s/m2a"])
+        self.assertEqual({c["set"] for c in data["cards"]}, {"m02a"})
+
+    def test_a_page_with_no_readable_cards_is_saved_and_described(self):
+        self.pages["/sell/poc/s/m01l"] = '<html><div id="card-list3"><div class="card-product x"><a href="https://yuyu-tei.jp/sell/poc/card/m09/5">x</a></div></div></html>'
+        data = self.go(sets="m01l")
+        self.assertEqual(data["cards"], [])
+        say = next(l for l in self.logs if "tidak ada kartu terbaca" in l)
+        self.assertIn("1 blok card-product", say)
+        self.assertIn("'m09': 1", say)
+        self.assertTrue(os.path.exists(os.path.join(self.tmp.name, "yuyutei_m01l.html")))
+
+    def test_a_closed_pipe_is_not_an_error(self):
+        def closed(*a, **k):
+            raise BrokenPipeError
+        from unittest import mock
+        with mock.patch.object(fetch_jp_prices, "run", closed):
+            self.assertEqual(fetch_jp_prices.main(["--list-sets"]), 0)
 
     def test_list_sets_makes_one_request(self):
         self.go(list_sets=True)

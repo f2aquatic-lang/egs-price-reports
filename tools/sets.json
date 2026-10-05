@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-04",
-  "about": "Kode set kartu Pokemon TCG Indonesia dan namanya. 'variants' (opsional) memberi nama tiap entri dari satu nomor kartu di situs resmi menurut urutannya: kosong = kartu biasa, lalu poke_ball, master_ball, element. Dipakai papan harga untuk mengelompokkan kartu. basis: 'pencarian web' = dari hasil pencarian web (Bulbapedia, pokeunlimited, krystalkollectz; halamannya sendiri belum dibuka langsung), 'judul listing' = nama Indonesia terbaca dari judul listing toco, 'perkiraan' = disimpulkan dari jumlah kartu dan nama kartu. base = angka total yang tercetak di kartu (nomor/base); total = jumlah kartu termasuk secret rare kalau diketahui. Koreksi langsung di berkas ini.",
+  "about": "Kode set kartu Pokemon TCG Indonesia dan namanya. 'variants' (opsional) memberi nama tiap entri dari satu nomor kartu di situs resmi menurut urutannya: kosong = kartu biasa, lalu poke_ball, master_ball, element. 'extra_variants' (opsional) menambah versi yang ada sebagai kartu tetapi tidak tercantum di situs resmi: rarities = rarity kartu yang punya versi itu ('-' = tanpa tanda rarity), variants = versi yang ditambahkan. Dipakai papan harga untuk mengelompokkan kartu. basis: 'pencarian web' = dari hasil pencarian web (Bulbapedia, pokeunlimited, krystalkollectz; halamannya sendiri belum dibuka langsung), 'judul listing' = nama Indonesia terbaca dari judul listing toco, 'perkiraan' = disimpulkan dari jumlah kartu dan nama kartu. base = angka total yang tercetak di kartu (nomor/base); total = jumlah kartu termasuk secret rare kalau diketahui. Koreksi langsung di berkas ini.",
   "families": [
     {"id": "MA", "name": "Seri MEGA"},
     {"id": "SV", "name": "Seri Scarlet & Violet"},
@@ -26,7 +26,8 @@
     {"code": "SV9S", "family": "SV", "name_id": "Ikatan Takdir", "name_en": null, "released": null, "base": 185, "total": null,
      "basis": "judul listing", "note": "Ada juga kartu bernomor n/139 di set ini; nama Inggris belum ditemukan."},
     {"code": "SV8A", "family": "SV", "name_id": "Festival Terastal ex", "name_en": "Terastal Festival ex", "released": null, "base": 187, "total": null,
-     "basis": "pencarian web", "note": ""},
+     "basis": "pencarian web", "note": "Kartu tanpa tanda rarity punya dua entri per nomor di situs resmi (biasa, holo Poké Ball); holo Master Ball tidak ada di situs resmi, jadi ditambahkan lewat extra_variants (dikonfirmasi pemilik).",
+     "variants": ["", "poke_ball"], "extra_variants": {"rarities": ["-"], "variants": ["master_ball"]}},
     {"code": "SV8S", "family": "SV", "name_id": "Kilat Rasi", "name_en": "Stellar Lightning", "released": null, "base": 182, "total": null,
      "basis": "pencarian web", "note": ""},
     {"code": "SV7S", "family": "SV", "name_id": "Bimbingan Rasi", "name_en": "Stellar Guidance", "released": null, "base": 166, "total": null,
@@ -42,7 +43,8 @@
     {"code": "SV3S", "family": "SV", "name_id": "Kilau Hitam", "name_en": "Black Shine", "released": null, "base": 170, "total": null,
      "basis": "pencarian web", "note": ""},
     {"code": "SV2A", "family": "SV", "name_id": "Pokémon Card 151", "name_en": "Pokémon Card 151", "released": null, "base": 165, "total": null,
-     "basis": "perkiraan", "note": "Disimpulkan dari jumlah kartu (165) dan nama kartu (Charizard ex, Jynx ex, Bulbasaur)."},
+     "basis": "perkiraan", "note": "Disimpulkan dari jumlah kartu (165) dan nama kartu (Charizard ex, Jynx ex, Bulbasaur). Kartu common punya holo Poké Ball dan holo Master Ball yang tidak ada di situs resmi; ditambahkan lewat extra_variants (kata pemilik; rarity lain belum dipastikan).",
+     "extra_variants": {"rarities": ["C"], "variants": ["poke_ball", "master_ball"]}},
     {"code": "SV1S", "family": "SV", "name_id": "Scarlet ex", "name_en": null, "released": null, "base": 78, "total": null,
      "basis": "judul listing", "note": ""},
     {"code": "SV1A", "family": "SV", "name_id": "Hantaman Triplet", "name_en": "Triplet Beat", "released": null, "base": 73, "total": null,

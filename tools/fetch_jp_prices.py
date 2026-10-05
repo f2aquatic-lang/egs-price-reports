@@ -18,6 +18,7 @@ import os
 import re
 import sys
 import time
+from collections import Counter
 from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -55,6 +56,20 @@ def parse_set_list(page):
             seen.add(value)
             out.append((value, text_of(label)))
     return out
+
+
+def page_codes(code):
+    """Set page addresses to try: the code as listed, then without the zero before the number (m02a -> m2a, sv08a -> sv8a)."""
+    short = re.sub(r"(?<=[a-z])0+(?=\d)", "", code)
+    return [code] + ([short] if short != code else [])
+
+
+def why_empty(page):
+    """One line on what a page without readable cards does contain, to find out what changed in its markup."""
+    codes = Counter(re.findall(r'href="https://yuyu-tei\.jp/sell/poc/card/([^/"]+)/\d+"', page))
+    blocks = len(re.findall(r'<div class="card-product', page))
+    has_list = "ada" if 'id="card-list3"' in page else "tidak ada"
+    return f"{len(page)} karakter, card-list3 {has_list}, {blocks} blok card-product, kode di tautan kartu: {dict(codes.most_common(5))}"
 
 
 def parse_set_page(page, code):
@@ -109,13 +124,26 @@ def run(args, get=http_get, now=None, sleep=time.sleep, log=print):
         if args.max_requests is not None and used >= args.max_requests:
             log("anggaran permintaan habis; sisanya tidak diambil")
             break
-        sleep(args.delay)
-        used += 1
-        status, text = get(f"{BASE}/sell/poc/s/{code}")
-        if status != 200:
+        got, status, text = [], 0, None   # status: the best answer so far (200 wins); text: the first page that answered 200
+        for attempt in page_codes(code):  # the page of m02a answers under m2a: try the other spelling when nothing is readable
+            sleep(args.delay)
+            used += 1
+            st, body = get(f"{BASE}/sell/poc/s/{attempt}")
+            if st == 200:
+                status, text = 200, body if text is None else text
+                got = parse_set_page(body, code)
+                if got:
+                    break
+            elif status != 200:
+                status = st
+        if text is None:
             log(f"  ! {code}: status {status}")
             continue
-        got = parse_set_page(text, code)
+        if not got:
+            dump = os.path.join(os.path.dirname(os.path.abspath(args.out)), f"yuyutei_{code}.html")
+            with open(dump, "w", encoding="utf-8") as fh:
+                fh.write(text)
+            log(f"  ! {code}: tidak ada kartu terbaca ({why_empty(text)}); halaman disimpan di {dump}")
         cards += got
         sets.append({"code": code, "label": names.get(code), "cards": len(got)})
         log(f"  {code}: {len(got)} kartu ({names.get(code)})")
@@ -138,7 +166,10 @@ def main(argv=None):
     ap.add_argument("--include", default=DEFAULT_INCLUDE, help="ekspresi reguler kode set yang diambil")
     ap.add_argument("--max-requests", type=int)
     ap.add_argument("--list-sets", action="store_true", help="hanya tampilkan set di situs, lalu selesai")
-    run(ap.parse_args(argv))
+    try:
+        run(ap.parse_args(argv))
+    except BrokenPipeError:  # "| head" closed the pipe: not an error
+        pass
     return 0
 
 
