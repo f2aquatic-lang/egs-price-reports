@@ -145,7 +145,7 @@ def build(d, raw=None, catalog=None):
     return data
 
 
-VARIANTS = ("", "poke_ball", "master_ball")  # the order of a number's entries on the official site: regular, then the foil versions
+VARIANTS = ("", "poke_ball", "master_ball")  # default order of a number's entries on the official site: regular, then the foil versions
 
 
 def card_key(set_code, number, variant=""):
@@ -160,14 +160,20 @@ def deck_sets(sets):
     return {x["code"].upper() for x in sets or [] if re.search(r"deck", x.get("product") or "", re.I)}
 
 
-def official_index(cards, sets=None):
+def variant_orders():
+    """{set code: [variant of the 1st entry, of the 2nd, ...]} from the 'variants' lists in tools/sets.json."""
+    return {m["code"].upper(): m["variants"] for m in load_sets()["sets"] if m.get("variants")}
+
+
+def official_index(cards, sets=None, orders=None):
     """{card_key: card} of the official catalog, one entry per card AND foil version.
 
     A number can appear two or three times on the site (regular, Poke Ball holo, Master Ball holo): they are
     different cards with different prices. The entries of a number come in that order, so the first is the
-    regular card and the next ones take the variants "poke_ball" and "master_ball". They share the rarity of the
-    first entry that has one."""
+    regular card and the next ones take the variants "poke_ball" and "master_ball" unless tools/sets.json says
+    otherwise for that set (MA3: regular, poke_ball, element). They share the rarity of the first entry that has one."""
     skip, groups = deck_sets(sets), {}
+    orders = variant_orders() if orders is None else orders
     for c in cards:
         if not c.get("number") or c["set"].upper() in skip:
             continue
@@ -175,8 +181,9 @@ def official_index(cards, sets=None):
     out = {}
     for (code, number, _), entries in groups.items():
         rarity = next((e["rarity"] for e in entries if e.get("rarity")), None)
+        order = orders.get(code.upper(), VARIANTS)
         for i, e in enumerate(entries):
-            variant = VARIANTS[i] if i < len(VARIANTS) else f"v{i + 1}"
+            variant = order[i] if i < len(order) else f"v{i + 1}"
             out[card_key(e["set"], e["number"], variant)] = {**e, "rarity": rarity, "variant": variant}
     return out
 
@@ -314,7 +321,7 @@ def attach_sets(data, raw, catalog=None):
                                        if released else None})
     sets.sort(key=lambda m: set_sort_key(m, family_order))
     order = {m["code"]: i for i, m in enumerate(sets)}
-    vorder = {v: i for i, v in enumerate(VARIANTS)}
+    vorder = {v: i for i, v in enumerate(("", "poke_ball", "master_ball", "element"))}
     rows.sort(key=lambda c: (order[c["set"]], c["sub"], c["den"], c["num"], vorder.get(c["variant"], 9)))
     data["raw_cards"], data["sets"], data["families"] = rows, sets, meta["families"]
 

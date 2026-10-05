@@ -15,7 +15,7 @@ STATS = ("n", "min", "p25", "median", "p75", "max")
 LISTING = ("url", "ask_idr", "city", "observed_at", "conf", "lang", "lang_by", "title")
 
 
-VARIANTS = ("poke_ball", "master_ball")
+VARIANTS = ("poke_ball", "master_ball", "element")
 
 
 def key(c):

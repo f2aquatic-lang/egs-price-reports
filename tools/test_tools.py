@@ -722,10 +722,10 @@ class Collector(unittest.TestCase):
         sets = [{"code": "MA3", "product": "High Class Booster Pack", "fetched": 6}, {"code": "MA6", "product": "Booster Pack", "fetched": 4},
                 {"code": "AC3D", "product": "Starter Deck GX", "fetched": 1}]
         idx = build_site.official_index(cards, sets)
-        self.assertEqual(sorted(idx), [("ma3", "1/193", ""), ("ma3", "1/193", "master_ball"), ("ma3", "1/193", "poke_ball"), ("ma3", "2/193", ""),
+        self.assertEqual(sorted(idx), [("ma3", "1/193", ""), ("ma3", "1/193", "element"), ("ma3", "1/193", "poke_ball"), ("ma3", "2/193", ""),
                                        ("ma3", "2/193", "poke_ball"), ("ma3", "250/193", ""), ("ma6", "1/130", ""), ("ma6", "2/130", ""),
                                        ("ma6", "3/130", ""), ("ma6", "5/30", "")])
-        self.assertEqual((idx[("ma3", "1/193", "poke_ball")]["id"], idx[("ma3", "1/193", "master_ball")]["id"]), (2, 3))   # the site's order: regular, Poke Ball, Master Ball
+        self.assertEqual((idx[("ma3", "1/193", "poke_ball")]["id"], idx[("ma3", "1/193", "element")]["id"]), (2, 3))   # the site's order; sets.json names MA3's third one Elemen
         self.assertEqual(idx[("ma3", "2/193", "")]["rarity"], "C")                                                              # inherited from the later entry
         path = os.path.join(self.tmp.name, "catalog.json")
         with open(path, "w", encoding="utf-8") as fh:
@@ -739,6 +739,16 @@ class Collector(unittest.TestCase):
         self.assertEqual(got, {("MA3", "1/193"): 400, ("MA3", "2/193"): 500, ("MA6", "1/130"): 400, ("MA6", "3/130"): 400})
         self.assertFalse(any(c.get("variant") for c in raw["cards"] if c.get("price_basis")))   # a holo version is never base-priced
         self.assertEqual(validate_raw.validate(raw)[0], [])
+
+    def test_the_order_of_versions_can_be_set_per_set(self):
+        def card(n, cid):
+            return {"set": "MA3", "number": "001/193", "num": 1, "den": 193, "name": "Pinsir", "rarity": None, "image": f"https://o/{cid}.png", "id": cid}
+        cards = [card(1, 17239), card(1, 17574), card(1, 17575)]
+        by = {v: c["id"] for (_, _, v), c in build_site.official_index(cards, [], {"MA3": ["", "poke_ball", "element"]}).items()}
+        self.assertEqual(by, {"": 17239, "poke_ball": 17574, "element": 17575})
+        self.assertEqual({v for (_, _, v) in build_site.official_index(cards, [], {})}, {"", "poke_ball", "master_ball"})   # the default order
+        from_file = build_site.official_index(cards, [])                                                                    # tools/sets.json says MA3 is regular, Poke Ball, Elemen
+        self.assertEqual({v for (_, _, v) in from_file}, {"", "poke_ball", "element"})
 
     def test_a_listing_that_names_the_ball_pattern_is_its_own_card_with_its_own_price_and_history(self):
         cards = [{"set": "MA3", "number": "002/193", "num": 2, "den": 193, "name": "Yanma", "rarity": None, "image": "https://o/1.png", "id": 1},

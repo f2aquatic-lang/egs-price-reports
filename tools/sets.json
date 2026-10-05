@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-04",
-  "about": "Kode set kartu Pokemon TCG Indonesia dan namanya. Dipakai papan harga untuk mengelompokkan kartu. basis: 'pencarian web' = dari hasil pencarian web (Bulbapedia, pokeunlimited, krystalkollectz; halamannya sendiri belum dibuka langsung), 'judul listing' = nama Indonesia terbaca dari judul listing toco, 'perkiraan' = disimpulkan dari jumlah kartu dan nama kartu. base = angka total yang tercetak di kartu (nomor/base); total = jumlah kartu termasuk secret rare kalau diketahui. Koreksi langsung di berkas ini.",
+  "about": "Kode set kartu Pokemon TCG Indonesia dan namanya. 'variants' (opsional) memberi nama tiap entri dari satu nomor kartu di situs resmi menurut urutannya: kosong = kartu biasa, lalu poke_ball, master_ball, element. Dipakai papan harga untuk mengelompokkan kartu. basis: 'pencarian web' = dari hasil pencarian web (Bulbapedia, pokeunlimited, krystalkollectz; halamannya sendiri belum dibuka langsung), 'judul listing' = nama Indonesia terbaca dari judul listing toco, 'perkiraan' = disimpulkan dari jumlah kartu dan nama kartu. base = angka total yang tercetak di kartu (nomor/base); total = jumlah kartu termasuk secret rare kalau diketahui. Koreksi langsung di berkas ini.",
   "families": [
     {"id": "MA", "name": "Seri MEGA"},
     {"id": "SV", "name": "Seri Scarlet & Violet"},
@@ -14,7 +14,8 @@
     {"code": "MA4", "family": "MA", "name_id": "Ledakan Peniada", "name_en": "Void Blast", "released": "2026-04-03", "base": 123, "total": 181,
      "basis": "pencarian web", "note": "123 + 58 secret rare. Nama produk: Mega Nullifying Explosion."},
     {"code": "MA3", "family": "MA", "name_id": "Evolusi Mega Impian ex", "name_en": "Mega Dream ex", "released": "2026-01-30", "base": 193, "total": 250,
-     "basis": "pencarian web", "note": ""},
+     "basis": "pencarian web", "note": "Satu nomor punya tiga versi di situs resmi: biasa, holo Poké Ball, dan holo Elemen (urutan dikonfirmasi pemilik).",
+     "variants": ["", "poke_ball", "element"]},
     {"code": "MA2", "family": "MA", "name_id": "Kobaran Biru", "name_en": "Blue Blaze", "released": "2025-12-05", "base": 103, "total": null,
      "basis": "pencarian web", "note": "Nama produk: Mega Inferno X (Mega Charizard X)."},
     {"code": "MA1", "family": "MA", "name_id": "Evolusi Mega", "name_en": "Mega Evolution", "released": "2025-09-26", "base": 126, "total": 184,

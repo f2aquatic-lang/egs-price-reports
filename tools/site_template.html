@@ -400,7 +400,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
 
   if (D.raw_cards && D.raw_cards.length) {
     $('#rawonly').hidden = false;
-    var LIMIT = 80, VARIANT_LABEL = {poke_ball: 'Poké Ball', master_ball: 'Master Ball'};
+    var LIMIT = 80, VARIANT_LABEL = {poke_ball: 'Poké Ball', master_ball: 'Master Ball', element: 'Elemen'};
     var ro = {set: D.sets[0].code, q: '', all: false, priced: false};
     var bySet = {};
     D.sets.forEach(function(m){ bySet[m.code] = m; });
