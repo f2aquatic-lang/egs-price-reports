@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the "Papan Harga Kartu Pokemon" page (RAW and EGS slab asking prices) from latest.json and raw.json. Read-only on the data.
 
-Usage: python3 tools/build_site.py [latest.json] [--raw raw.json] [--out FILE] [--standalone]
+Usage: python3 tools/build_site.py [latest.json] [--raw raw.json] [--catalog catalog.json] [--jp jp_prices.json] [--out FILE] [--standalone]
 
 Every asking price is treated as the price (price_type OBSERVED_ASKING_ONLY);
 nothing waits for a sale. For each tracked card type the page lists every known
@@ -13,7 +13,8 @@ Match confidence of a discovery candidate to a tracked card:
   nama       name only, or the rarity/set conflicts               -> shown, not counted
 Foreign-language versions are shown but never counted. Non-Pokemon cards are hidden.
 With --raw (see docs/raw-dataset.md) each card also shows the RAW (ungraded) asking range next to the
-slabs, and RAW-only cards get their own table.
+slabs, and RAW-only cards get their own table. With --catalog every official card of each set is a row; with --jp the Japanese
+shop price (tools/fetch_jp_prices.py) is shown beside the Indonesian prices for the sets that 'jp_sets' in tools/sets.json maps.
 Without --standalone the output is a fragment for the Artifact tool (no <html> tag).
 """
 import argparse
@@ -27,6 +28,7 @@ from urllib.parse import quote_plus
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from triage_candidates import FOREIGN, NON_POKEMON, clean_name, parse  # noqa: E402
+from fetch_jp_prices import split_name  # noqa: E402
 
 WIB = timezone(timedelta(hours=7))
 RARITY = re.compile(r"\b(SAR|SR|AR|UR|HR|CSR|SSR|RRR|RR)\b")
@@ -86,7 +88,7 @@ def match_type(text, types):
     return (best[1], best[2]) if best else None
 
 
-def build(d, raw=None, catalog=None):
+def build(d, raw=None, catalog=None, jp=None):
     gen = datetime.fromisoformat(d["generated_at"])
     types, index = [], {}
     for l in d["listings"]:
@@ -141,7 +143,7 @@ def build(d, raw=None, catalog=None):
         "raw_meta": None, "raw_only": [], "raw_cards": [], "sets": [], "families": [],
     }
     if raw:
-        attach_raw(data, raw, gen, catalog)
+        attach_raw(data, raw, gen, catalog, jp)
     return data
 
 
@@ -165,10 +167,37 @@ def variant_orders():
     return {m["code"].upper(): m["variants"] for m in load_sets()["sets"] if m.get("variants")}
 
 
-def extra_variants():
-    """{set code: {"rarities": [...], "variants": [...]}} from 'extra_variants' in tools/sets.json: foil versions that exist
-    as cards but that the official site does not list, for the cards of those rarities ("-" = no rarity mark)."""
-    return {m["code"].upper(): m["extra_variants"] for m in load_sets()["sets"] if m.get("extra_variants")}
+BALL_VARIANTS = ("poke_ball", "master_ball", "element")  # the foil versions a Japanese listing can add to an Indonesian card
+
+
+def jp_variant(card):
+    """Foil version of a Yuyu-tei card, read from the bracket in its name ('' = the regular card, 'rocket' = Team Rocket mark mirror)."""
+    return split_name(f"x({card['tag']})")[2] if card.get("tag") else ""
+
+
+def jp_sets():
+    """{Indonesian set code: Yuyu-tei set code} from 'jp_sets' in tools/sets.json: the sets whose cards have the same numbers in both."""
+    return {k.upper(): v for k, v in load_sets().get("jp_sets", {}).items()}
+
+
+def jp_index(jp):
+    """{card_key(yuyu-tei set, number, variant): card} of jp_prices.json; the first entry wins when a version is listed twice."""
+    out = {}
+    for c in (jp or {}).get("cards", []):
+        out.setdefault(card_key(c["set"], c["number"], jp_variant(c)), c)
+    return out
+
+
+def jp_versions(jp, mapping=None):
+    """{(Indonesian set code, number key): {versions}}: the foil versions Yuyu-tei lists for a number of a mapped set. Where the
+    official Indonesian site lists none of them (SV2A, SV8A's Master Ball) they are the proof such a card exists."""
+    back = {v: k for k, v in (jp_sets() if mapping is None else mapping).items()}
+    out = {}
+    for c in (jp or {}).get("cards", []):
+        code, variant = back.get(c["set"]), jp_variant(c)
+        if code and variant in BALL_VARIANTS:
+            out.setdefault((code, card_key(c["set"], c["number"])[1]), set()).add(variant)
+    return out
 
 
 def official_index(cards, sets=None, orders=None, extras=None):
@@ -179,10 +208,10 @@ def official_index(cards, sets=None, orders=None, extras=None):
     regular card and the next ones take the variants "poke_ball" and "master_ball" unless tools/sets.json says
     otherwise for that set (MA3: regular, poke_ball, element). They share the rarity of the first entry that has one.
     Versions the site does not list at all (SV2A's Poke Ball and Master Ball commons, SV8A's Master Ball) are added
-    from 'extra_variants' in tools/sets.json; they have no official image and stay unpriced until a seller lists them."""
+    from `extras` (jp_versions: what Yuyu-tei lists for that number); they have no official image and stay unpriced until a seller lists them."""
     skip, groups = deck_sets(sets), {}
     orders = variant_orders() if orders is None else orders
-    extras = extra_variants() if extras is None else extras
+    extras = extras or {}
     for c in cards:
         if not c.get("number") or c["set"].upper() in skip:
             continue
@@ -194,12 +223,10 @@ def official_index(cards, sets=None, orders=None, extras=None):
         for i, e in enumerate(entries):
             variant = order[i] if i < len(order) else f"v{i + 1}"
             out[card_key(e["set"], e["number"], variant)] = {**e, "rarity": rarity, "variant": variant}
-        extra = extras.get(code.upper())
-        if extra and (rarity or "-") in extra["rarities"]:
-            for variant in extra["variants"]:
-                key = card_key(entries[0]["set"], entries[0]["number"], variant)
-                if key not in out:
-                    out[key] = {**entries[0], "rarity": rarity, "variant": variant, "image": None, "id": None, "extra": True}
+        for variant in BALL_VARIANTS:
+            key = card_key(entries[0]["set"], entries[0]["number"], variant)
+            if variant in extras.get((code.upper(), number), ()) and key not in out:
+                out[key] = {**entries[0], "rarity": rarity, "variant": variant, "image": None, "id": None, "extra": True}
     return out
 
 
@@ -251,7 +278,7 @@ def egs_lowest(t):
     return [{"grade": g, "ask": low, "n": n} for g, (n, low) in sorted(best.items(), key=lambda kv: -float(kv[0]))]
 
 
-def attach_raw(data, raw, gen, catalog=None):
+def attach_raw(data, raw, gen, catalog=None, jp=None):
     """Join raw.json cards to the tracked types on (set_code, card_number)."""
     by = {card_key(c["set_code"], c["card_number"], c.get("variant", "")): c for c in raw["cards"]}
     used = set()
@@ -274,23 +301,35 @@ def attach_raw(data, raw, gen, catalog=None):
         key=lambda c: (-c["n"], c["set"], c["number"]))
     data["raw_meta"] = {"generated": wib_label(raw["generated_at"]), "cards": len(raw["cards"]),
                         "listings": raw["coverage"]["listings_counted"]}
-    attach_sets(data, raw, catalog)
+    attach_sets(data, raw, catalog, jp)
 
 
-def attach_sets(data, raw, catalog=None):
+def jp_price(row, mapping, jpx, jp):
+    """The Yuyu-tei card with the same set, number and foil version as a board row (None where the set is not mapped or the card is not listed)."""
+    jpcode = mapping.get(row["set"])
+    c = jpx.get(card_key(jpcode, row["number"], row["variant"])) if jpcode else None
+    if not c:
+        return None
+    return {"yen": c["yen"], "in_stock": c.get("in_stock", True), "stock": c.get("stock"), "rarity": c.get("rarity"), "name": c.get("name"),
+            "url": jp["card_url"].format(**c) if jp.get("card_url") else None}
+
+
+def attach_sets(data, raw, catalog=None, jp=None):
     """Every card as a row, grouped by set code: priced from listings, base-priced, or (with the official catalog) unpriced."""
     meta = load_sets()
     known = {m["code"].upper(): m for m in meta["sets"]}
     family_order = {f["id"]: i for i, f in enumerate(meta["families"])}
     tracked = {card_key(t["set"], t["number"]): t for t in data["types"]}
+    mapping, jpx = jp_sets() if jp else {}, jp_index(jp)
     official = {}
     official_sets = {}
     if catalog:
-        official = official_index(catalog["cards"], catalog["sets"])
+        official = official_index(catalog["cards"], catalog["sets"], extras=jp_versions(jp, mapping))
         official_sets = {x["code"].upper(): x for x in catalog["sets"] if x.get("fetched") and x["code"].upper() not in deck_sets(catalog["sets"])}
     rows, per_set, seen = [], {}, set()
 
     def add(row):
+        row["jp"] = jp_price(row, mapping, jpx, jp)
         rows.append(row)
         per_set.setdefault(row["set"], []).append(row)
 
@@ -331,6 +370,7 @@ def attach_sets(data, raw, catalog=None):
                      "base_priced": sum(1 for c in cards if c["basis"] == "default"),
                      "unpriced": sum(1 for c in cards if c["basis"] is None),
                      "listings": sum(c["n"] for c in cards),
+                     "jp_set": mapping.get(code), "jp_cards": sum(1 for c in cards if c["jp"]),
                      "released": released,
                      "released_label": (lambda d: f"{d.day} {MONTHS[d.month - 1]} {d.year}")(date.fromisoformat(released))
                                        if released else None})
@@ -339,6 +379,8 @@ def attach_sets(data, raw, catalog=None):
     vorder = {v: i for i, v in enumerate(("", "poke_ball", "master_ball", "element"))}
     rows.sort(key=lambda c: (order[c["set"]], c["sub"], c["den"], c["num"], vorder.get(c["variant"], 9)))
     data["raw_cards"], data["sets"], data["families"] = rows, sets, meta["families"]
+    data["jp_meta"] = ({"generated": wib_label(jp["generated_at"]), "rate": jp.get("jpy_idr"), "rate_date": jp.get("jpy_idr_date"),
+                        "cards": sum(1 for c in rows if c["jp"])} if jp else None)
 
 
 def render(data, standalone):
@@ -364,6 +406,7 @@ def main():
     ap.add_argument("path", nargs="?", default="latest.json")
     ap.add_argument("--raw", help="raw.json with the RAW (ungraded) dataset")
     ap.add_argument("--catalog", help="catalog.json from tools/fetch_catalog.py: every official card of each set, with its image")
+    ap.add_argument("--jp", help="jp_prices.json from tools/fetch_jp_prices.py: Japanese shop prices beside the Indonesian ones")
     ap.add_argument("--out", default="-", help="output file (default: stdout)")
     ap.add_argument("--standalone", action="store_true", help="wrap in a full HTML document")
     a = ap.parse_args()
@@ -377,7 +420,11 @@ def main():
     if a.catalog:
         with open(a.catalog, encoding="utf-8") as fh:
             catalog = json.load(fh)
-    html = render(build(latest, raw, catalog), a.standalone)
+    jp = None
+    if a.jp:
+        with open(a.jp, encoding="utf-8") as fh:
+            jp = json.load(fh)
+    html = render(build(latest, raw, catalog, jp), a.standalone)
     if a.out == "-":
         sys.stdout.write(html)
     else:

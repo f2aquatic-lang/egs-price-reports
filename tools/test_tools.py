@@ -293,6 +293,13 @@ class RawFormat(unittest.TestCase):
         self.assertTrue(any("outside" in e for e in validate_raw.validate(d)[0]))
 
 
+def jp_card(code, number, name, yen, id=1, in_stock=True):
+    """A Yuyu-tei card as tools/fetch_jp_prices.py writes it (name with the bracket as on the site)."""
+    base, tag, variant = fetch_jp_prices.split_name(name)
+    return {"set": code, "number": number, "rarity": "-", "name": base, "tag": tag, "variant": variant, "yen": yen, "in_stock": in_stock,
+            "stock": None if in_stock else 0, "id": id}
+
+
 def tiny_latest():
     row = {"observed_at": "2026-10-02T22:30:00+00:00", "asking_idr": 650000, "in_stock": True}
     return {
@@ -750,12 +757,25 @@ class Collector(unittest.TestCase):
         from_file = build_site.official_index(cards, [])                                                                    # tools/sets.json says MA3 is regular, Poke Ball, Elemen
         self.assertEqual({v for (_, _, v) in from_file}, {"", "poke_ball", "element"})
 
-    def test_versions_missing_on_the_official_site_are_added_for_the_configured_rarities(self):
+    def test_a_set_code_that_is_not_an_official_set_is_a_typo_and_the_printed_total_decides(self):
+        sets_by_total = {"187": "SV8A"}
+        known = {"SV8A", "MA3"}
+        self.assertEqual(collect_raw.catalog_key("Dudunsparce 130/187 sv82 Kartu TCG Pokemon Indonesia", sets_by_total, known), ("SV8A", "130/187"))
+        self.assertEqual(collect_raw.catalog_key("Dudunsparce 130/187 sv08a Indonesia", sets_by_total, known)[0], "SV8A")
+        self.assertEqual(collect_raw.catalog_key("Dudunsparce 130/187 sv82 Indonesia", {}, known), None)      # no total to go by either
+        self.assertEqual(collect_raw.catalog_key("Dudunsparce 130/187 sv82 Indonesia", sets_by_total)[0], "SV82")   # without the official list nothing is judged
+
+    def test_versions_missing_on_the_official_site_are_added_where_yuyutei_lists_them(self):
         def card(set_, n, cid, rarity=None):
             return {"set": set_, "number": f"{n:03d}/187", "num": n, "den": 187, "name": f"Card {n}", "rarity": rarity, "image": f"https://o/{cid}.png", "id": cid}
         cards = [card("SV8A", 1, 1), card("SV8A", 1, 2), card("SV8A", 2, 3, "RR"),                      # unmarked: regular + Poke Ball on the site; RR: one entry
                  card("SV2A", 5, 4, "C"), card("SV2A", 6, 5, "U"), card("MA3", 1, 6)]
-        extras = {"SV8A": {"rarities": ["-"], "variants": ["master_ball"]}, "SV2A": {"rarities": ["C"], "variants": ["poke_ball", "master_ball"]}}
+        jp = {"cards": [jp_card("sv08a", "001/187", "ピカチュウ(マスターボール柄/ミラー仕様)", 600), jp_card("sv08a", "001/187", "ピカチュウ(モンスターボール柄/ミラー仕様)", 400),
+                        jp_card("sv08a", "001/187", "ピカチュウ", 50), jp_card("sv08a", "002/187", "ライチュウex", 900),
+                        jp_card("sv02a", "005/187", "フシギダネ(モンスターボール柄/ミラー仕様)", 300), jp_card("sv02a", "005/187", "フシギダネ(マスターボール柄/ミラー仕様)", 500),
+                        jp_card("m02a", "001/187", "ヒビキのカイロス(ロケット団マーク/ミラー仕様)", 120)]}
+        extras = build_site.jp_versions(jp, {"SV8A": "sv08a", "SV2A": "sv02a"})
+        self.assertEqual(extras, {("SV8A", "1/187"): {"master_ball", "poke_ball"}, ("SV2A", "5/187"): {"poke_ball", "master_ball"}})   # unmapped sets and the Rocket mirror add nothing
         idx = build_site.official_index(cards, [], {"SV8A": ["", "poke_ball"]}, extras)
         self.assertEqual(sorted(idx), [("ma3", "1/187", ""), ("sv2a", "5/187", ""), ("sv2a", "5/187", "master_ball"), ("sv2a", "5/187", "poke_ball"),
                                        ("sv2a", "6/187", ""), ("sv8a", "1/187", ""), ("sv8a", "1/187", "master_ball"), ("sv8a", "1/187", "poke_ball"),
@@ -763,21 +783,33 @@ class Collector(unittest.TestCase):
         added = idx[("sv8a", "1/187", "master_ball")]
         self.assertEqual((added["image"], added["extra"], idx[("sv8a", "1/187", "poke_ball")]["id"]), (None, True, 2))   # the listed Poke Ball is the official entry
         self.assertFalse(idx[("sv2a", "5/187", "")].get("extra"))
-        from_file = build_site.official_index(cards, [])                                                                  # tools/sets.json: the owner's rules for SV8A and SV2A
-        self.assertEqual({k for k in from_file if k[0] == "sv8a" and k[1] == "1/187"}, {("sv8a", "1/187", ""), ("sv8a", "1/187", "poke_ball"), ("sv8a", "1/187", "master_ball")})
-        self.assertEqual({k[2] for k in from_file if k[:2] == ("sv2a", "5/187")}, {""})                                   # SV2A follows the official site until the owner is sure which cards
+        plain = build_site.official_index(cards, [])                                                                      # without Yuyu-tei data nothing is added
+        self.assertNotIn(("sv8a", "1/187", "master_ball"), plain)
+        self.assertEqual({k[2] for k in plain if k[:2] == ("sv2a", "5/187")}, {""})
 
-    def test_an_added_version_is_a_row_without_listing_and_takes_a_listing_when_a_seller_names_it(self):
+    def test_the_board_shows_the_yuyutei_price_beside_the_indonesian_one_and_adds_the_ball_versions(self):
         cards = [{"set": "SV8A", "number": "013/187", "num": 13, "den": 187, "name": "Rellor", "rarity": None, "image": f"https://o/{i}.png", "id": i} for i in (1, 2)]
         path = os.path.join(self.tmp.name, "catalog.json")
         with open(path, "w", encoding="utf-8") as fh:
             json.dump({"schema_version": 1, "sets": [{"code": "SV8A", "product": "High Class", "fetched": 2}], "cards": cards}, fh)
+        jp = {"generated_at": "2026-10-06T01:00:00+00:00", "jpy_idr": 105.5, "jpy_idr_date": "2026-10-05", "card_url": "https://yuyu-tei.jp/sell/poc/card/{set}/{id}",
+              "cards": [jp_card("sv08a", "013/187", "コロモリ", 30, id=7), jp_card("sv08a", "013/187", "コロモリ(モンスターボール柄/ミラー仕様)", 120, id=8),
+                        jp_card("sv08a", "013/187", "コロモリ(マスターボール柄/ミラー仕様)", 400, id=9, in_stock=False)]}
         raw = good_raw()
         raw["cards"] = []
-        data = build_site.build(tiny_latest(), raw, json.load(open(path, encoding="utf-8")))
+        data = build_site.build(tiny_latest(), raw, json.load(open(path, encoding="utf-8")), jp)
         rows = {r["variant"]: r for r in data["raw_cards"] if r["number"] == "013/187"}
         self.assertEqual(sorted(rows), ["", "master_ball", "poke_ball"])
-        self.assertEqual((rows["master_ball"]["basis"], rows["master_ball"]["n"], rows["master_ball"]["image"]), (None, 0, None))
+        self.assertEqual([(rows[v]["jp"]["yen"], rows[v]["jp"]["in_stock"]) for v in ("", "poke_ball", "master_ball")], [(30, True), (120, True), (400, False)])
+        self.assertEqual(rows["master_ball"]["jp"]["url"], "https://yuyu-tei.jp/sell/poc/card/sv08a/9")
+        self.assertEqual((rows["master_ball"]["basis"], rows["master_ball"]["n"], rows["master_ball"]["image"]), (None, 0, None))   # no Indonesian listing yet
+        sv8a = next(m for m in data["sets"] if m["code"] == "SV8A")
+        self.assertEqual((sv8a["jp_set"], sv8a["jp_cards"]), ("sv08a", 3))
+        self.assertEqual((data["jp_meta"]["rate"], data["jp_meta"]["cards"]), (105.5, 3))
+        again = build_site.build(tiny_latest(), raw, json.load(open(path, encoding="utf-8")))                                          # without --jp nothing changes but the missing column
+        self.assertEqual(sorted(r["variant"] for r in again["raw_cards"]), ["", "poke_ball"])
+        self.assertIsNone(again["jp_meta"])
+        self.assertTrue(all(r["jp"] is None for r in again["raw_cards"]))
 
     def test_a_listing_that_names_the_ball_pattern_is_its_own_card_with_its_own_price_and_history(self):
         cards = [{"set": "MA3", "number": "002/193", "num": 2, "den": 193, "name": "Yanma", "rarity": None, "image": "https://o/1.png", "id": 1},
@@ -1494,6 +1526,17 @@ class FetchJpPrices(unittest.TestCase):
         self.assertNotIn("image", data["cards"][0])
         self.assertEqual(data["card_url"].format(**data["cards"][1]), "https://yuyu-tei.jp/sell/poc/card/m02a/10487")
 
+    def test_the_yen_rate_is_saved_with_the_prices_and_its_absence_is_not_an_error(self):
+        self.pages[fetch_jp_prices.RATE_URL.replace(fetch_jp_prices.BASE, "")] = '{"amount":1.0,"base":"JPY","date":"2026-10-05","rates":{"IDR":105.62}}'
+        data = self.go(sets="m02a")
+        self.assertEqual((data["jpy_idr"], data["jpy_idr_date"]), (105.62, "2026-10-05"))
+        self.assertTrue(any("kurs: 1 yen = Rp 105.62" in l for l in self.logs))
+        del self.pages[fetch_jp_prices.RATE_URL.replace(fetch_jp_prices.BASE, "")]
+        data = self.go(sets="m02a")                                                       # the rate site answers 404: prices are still written
+        self.assertEqual((data["jpy_idr"], len(data["cards"])), (None, 4))
+        self.assertEqual(fetch_jp_prices.fetch_rate(lambda url: (200, "not json")), (None, None))
+        self.assertEqual(fetch_jp_prices.fetch_rate(lambda url: (200, '{"rates":{"IDR":0}}')), (None, None))
+
     def test_a_saved_page_can_be_checked_without_any_request(self):
         path = os.path.join(self.tmp.name, "yuyutei_m02a.html")
         with open(path, "w", encoding="utf-8") as fh:
@@ -1820,6 +1863,41 @@ class BrowserRender(unittest.TestCase):
         self.assertEqual(images[0], "https://official.example/114.png")          # the official image, not the seller's photo
         self.assertEqual(len(hidden), 2)
         self.assertFalse(any("belum ada listing" in r for r in hidden))
+
+    def test_board_shows_the_yuyutei_column_with_rupiah_and_sold_out_and_says_so_for_unmapped_sets(self):
+        from playwright.sync_api import sync_playwright
+        raw, catalog = board_with_official_catalog()
+        jp = {"generated_at": "2026-10-06T01:00:00+00:00", "jpy_idr": 105.5, "jpy_idr_date": "2026-10-05", "card_url": "https://yuyu-tei.jp/sell/poc/card/{set}/{id}",
+              "cards": [jp_card("m02a", "114/193", "フェザンディ", 2480, id=114), jp_card("m02a", "115/193", "フー", 30, id=115, in_stock=False)]}
+        html = build_site.render(build_site.build(tiny_latest(), raw, catalog, jp), True)
+        path = os.path.join(tempfile.mkdtemp(), "board.html")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(html)
+        errors = []
+        gif = bytes.fromhex("47494638396101000100800000000000ffffff21f90401000000002c00000000010001000002024401003b")
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path=chrome_path(), headless=True, args=["--no-sandbox"] if os.geteuid() == 0 else [])
+            page = browser.new_page()
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            page.route("https://**/*", lambda route: route.fulfill(status=200, content_type="image/gif", body=gif))
+            page.goto("file://" + path)
+            page.wait_for_timeout(300)
+            ev = page.evaluate
+            head = ev("() => [...document.querySelectorAll('#rawonly-body thead th')].map(th => th.innerText)")
+            rows = ev("() => [...document.querySelectorAll('#rawonly-body tbody tr')].map(tr => tr.innerText.replace(/\\s+/g, ' ').trim())")
+            link = ev("() => document.querySelector('#rawonly-body td.jp a').getAttribute('href')")
+            info = ev("() => document.querySelector('#rawonly-info').innerText")
+            page.click("#rawonly-sets .chip:has-text('MA1')")
+            other = ev("() => document.querySelector('#rawonly-info').innerText")
+            browser.close()
+        self.assertEqual(errors, [])
+        self.assertIn("Acuan JP: belum ada untuk set ini", other)
+        self.assertIn("ACUAN JP", head)                                                  # the header is upper-cased by the style sheet
+        self.assertTrue(any("114/193" in r and "¥2.480" in r.replace(",", ".") and "Rp261.600" in r for r in rows), rows)
+        self.assertTrue(any("115/193" in r and "¥30" in r and "habis" in r for r in rows), rows)
+        self.assertFalse(any("117/193" in r and "¥" in r for r in rows))
+        self.assertEqual(link, "https://yuyu-tei.jp/sell/poc/card/m02a/114")
+        self.assertIn("Acuan JP: Yuyutei m02a (2 kartu ada harganya; kurs ¥1 = Rp 105,5, 2026-10-05)", info)
 
     def test_browser_probe_reports_listings_data_requests_and_serial(self):
         script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "probe_toco_browser.py")

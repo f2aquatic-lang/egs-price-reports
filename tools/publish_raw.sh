@@ -59,6 +59,7 @@ main() {
     [ -n "${EGS_SITE_DIR:-}" ] || return 0
     local catalog_arg=""
     [ -f catalog.json ] && catalog_arg="--catalog catalog.json"
+    [ -f jp_prices.json ] && catalog_arg="$catalog_arg --jp jp_prices.json"
     if "$PYTHON" tools/build_site.py latest.json --raw raw.json $catalog_arg --standalone --out "$EGS_SITE_DIR/.index.html.new" \
         && chmod 644 "$EGS_SITE_DIR/.index.html.new" && mv -f "$EGS_SITE_DIR/.index.html.new" "$EGS_SITE_DIR/index.html"; then
       printf 'User-agent: *\nDisallow: /\n' > "$EGS_SITE_DIR/robots.txt"

@@ -90,6 +90,7 @@ grep -q '^EGS_SITE_DIR=' "$ENV_FILE" || echo "EGS_SITE_DIR=$SITE_DIR" >> "$ENV_F
 if [ -f "$REPO/raw.json" ] && [ -f "$REPO/latest.json" ]; then
   CATALOG_ARG=""
   [ -f "$REPO/catalog.json" ] && CATALOG_ARG="--catalog catalog.json"
+  [ -f "$REPO/jp_prices.json" ] && CATALOG_ARG="$CATALOG_ARG --jp jp_prices.json"
   (cd "$REPO" && as_bot env PYTHONDONTWRITEBYTECODE=1 python3 tools/build_site.py latest.json --raw raw.json $CATALOG_ARG --standalone --out "$SITE_DIR/index.html") \
     && chmod 644 "$SITE_DIR/index.html" \
     && printf 'User-agent: *\nDisallow: /\n' > "$SITE_DIR/robots.txt" \

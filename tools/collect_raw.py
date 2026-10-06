@@ -423,12 +423,16 @@ def denominator_sets(titles):
     return out
 
 
-def catalog_key(title, sets_by_total):
-    """(set, number) of an untracked raw card named only by what the title shows, else None."""
+def catalog_key(title, sets_by_total, known=None):
+    """(set, number) of an untracked raw card named only by what the title shows, else None.
+
+    A set code in the title that is not one of the official sets (a seller's typo such as 'sv82') is ignored: the printed
+    total decides, as when the title has no set code at all."""
     c = classify_title(title)
     if c["kind"] != "raw" or not c["number"]:
         return None
-    code = c["set"] or sets_by_total.get(c["number"].split("/")[1])
+    code = c["set"] if c["set"] and (not known or c["set"].upper() in known) else None
+    code = code or sets_by_total.get(c["number"].split("/")[1])
     return (code, c["number"]) if code else None
 
 
@@ -623,6 +627,7 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
     listings = [l for l in map(to_listing, items.values())]
     sets_by_total = denominator_sets(l["title"] for l in listings) if catalog_on else {}
     official = load_official(getattr(cfg, "catalog_json", None)) if catalog_on else {}
+    known_sets = {o["set"].upper() for o in official.values()}
     by_set_num = defaultdict(list)
     for o in official.values():
         if o.get("num") is not None and not o["variant"]:
@@ -640,7 +645,7 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
             if m:
                 conf, cset, cnum = m[1], types[m[0]]["set"], types[m[0]]["number"]
             if conf not in MATCHED and catalog_on:
-                key = catalog_key(l["title"], sets_by_total)
+                key = catalog_key(l["title"], sets_by_total, known_sets)
                 if key:
                     conf, (cset, cnum) = CATALOG, reconcile(key, l["title"], official, by_set_num)
                     variant = classify_title(l["title"])["variant"]

@@ -82,6 +82,7 @@ td.title{min-width:220px}
 .tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .count{color:var(--ink-2);font-size:13px}
 .badge.variant{border-color:var(--tracked);color:var(--tracked)}
+td.jp small{display:block;color:var(--ink-2);font-size:11px}
 .toggle{display:inline-flex;align-items:center;gap:6px;color:var(--ink-2);font-size:13px;cursor:pointer}
 .setinfo{display:flex;flex-direction:column;gap:2px;margin:10px 0 2px}
 .setinfo h3{margin:0;font:600 18px/1.25 var(--display)}
@@ -426,6 +427,14 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
       onchange: function(e){ ro.priced = e.target.checked; ro.all = false; draw(); }}), ' Sembunyikan kartu tanpa harga');
     $('#rawonly-tools').append(roSearch, hideBox, roCount);
     function trendText(t){ return !t || (t.pct === 0 && t.days < 2) ? '—' : (t.pct > 0 ? '↑ ' : t.pct < 0 ? '↓ ' : '') + Math.abs(t.pct).toLocaleString('id-ID') + '% / ' + t.days + ' hari'; }
+    function yen(n){ return '¥' + n.toLocaleString('ja-JP'); }
+    function jpCell(j){
+      if (!j) return '—';
+      var rate = D.jp_meta && D.jp_meta.rate;
+      var main = j.url ? h('a', {href: j.url, target: '_blank', rel: 'noopener', text: yen(j.yen), title: 'Harga jual Yuyutei (Jepang), kondisi tanpa goresan'}) : yen(j.yen);
+      return [main, rate ? h('small', {text: '≈ ' + rp(Math.round(j.yen * rate / 100) * 100)}) : null,
+              j.in_stock ? null : h('span', {'class': 'badge', text: 'habis', title: 'Stok Yuyutei habis; harganya tetap harga jual terakhir mereka'})];
+    }
     function dateLabel(m){ return m.released_label ? 'dirilis ' + m.released_label : null; }
     function drawInfo(){
       var m = bySet[ro.set];
@@ -438,6 +447,11 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
       } else {
         facts.push(m.cards + (denom ? ' dari ' + denom + ' kartu' : ' kartu') + ' punya harga RAW (' + m.listings + ' listing)');
         if (!denom) facts.push('nomor tercetak /' + m.base);
+      }
+      var jpm = D.jp_meta;
+      if (jpm) {
+        facts.push(m.jp_set ? 'Acuan JP: Yuyutei ' + m.jp_set + ' (' + m.jp_cards + ' kartu ada harganya' + (jpm.rate ? '; kurs ¥1 = Rp ' + jpm.rate.toLocaleString('id-ID', {maximumFractionDigits: 1}) + (jpm.rate_date ? ', ' + jpm.rate_date : '') : '') + ')'
+                                : 'Acuan JP: belum ada untuk set ini');
       }
       infoBox.replaceChildren.apply(infoBox, [
         h('h3', null, m.code + (m.name_id ? ' · ' + m.name_id : ' · nama belum diketahui'),
@@ -460,7 +474,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
       var shown = ro.all ? rows : rows.slice(0, LIMIT);
       roCount.textContent = shown.length + ' dari ' + rows.length + ' kartu';
       if (!rows.length) { roBox.replaceChildren(h('div', {'class': 'empty', text: 'Tidak ada kartu yang cocok.'})); return; }
-      var heads = [D.photos ? 'Foto' : null, multi ? 'Set' : null, 'No', 'Kartu', 'Listing', 'Termurah', 'Median', 'Termahal', 'Tren', 'Slab EGS', '']
+      var heads = [D.photos ? 'Foto' : null, multi ? 'Set' : null, 'No', 'Kartu', 'Listing', 'Termurah', 'Median', 'Termahal', 'Tren', 'Slab EGS', D.jp_meta ? 'Acuan JP' : null, '']
         .filter(function(c){ return c !== null; });
       var nodes = [h('table', null,
         h('thead', null, h('tr', null, heads.map(function(c){ return h('th', {text: c}); }))),
@@ -479,6 +493,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
               : h('td', {'class': 'nodata', colspan: 3, text: 'belum ada listing'}),
             h('td', {'class': 'num', text: trendText(c.trend)}),
             h('td', {'class': 'num'}, c.egs.length ? c.egs.map(function(e){ return h('div', {text: 'EGS ' + e.grade + ' ' + rp(e.ask)}); }) : '—'),
+            D.jp_meta ? h('td', {'class': 'num jp'}, jpCell(c.jp)) : null,
             h('td', null, c.url ? h('a', {href: c.url, target: '_blank', rel: 'noopener', text: 'Buka ↗'}) : null));
         })))];
       if (shown.length < rows.length) nodes.push(h('button', {'class': 'chip', type: 'button', text: 'Tampilkan semua ' + rows.length,

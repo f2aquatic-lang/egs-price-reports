@@ -1,6 +1,7 @@
 {
   "updated": "2026-10-04",
-  "about": "Kode set kartu Pokemon TCG Indonesia dan namanya. 'variants' (opsional) memberi nama tiap entri dari satu nomor kartu di situs resmi menurut urutannya: kosong = kartu biasa, lalu poke_ball, master_ball, element. 'extra_variants' (opsional) menambah versi yang ada sebagai kartu tetapi tidak tercantum di situs resmi: rarities = rarity kartu yang punya versi itu ('-' = tanpa tanda rarity), variants = versi yang ditambahkan. Dipakai papan harga untuk mengelompokkan kartu. basis: 'pencarian web' = dari hasil pencarian web (Bulbapedia, pokeunlimited, krystalkollectz; halamannya sendiri belum dibuka langsung), 'judul listing' = nama Indonesia terbaca dari judul listing toco, 'perkiraan' = disimpulkan dari jumlah kartu dan nama kartu. base = angka total yang tercetak di kartu (nomor/base); total = jumlah kartu termasuk secret rare kalau diketahui. Koreksi langsung di berkas ini.",
+  "about": "Kode set kartu Pokemon TCG Indonesia dan namanya. 'variants' (opsional) memberi nama tiap entri dari satu nomor kartu di situs resmi menurut urutannya: kosong = kartu biasa, lalu poke_ball, master_ball, element. 'jp_sets' (di luar daftar set) memasangkan set Indonesia dengan set Yuyutei yang nomor kartunya sama persis; hanya set yang sudah dibuktikan sama (nomor, jumlah kartu, dan nama kartu cocok) yang boleh masuk. Dari set itu papan memakai harga Yuyutei sebagai acuan dan menambahkan baris versi Poké Ball, Master Ball, dan Elemen yang dijual di Jepang tetapi tidak tercantum di situs resmi Indonesia. Dipakai papan harga untuk mengelompokkan kartu. basis: 'pencarian web' = dari hasil pencarian web (Bulbapedia, pokeunlimited, krystalkollectz; halamannya sendiri belum dibuka langsung), 'judul listing' = nama Indonesia terbaca dari judul listing toco, 'perkiraan' = disimpulkan dari jumlah kartu dan nama kartu. base = angka total yang tercetak di kartu (nomor/base); total = jumlah kartu termasuk secret rare kalau diketahui. Koreksi langsung di berkas ini.",
+  "jp_sets": {"MA3": "m02a", "SV8A": "sv08a", "SV4A": "sv04a", "SV2A": "sv02a", "SV2P": "sv02p", "SV2D": "sv02d", "SV1A": "sv01a", "SV1S": "sv01s", "SV1V": "sv01v"},
   "families": [
     {"id": "MA", "name": "Seri MEGA"},
     {"id": "SV", "name": "Seri Scarlet & Violet"},
@@ -26,8 +27,8 @@
     {"code": "SV9S", "family": "SV", "name_id": "Ikatan Takdir", "name_en": null, "released": null, "base": 185, "total": null,
      "basis": "judul listing", "note": "Ada juga kartu bernomor n/139 di set ini; nama Inggris belum ditemukan."},
     {"code": "SV8A", "family": "SV", "name_id": "Festival Terastal ex", "name_en": "Terastal Festival ex", "released": null, "base": 187, "total": null,
-     "basis": "pencarian web", "note": "Kartu tanpa tanda rarity punya dua entri per nomor di situs resmi (biasa, holo Poké Ball); holo Master Ball tidak ada di situs resmi, jadi ditambahkan lewat extra_variants (dikonfirmasi pemilik).",
-     "variants": ["", "poke_ball"], "extra_variants": {"rarities": ["-"], "variants": ["master_ball"]}},
+     "basis": "pencarian web", "note": "Kartu tanpa tanda rarity punya dua entri per nomor di situs resmi (biasa, holo Poké Ball); holo Master Ball tidak ada di situs resmi; barisnya ditambahkan dari data Yuyutei (101 kartu punya versi Master Ball di Jepang). Dikonfirmasi pemilik: entri kedua adalah Poké Ball.",
+     "variants": ["", "poke_ball"]},
     {"code": "SV8S", "family": "SV", "name_id": "Kilat Rasi", "name_en": "Stellar Lightning", "released": null, "base": 182, "total": null,
      "basis": "pencarian web", "note": ""},
     {"code": "SV7S", "family": "SV", "name_id": "Bimbingan Rasi", "name_en": "Stellar Guidance", "released": null, "base": 166, "total": null,
@@ -43,7 +44,7 @@
     {"code": "SV3S", "family": "SV", "name_id": "Kilau Hitam", "name_en": "Black Shine", "released": null, "base": 170, "total": null,
      "basis": "pencarian web", "note": ""},
     {"code": "SV2A", "family": "SV", "name_id": "Pokémon Card 151", "name_en": "Pokémon Card 151", "released": null, "base": 165, "total": null,
-     "basis": "perkiraan", "note": "Disimpulkan dari jumlah kartu (165) dan nama kartu (Charizard ex, Jynx ex, Bulbasaur). Pemilik bilang set ini punya holo Poké Ball dan Master Ball tapi tidak yakin kartu mana saja, jadi tidak ditambahkan (mengikuti situs resmi). Barisnya tetap muncul kalau penjual menyebut versinya di judul. Untuk menambahkan: kolom extra_variants seperti di SV8A."},
+     "basis": "perkiraan", "note": "Disimpulkan dari jumlah kartu (165) dan nama kartu (Charizard ex, Jynx ex, Bulbasaur). Versi holo Poké Ball dan Master Ball tidak ada di situs resmi; barisnya ditambahkan dari data Yuyutei (kartu C, U, dan R punya keduanya di Jepang, 153 kartu)."},
     {"code": "SV1S", "family": "SV", "name_id": "Scarlet ex", "name_en": null, "released": null, "base": 78, "total": null,
      "basis": "judul listing", "note": ""},
     {"code": "SV1A", "family": "SV", "name_id": "Hantaman Triplet", "name_en": "Triplet Beat", "released": null, "base": 73, "total": null,
