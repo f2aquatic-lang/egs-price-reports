@@ -244,7 +244,7 @@ def jp_versions(jp, mapping=None):
     return out
 
 
-def official_index(cards, sets=None, orders=None, extras=None):
+def official_index(cards, sets=None, orders=None, extras=None, decks=False):
     """{card_key: card} of the official catalog, one entry per card AND foil version.
 
     A number can appear two or three times on the site (regular, Poke Ball holo, Master Ball holo): they are
@@ -252,8 +252,9 @@ def official_index(cards, sets=None, orders=None, extras=None):
     regular card and the next ones take the variants "poke_ball" and "master_ball" unless tools/sets.json says
     otherwise for that set (MA3: regular, poke_ball, element). They share the rarity of the first entry that has one.
     Versions the site does not list at all (SV2A's Poke Ball and Master Ball commons, SV8A's Master Ball) are added
-    from `extras` (jp_versions: what Yuyu-tei lists for that number); they have no official image and stay unpriced until a seller lists them."""
-    skip, groups = deck_sets(sets), {}
+    from `extras` (jp_versions: what Yuyu-tei lists for that number); they have no official image and stay unpriced until a seller lists them.
+    Deck sets are left out unless decks=True (the board lists them as unpriced rows; the collector gives no base price to a deck card)."""
+    skip, groups = (set() if decks else deck_sets(sets)), {}
     orders = variant_orders() if orders is None else orders
     extras = extras or {}
     for c in cards:
@@ -303,8 +304,10 @@ def load_sets(path=SETS_PATH):
 def set_family(code, known):
     if code in known:
         return known[code]["family"]
-    m = re.match(r"[A-Z]+", code)
-    return m.group(0) if m and m.group(0) in ("MA", "SV", "AC") else "AC"
+    for family in ("MA", "SV", "AC"):   # MA6, MAT (Deck Taktik), MATL ... are all MEGA series; anything else is "Lainnya" until it is named
+        if code.startswith(family):
+            return family
+    return "AC"
 
 
 def set_sort_key(meta, family_order):
@@ -368,8 +371,8 @@ def attach_sets(data, raw, catalog=None, jp=None):
     official = {}
     official_sets = {}
     if catalog:
-        official = official_index(catalog["cards"], catalog["sets"], extras=jp_versions(jp, mapping))
-        official_sets = {x["code"].upper(): x for x in catalog["sets"] if x.get("fetched") and x["code"].upper() not in deck_sets(catalog["sets"])}
+        official = official_index(catalog["cards"], catalog["sets"], extras=jp_versions(jp, mapping), decks=True)
+        official_sets = {x["code"].upper(): x for x in catalog["sets"] if x.get("fetched")}
     rows, per_set, seen = [], {}, set()
 
     def add(row):
@@ -407,7 +410,11 @@ def attach_sets(data, raw, catalog=None, jp=None):
         for c in cards:  # the set's own numbering first, then side series such as the n/30 Pikachu of MA6
             c["sub"] = 0 if c["den"] == base else 1
         released = o.get("released") or m.get("released")
+        worth = [c for c in cards if c["basis"] and c.get("median")]     # the card price for ordering: the median of its listings, or its base price
+        top = max(worth, key=lambda c: (c["median"], -c["num"]), default=None)
         sets.append({**m, "code": code, "base": base, "cards": len(cards),
+                     "top_price": top["median"] if top else None,
+                     "top_card": " ".join(x for x in (top["name"], top["number"], top["rarity"]) if x) if top else None,
                      "name_id": o.get("name") or m.get("name_id"),
                      "total": (o.get("total") or m.get("total")) if o else m.get("total"),
                      "basis": "resmi" if o.get("name") else m.get("basis"), "official": bool(o),

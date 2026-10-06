@@ -452,30 +452,54 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
   if (D.raw_cards && D.raw_cards.length) {
     $('#rawonly').hidden = false;
     var LIMIT = 80, VARIANT_LABEL = {poke_ball: 'Poké Ball', master_ball: 'Master Ball', element: 'Elemen', holo: 'Holo'};
-    var ro = {set: D.sets[0].code, q: '', all: false, priced: false};
-    var bySet = {};
+    var ro = {set: null, q: '', all: false, priced: false, sort: 'price'};   // sort: 'price' = sets by their dearest card and cards dearest first; 'number' = the printed order
+    var bySet = {}, setRank = {}, cardIdx = new Map();
     D.sets.forEach(function(m){ bySet[m.code] = m; });
+    D.raw_cards.forEach(function(c, i){ cardIdx.set(c, i); });
     var setsBox = $('#rawonly-sets'), infoBox = $('#rawonly-info'), roBox = $('#rawonly-body'), roCount = h('small', {'class': 'count'});
     var setChips = [];
-    function setChip(label, code, n){
-      var c = h('button', {'class': 'chip', type: 'button', 'aria-pressed': String(ro.set === code), title: label,
-        onclick: function(){ ro.set = code; ro.all = false; draw(); }}, label, h('small', {text: String(n)}));
+    function rankSets(){
+      var list = D.sets.slice();
+      if (ro.sort === 'price') list.sort(function(a, b){
+        var x = a.top_price == null ? -1 : a.top_price, y = b.top_price == null ? -1 : b.top_price;
+        return y - x || D.sets.indexOf(a) - D.sets.indexOf(b); });
+      list.forEach(function(m, i){ setRank[m.code] = i; });
+      return list;
+    }
+    function setChip(label, code, n, top){
+      var c = h('button', {'class': 'chip', type: 'button', 'aria-pressed': String(ro.set === code), title: label + (top ? ' · kartu termahal ' + rp(top) : ''),
+        onclick: function(){ ro.set = code; ro.all = false; draw(); }}, label, h('small', {text: n + (top ? ' · ' + rp(top) : '')}));
       setChips.push({el: c, code: code}); return c;
     }
     var famLabel = {};
     (D.families || []).forEach(function(f){ famLabel[f.id] = f.name; });
-    var groups = {};
-    D.sets.forEach(function(m){ (groups[m.family] = groups[m.family] || []).push(m); });
-    setsBox.append(h('div', {'class': 'chipgroup'}, setChip('Semua set', '*', D.raw_cards.length)));
-    Object.keys(groups).forEach(function(f){
-      setsBox.append(h('div', {'class': 'chipgroup'}, h('span', {'class': 'lab', text: famLabel[f] || f}),
-        groups[f].map(function(m){ return setChip(m.code + (m.name_id ? ' · ' + m.name_id : ''), m.code, m.cards); })));
-    });
+    function drawSets(){
+      setsBox.replaceChildren(); setChips.length = 0;
+      var list = rankSets();
+      setsBox.append(h('div', {'class': 'chipgroup'}, setChip('Semua set', '*', D.raw_cards.length)));
+      var label = function(m){ return m.code + (m.name_id ? ' · ' + m.name_id : ''); };
+      if (ro.sort === 'price') {
+        setsBox.append(h('div', {'class': 'chipgroup'}, h('span', {'class': 'lab', text: 'Dari kartu termahal'}),
+          list.map(function(m){ return setChip(label(m), m.code, m.cards, m.top_price); })));
+      } else {
+        var groups = {};
+        list.forEach(function(m){ (groups[m.family] = groups[m.family] || []).push(m); });
+        Object.keys(groups).forEach(function(f){
+          setsBox.append(h('div', {'class': 'chipgroup'}, h('span', {'class': 'lab', text: famLabel[f] || f}),
+            groups[f].map(function(m){ return setChip(label(m), m.code, m.cards, m.top_price); })));
+        });
+      }
+    }
+    ro.set = rankSets()[0].code;
+    drawSets();
     var roSearch = h('input', {type: 'search', placeholder: 'Cari nama atau nomor kartu di semua set (mis. Zoroark atau 112/193)', 'aria-label': 'Cari kartu RAW',
       oninput: function(e){ ro.q = e.target.value.trim().toLowerCase(); ro.all = false; draw(); }});
     var hideBox = h('label', {'class': 'toggle'}, h('input', {type: 'checkbox', id: 'hide-unpriced',
       onchange: function(e){ ro.priced = e.target.checked; ro.all = false; draw(); }}), ' Sembunyikan kartu tanpa harga');
-    $('#rawonly-tools').append(roSearch, hideBox, roCount);
+    var rawSort = h('button', {'class': 'chip', type: 'button', id: 'raw-sort', title: 'Ganti urutan set dan kartu',
+      onclick: function(){ ro.sort = ro.sort === 'price' ? 'number' : 'price'; ro.all = false; rawSort.textContent = ro.sort === 'price' ? 'Urut: harga termahal dulu' : 'Urut: nomor kartu'; drawSets(); draw(); }},
+      'Urut: harga termahal dulu');
+    $('#rawonly-tools').append(roSearch, hideBox, rawSort, roCount);
     function trendText(t){ return !t || (t.pct === 0 && t.days < 2) ? '—' : (t.pct > 0 ? '↑ ' : t.pct < 0 ? '↓ ' : '') + Math.abs(t.pct).toLocaleString('id-ID') + '% / ' + t.days + ' hari'; }
     function yen(n){ return '¥' + n.toLocaleString('ja-JP'); }
     function jpCell(j){
@@ -498,6 +522,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
         facts.push(m.cards + (denom ? ' dari ' + denom + ' kartu' : ' kartu') + ' punya harga RAW (' + m.listings + ' listing)');
         if (!denom) facts.push('nomor tercetak /' + m.base);
       }
+      if (m.top_card) facts.push('kartu termahal: ' + m.top_card + ' ' + rp(m.top_price));
       var jpm = D.jp_meta;
       if (jpm) {
         facts.push(m.jp_set ? 'Acuan JP: Yuyutei ' + m.jp_set + ' (' + m.jp_cards + ' kartu ada harganya)' : 'Acuan JP: belum ada untuk set ini');
@@ -520,6 +545,10 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
         }
         return ro.set === '*' || c.set === ro.set;
       }).filter(function(c){ return !ro.priced || c.basis; });
+      if (ro.sort === 'price') {   // sets by their dearest card, and inside a set the dearest card first (cards without a price last, then the printed order)
+        var worth = function(c){ return c.basis && c.median != null ? c.median : -1; };
+        rows = rows.slice().sort(function(a, b){ return (setRank[a.set] - setRank[b.set]) || (worth(b) - worth(a)) || (cardIdx.get(a) - cardIdx.get(b)); });
+      }
       var shown = ro.all ? rows : rows.slice(0, LIMIT);
       roCount.textContent = shown.length + ' dari ' + rows.length + ' kartu';
       if (!rows.length) { roBox.replaceChildren(h('div', {'class': 'empty', text: 'Tidak ada kartu yang cocok.'})); return; }

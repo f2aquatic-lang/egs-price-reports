@@ -379,7 +379,7 @@ class Board(unittest.TestCase):
                          ("Evolusi Mega Impian ex", "2026-01-30", 4, 4, 1, 1, 2, "resmi", True))
         self.assertEqual([c["number"] for c in data["raw_cards"] if c["set"] == "MA3"], ["114/193", "115/193", "117/193", "118/193"])
 
-    def test_foil_versions_are_cards_of_their_own_and_deck_sets_are_left_out(self):
+    def test_foil_versions_are_cards_of_their_own_and_deck_sets_are_listed_unpriced(self):
         raw, catalog = board_with_official_catalog()
         dup = dict(catalog["cards"][0], id=999, image="https://official.example/999.png")      # the Poke Ball holo version of 114/193
         deck = {"set": "AC3D", "number": "001/180", "num": 1, "den": 180, "name": "Deck card", "rarity": None, "image": "x", "id": 1000}
@@ -391,8 +391,29 @@ class Board(unittest.TestCase):
         self.assertEqual((ma3["total"], ma3["cards"]), (5, 5))                                   # 4 numbers, one of them in two versions
         rows = [(c["number"], c["variant"], c["image"]) for c in data["raw_cards"] if c["set"] == "MA3"]
         self.assertEqual(rows[:2], [("114/193", "", "https://official.example/114.png"), ("114/193", "poke_ball", "https://official.example/999.png")])
-        self.assertNotIn("AC3D", [m["code"] for m in data["sets"]])
-        self.assertNotIn("AC3D", {c["set"] for c in data["raw_cards"]})
+        deck = next(m for m in data["sets"] if m["code"] == "AC3D")                              # decks are on the board with their cards and pictures ...
+        self.assertEqual((deck["cards"], deck["priced"], deck["base_priced"], deck["unpriced"], deck["family"]), (1, 0, 0, 1, "AC"))
+        deck_row = next(c for c in data["raw_cards"] if c["set"] == "AC3D")
+        self.assertEqual((deck_row["basis"], deck_row["image"]), (None, "x"))                    # ... but with no price of their own until a listing exists
+
+    def test_each_set_knows_its_dearest_card_and_unknown_codes_find_their_family_by_prefix(self):
+        import copy
+        raw, catalog = board_with_official_catalog()
+        listed = next(c for c in raw["cards"] if c.get("card_number") == "114/193")
+        dear = copy.deepcopy(listed)
+        dear.update(name="Other Rare", card_number="118/193", rarity="SR", stats={"n": 3, "min": 1800000, "p25": 1900000, "median": 2000000, "p75": 2100000, "max": 2200000})
+        for l in dear["listings"]:
+            l["url"] += "-118"
+        raw["cards"].append(dear)
+        catalog["sets"].append({"code": "MATL", "product": "Promo", "released": "2026-02-01", "total": 1, "fetched": 1, "name": "Promo MEGA"})
+        catalog["cards"].append({"set": "MATL", "number": "001/001", "num": 1, "den": 1, "name": "Promo Card", "rarity": None, "image": "https://official.example/p.png", "id": 900})
+        data = build_site.build(tiny_latest(), raw, catalog)
+        ma3 = next(m for m in data["sets"] if m["code"] == "MA3")
+        self.assertEqual((ma3["top_price"], ma3["top_card"]), (2000000, "Other Rare 118/193 SR"))              # the median of the dearest card, with its name
+        promo = next(m for m in data["sets"] if m["code"] == "MATL")
+        self.assertEqual((promo["top_price"], promo["top_card"], promo["family"], promo["unpriced"]), (None, None, "MA", 1))   # no price at all: no top price, never 0
+        for code, family in (("MATL", "MA"), ("MAT", "MA"), ("SVDS", "SV"), ("SV11S", "SV"), ("AC3D", "AC"), ("S12A", "AC"), ("AS1A", "AC")):
+            self.assertEqual(build_site.set_family(code, {}), family, code)
 
     def test_the_board_counts_outliers_and_puts_the_holo_version_after_the_named_patterns(self):
         import copy
@@ -776,6 +797,23 @@ class Collector(unittest.TestCase):
         self.assertEqual(got, {("MA3", "1/193"): 400, ("MA3", "2/193"): 500, ("MA6", "1/130"): 400, ("MA6", "3/130"): 400})
         self.assertFalse(any(c.get("variant") for c in raw["cards"] if c.get("price_basis")))   # a holo version is never base-priced
         self.assertEqual(validate_raw.validate(raw)[0], [])
+
+    def test_a_set_where_no_card_has_a_rarity_mark_gets_no_base_price(self):
+        def card(set_, n, den, name, rarity, cid):
+            return {"set": set_, "number": f"{n:03d}/{den}", "num": n, "den": den, "name": name, "rarity": rarity, "image": f"https://o/{cid}.png", "id": cid}
+        cards = [card("MA3", 1, 193, "Pinsir", None, 1), card("MA3", 2, 193, "Rare Thing", "SAR", 2),            # High Class: most cards unmarked, a few marked
+                 card("PRM1", 1, 20, "Promo Ex", None, 3), card("PRM1", 2, 20, "Promo Two", None, 4)]             # a promo set: every card unmarked, ex cards included
+        sets = [{"code": "MA3", "product": "High Class Booster Pack", "fetched": 2}, {"code": "PRM1", "product": "Promo Pack", "fetched": 2}]
+        path = os.path.join(self.tmp.name, "catalog.json")
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump({"schema_version": 1, "sets": sets, "cards": cards}, fh)
+        prices = os.path.join(self.tmp.name, "default_prices.json")
+        with open(prices, "w", encoding="utf-8") as fh:
+            json.dump({"by_rarity": {"C": 500, "-": 500}}, fh)
+        self.catalog = API_CATALOG
+        raw, _ = self.go(lang_mode="text", catalog=True, catalog_json=path, default_prices=prices)
+        got = {(c["set_code"], c["card_number"]) for c in raw["cards"] if c.get("price_basis") == "default"}
+        self.assertEqual(got, {("MA3", "1/193")})                          # the unmarked card of a High Class set is a common; nothing in the promo set is guessed
 
     def test_the_order_of_versions_can_be_set_per_set(self):
         def card(n, cid):
@@ -1396,9 +1434,9 @@ class FetchCatalog(unittest.TestCase):
         self.assertTrue(any(l.startswith("SM1") and "2017-01-01" in l for l in self.logs))
 
     def test_full_run_collects_names_numbers_images_and_set_names(self):
-        data = self.go()
+        data = self.go(include=fetch_catalog.BOOSTER_ONLY)
         sets = {s["code"]: s for s in data["sets"]}
-        self.assertEqual(sorted(sets), ["MA6", "SV8S"])                       # SM1 does not match the default --include
+        self.assertEqual(sorted(sets), ["MA6", "SV8S"])                       # SM1 does not match the booster-only pattern
         self.assertEqual((sets["MA6"]["name"], sets["MA6"]["released"], sets["MA6"]["total"], sets["MA6"]["complete"]),
                          ("30th CELEBRATION", "2026-09-16", 25, True))        # product of MA6, not the other product on card 1003
         ma6 = [c for c in data["cards"] if c["set"] == "MA6"]
@@ -1475,9 +1513,11 @@ class FetchCatalog(unittest.TestCase):
             held.close()
         self.assertIsNotNone(self.go(sets="MA6"))                               # the lock is released with the process or file
 
-    def test_default_include_takes_booster_sets_not_decks_or_promos(self):
+    def test_default_include_takes_every_expansion_and_booster_only_keeps_the_old_narrow_pattern(self):
         import re
-        pick = lambda code: bool(re.search(fetch_catalog.DEFAULT_INCLUDE, code))
+        every = ("MA1", "MA6", "SV8S", "SV11S", "SV1A", "SV2A", "SV4A", "AC3A", "AC3B", "MATL", "MAAL", "M", "SV", "SVM", "SVK", "SVTL", "SVDS", "S12A", "AS1A", "AC3D")
+        self.assertTrue(all(re.search(fetch_catalog.DEFAULT_INCLUDE, c) for c in every))                       # the board shows every official card with its picture
+        pick = lambda code: bool(re.search(fetch_catalog.BOOSTER_ONLY, code))
         self.assertTrue(all(pick(c) for c in ("MA1", "MA6", "SV8S", "SV11S", "SV1A", "SV2A", "SV4A", "AC3A", "AC3B")))
         self.assertFalse(any(pick(c) for c in ("MATL", "MAAL", "M", "SV", "SVM", "SVK", "SVTL", "SVDS", "S12A", "AS1A", "AC3D")))
 
@@ -1983,8 +2023,8 @@ class BrowserRender(unittest.TestCase):
             browser.close()
         self.assertEqual(errors, [])
         self.assertEqual(chips[0], "Semua set136")                                                    # 130 + 5 + the tracked one
-        self.assertTrue(any(c.startswith("MA3 · Evolusi Mega Impian ex") and c.endswith("130") for c in chips))
-        self.assertTrue(any(c.startswith("XY1") and "·" not in c for c in chips))
+        self.assertTrue(any(c.startswith("MA3 · Evolusi Mega Impian ex") and "130" in c for c in chips))
+        self.assertTrue(any(c.startswith("XY1") and "Evolusi" not in c for c in chips))
         self.assertIn("MA3 · Evolusi Mega Impian ex", first["info"])
         self.assertIn("dirilis 30 Jan 2026", first["info"])
         self.assertIn("130 dari 250 kartu punya harga RAW", first["info"])
@@ -1998,6 +2038,59 @@ class BrowserRender(unittest.TestCase):
         self.assertEqual((searched["rows"], searched["set"]), (1, "MA3"))
         self.assertIn("Hasil pencarian", searched["info"])
         self.assertEqual(expanded, 130)
+
+    def test_board_orders_sets_by_their_dearest_card_and_cards_dearest_first_with_a_switch_back_to_numbers(self):
+        from playwright.sync_api import sync_playwright
+        import copy
+        raw, catalog = board_with_official_catalog()
+        listed = next(c for c in raw["cards"] if c.get("card_number") == "114/193")
+        listed["stats"] = {"n": 3, "min": 250000, "p25": 280000, "median": 300000, "p75": 320000, "max": 350000}
+        dear = copy.deepcopy(listed)
+        dear.update(name="Other Rare", card_number="118/193", rarity="SR", stats={"n": 3, "min": 1800000, "p25": 1900000, "median": 2000000, "p75": 2100000, "max": 2200000})
+        for l in dear["listings"]:
+            l["url"] += "-118"
+        top = copy.deepcopy(listed)
+        top.update(name="Chase Card", set_code="XY1", card_number="1/50", rarity="UR", catalog=True, stats={"n": 3, "min": 4800000, "p25": 4900000, "median": 5000000, "p75": 5100000, "max": 5200000})
+        for l in top["listings"]:
+            l["url"] += "-xy1"
+        raw["cards"] += [dear, top]
+        html = build_site.render(build_site.build(tiny_latest(), raw, catalog), True)
+        path = os.path.join(tempfile.mkdtemp(), "board.html")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(html)
+        errors = []
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path=chrome_path(), headless=True, args=["--no-sandbox"] if os.geteuid() == 0 else [])
+            page = browser.new_page()
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            page.route("https://**/*", lambda route: route.abort())
+            page.goto("file://" + path)
+            page.wait_for_timeout(300)
+            ev = page.evaluate
+            chips = lambda: ev("() => [...document.querySelectorAll('#rawonly-sets .chip')].map(c => c.firstChild.textContent.split(' ')[0])")
+            rows = lambda: ev("() => [...document.querySelectorAll('#rawonly-body tbody tr')].map(tr => tr.innerText.replace(/\\s+/g, ' ').trim())")
+            groups = lambda: ev("() => [...document.querySelectorAll('#rawonly-sets .lab')].map(l => l.textContent)")
+            by_price = {"chips": chips(), "groups": groups(), "first_info": ev("() => document.querySelector('#rawonly-info').innerText"),
+                        "label": ev("() => document.querySelector('#raw-sort').textContent")}
+            page.click("#rawonly-sets .chip:has-text('MA3')")
+            ma3_price = {"rows": rows(), "info": ev("() => document.querySelector('#rawonly-info').innerText")}
+            page.click("#raw-sort")
+            by_number = {"chips": chips(), "groups": groups(), "label": ev("() => document.querySelector('#raw-sort').textContent")}
+            page.click("#rawonly-sets .chip:has-text('MA3')")
+            ma3_number = rows()
+            browser.close()
+        self.assertEqual(errors, [])
+        self.assertEqual(by_price["chips"][:4], ["Semua", "XY1", "MA3", "MA1"])                             # sets by the price of their dearest card
+        self.assertEqual(by_price["groups"], ["Dari kartu termahal"])
+        self.assertEqual(by_price["label"], "Urut: harga termahal dulu")
+        self.assertIn("kartu termahal: Chase Card 1/50 UR Rp5.000.000", by_price["first_info"])               # the page opens on the dearest set
+        order = [r.split(" ")[0] for r in ma3_price["rows"]]
+        self.assertEqual(order, ["118/193", "114/193", "115/193", "117/193"])                                  # dearest first, the base-priced common, then the card with no price
+        self.assertIn("kartu termahal: Other Rare 118/193 SR Rp2.000.000", ma3_price["info"])
+        self.assertEqual(by_number["label"], "Urut: nomor kartu")
+        self.assertEqual(by_number["chips"][:4], ["Semua", "MA3", "MA1", "XY1"])                               # the old order: MEGA family first, unknown sets last
+        self.assertIn("Seri MEGA", by_number["groups"])
+        self.assertEqual([r.split(" ")[0] for r in ma3_number], ["114/193", "115/193", "117/193", "118/193"])
 
     def test_board_shows_base_prices_missing_prices_official_images_and_can_hide_unpriced(self):
         from playwright.sync_api import sync_playwright

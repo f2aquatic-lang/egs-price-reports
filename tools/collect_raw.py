@@ -623,9 +623,11 @@ def build_raw(db, types, now, max_age_hours, record=True, catalog=False, officia
     regular = {key: o for key, o in official.items() if not o["variant"]}  # only the regular card gets a base price, not its holo versions
     main_den = {code: Counter(o["den"] for o in regular.values() if o["set"] == code and o.get("den")).most_common(1)[0][0]
                 for code in {o["set"] for o in regular.values() if o.get("den")}}
+    marked_sets = {o["set"] for o in regular.values() if o.get("rarity")}
     for key, o in regular.items():
-        # "-" is the price of a card without a rarity mark, only inside the set's own numbering (not its n/30 Pikachu or secret rares)
-        no_mark_main = (not o.get("rarity") and o.get("den") == main_den.get(o["set"]) and (o.get("num") or 0) <= o["den"])
+        # "-" is the price of a card without a rarity mark, only inside the set's own numbering (not its n/30 Pikachu or secret rares),
+        # and only in a set that also has marked cards (High Class sets): in a set where no card has a mark every card is unmarked, ex and GX included
+        no_mark_main = (not o.get("rarity") and o.get("den") == main_den.get(o["set"]) and (o.get("num") or 0) <= o["den"] and o["set"] in marked_sets)
         price = (defaults or {}).get(o.get("rarity")) if o.get("rarity") else (defaults or {}).get("-") if no_mark_main else None
         if price and key not in priced:
             base_priced.append({"name": o["name"], "set_code": o["set"].upper(), "card_number": re.sub(r"^0+(?=\d)", "", o["number"]),

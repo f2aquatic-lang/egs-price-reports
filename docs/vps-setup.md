@@ -162,7 +162,7 @@ sudo -u egsprice -H nohup python3 /opt/egs-raw/main/tools/fetch_catalog.py \
 tail -n 3 /opt/egs-raw/catalog.log
 ```
 
-Bawaannya hanya set booster utama (`MA1`..`MA6`, `SV1S`..`SV11S`, `SV1A`/`SV2A`/`SV4A`/`SV8A`, `AC3A`/`AC3B`); ubah dengan `--include` (ekspresi reguler) atau `--sets KODE,KODE`. Tiap set juga menelusuri rarity (satu daftar tersaring per kode rarity); matikan dengan `--no-rarities`.
+Bawaannya **semua set yang dicantumkan situs** (booster, deck, promo, dan seri lama), karena papan harus memuat semua kartu resmi dengan fotonya lebih dulu, baru harganya dicari. Lihat dulu daftarnya dengan `--list-sets`. Untuk membatasi ke set booster utama (`MA1`..`MA6`, `SV1S`..`SV11S`, `SV1A`/`SV2A`/`SV4A`/`SV8A`, `AC3A`/`AC3B`) pakai `--include '^(MA\d+|SV\d+[A-Z]|AC\d[AB])$'`; `--sets KODE,KODE` mengambil set tertentu. Set yang sudah ada di `catalog.sqlite` tidak diambil ulang, jadi menambah set hanya mengambil yang baru. Tiap set juga menelusuri rarity (satu daftar tersaring per kode rarity); matikan dengan `--no-rarities`.
 
 Sesudah itu `publish_raw.sh` menyalin `/opt/egs-raw/catalog.json` ke repo dan membangun halaman dengannya, jadi papan menampilkan semua kartu tiap set. Untuk memperbarui katalog tiap minggu (set dan kartu baru), tambahkan layanan dan pemicu:
 
