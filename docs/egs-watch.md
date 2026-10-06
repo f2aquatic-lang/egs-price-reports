@@ -182,3 +182,5 @@ Tiga penyebab yang berbeda sering tertukar. Yang mana yang berlaku, menentukan p
 
 Karena penghalangnya adalah pertahanan anti-bot dan robots.txt, bukan satu IP yang diblokir, **membeli proxy atau IP rumahan bukan jawabannya**: itu berarti menyamar untuk melewati pembatasan, dan itu tidak dilakukan di proyek ini. Jalur yang tersisa untuk Shopee dan Tokopedia adalah yang diizinkan situsnya: API resmi (Shopee Affiliate Open API, bila akunnya disetujui dan syaratnya mengizinkan), data toko sendiri, atau input manual. Probe kini juga mematuhi robots.txt di kedua situs (termasuk tanda `*` dan `$`): alamat yang dilarang tidak diminta sama sekali.
 
+Verdict `notfound` (404/410) berarti alamat yang ditebak tidak ada di situs itu, **bukan** pemblokiran: kirim alamat halaman yang benar dari browser (misalnya halaman satu kartu, dan halaman daftar yang memuatnya) dan uji lagi dengan `--site`. Untuk situs yang diprobe di bawah robots.txt, semua aturan dalam berkasnya dicetak (bukan hanya yang menyebut pencarian). SNKRDUNK pertama kali diprobe dengan `/en/trading-cards` dan dijawab 404; robots.txt-nya terbaca (200).
+

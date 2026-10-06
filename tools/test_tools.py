@@ -3374,6 +3374,24 @@ class MarketplaceProbe(unittest.TestCase):
         self.assertTrue(allows("User-agent: googlebot\nDisallow: /\n", "/anything"))         # a group for another bot is not ours
         self.assertTrue(allows("", "/anything"))
 
+    def test_a_wrong_path_is_told_from_a_block_and_a_probed_site_shows_every_robots_rule(self):
+        base = self.serve({"/robots.txt": (200, {}, "User-agent: *\nDisallow: /admin\nAllow: /public\nSitemap: https://x.example/s.xml\n")})
+        lines = []
+        v = probe_marketplaces.probe_site("Situs", base, "/en/trading-cards", lines.append, sleep=lambda s: None)       # the server answers 404 for it
+        self.assertEqual(v, {"page": "notfound"})
+        text = "\n".join(lines)
+        self.assertIn("NOTFOUND", text)
+        self.assertIn("salah jalur, bukan pemblokiran", text)
+        self.assertIn("Disallow: /admin", text)                                                                          # every rule of the file, not only those about search
+        self.assertIn("Allow: /public", text)
+        out = []
+        with mock.patch("builtins.print", lambda *a, **k: out.append(" ".join(str(x) for x in a))), mock.patch.object(probe_marketplaces.time, "sleep", lambda s: None):
+            probe_marketplaces.main(["--skip-marketplaces", "--site", f"Toko={base}|/tidak-ada"])
+        self.assertIn("jalur halaman salah (404), BUKAN pemblokiran", "\n".join(out))
+        self.assertNotIn("belum ada jalur yang bisa dipakai tanpa melewati pembatasan", "\n".join(out))
+        for status, verdict in ((404, "notfound"), (410, "notfound"), (403, "blocked"), (429, "blocked")):
+            self.assertEqual(probe_marketplaces.judge_page(status, "https://x.example/", "", "")[0], verdict)
+
     def test_site_option_and_candidate_list(self):
         self.assertEqual([c[0] for c in probe_marketplaces.CANDIDATES], ["Cardtell", "Pokepedia", "Carousell Indonesia"])
         base = self.serve({"/robots.txt": (404, {}, ""), "/cari": (200, {}, "".join(f"<div>Rp{n}.000</div>" for n in (450, 500, 650)))})

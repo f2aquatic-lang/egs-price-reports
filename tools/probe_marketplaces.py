@@ -8,6 +8,7 @@ for Shopee, the search call the website itself makes, a few requests per site, 2
   login       the site asks for a login: not used
   captcha     a challenge or verification page: not used, not solved, not worked around
   blocked     refused (403/429, an anti-bot error code): not worked around
+  notfound    404/410: the address guessed for the site does not exist; a wrong path, not a block
   empty       answered normally but the listings are not in what was sent (they load later with JavaScript)
   error       network or server error
 
@@ -112,15 +113,17 @@ def terms_links(page, base, limit=4):
     return out[:limit]
 
 
-def robots_lines(text, words=("search", "/api", "Crawl-delay", "User-agent: *")):
+def robots_lines(text, words=("search", "/api", "Crawl-delay", "User-agent: *"), limit=8):
     keep = [l.strip() for l in text.splitlines() if any(w.lower() in l.lower() for w in words)]
-    return keep[:8]
+    return keep[:limit]
 
 
 def judge_page(status, final_url, text, error):
     """(verdict, explanation) for a search page."""
     if status == 0:
         return "error", error
+    if status in (404, 410):
+        return "notfound", f"status {status}: alamat ini tidak ada di situsnya. Itu salah jalur, bukan pemblokiran; berikan alamat halaman yang benar (--site)"
     if status in (401, 403, 429, 451) or status >= 500:
         if CHALLENGE.search(text[:5000]):
             return "captcha", f"status {status} dengan halaman verifikasi"
@@ -157,7 +160,7 @@ def probe_site(name, base, search_path, out, sleep=time.sleep, api_path=None, qu
     out(f"== {name}: {base}")
     status, _, text, err = get(base + "/robots.txt")
     out(f"robots.txt: status {status}" + (f" ({err})" if err else ""))
-    for line in robots_lines(text):
+    for line in (robots_lines(text, ("allow", "disallow", "crawl-delay", "user-agent"), 25) if respect_robots else robots_lines(text)):
         out("   " + line)
     sleep(2)
     url = base + search_path.format(q=quote(query))
@@ -253,7 +256,10 @@ def main(argv=None):
     out("\n== ringkasan")
     for site, v in results.items():
         usable = [k for k, x in v.items() if x == "ok"]
-        out(f"{site}: " + ", ".join(f"{k}={x}" for k, x in v.items()) + (f"  -> bisa dipakai lewat: {', '.join(usable)}" if usable else "  -> belum ada jalur yang bisa dipakai tanpa melewati pembatasan"))
+        verdict_text = (f"  -> bisa dipakai lewat: {', '.join(usable)}" if usable
+                        else "  -> jalur halaman salah (404), BUKAN pemblokiran: kirim alamat halaman yang benar dan uji lagi (--site)" if v.get("page") == "notfound"
+                        else "  -> belum ada jalur yang bisa dipakai tanpa melewati pembatasan")
+        out(f"{site}: " + ", ".join(f"{k}={x}" for k, x in v.items()) + verdict_text)
     return 0
 
 
