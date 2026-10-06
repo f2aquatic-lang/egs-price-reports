@@ -2205,6 +2205,12 @@ class EgsIdentity(unittest.TestCase):
         self.assertEqual(verify_title("Pikachu ex SAR 234/193 MA3 EGS 10")["identity"]["language_by"], "kode set MA (hanya dipakai kartu Indonesia)")
         v = verify_title("Leafeon ex SAR 200/187 SV8A EGS 10", photo={"language": "JP"})
         self.assertEqual((v["verdict"], codes(v)), ("rejected", ["foreign_language"]))
+        # the first real photo reading: the title says Indonesia, the photo reader says EN and a number that no Indonesian set has
+        v = verify_title("Charizard ex SAR Indonesia EGS10", photo={"is_slab": True, "company": "EGS", "grade": "10", "cert": "A0D960", "name": "Charizard EX",
+                                                                    "number": "330/193", "rarity": None, "language": "EN"})
+        self.assertEqual(v["verdict"], "ambiguous")
+        self.assertIn("language_conflict", codes(v))
+        self.assertEqual(verify_title("Charizard ex SAR MA3 EGS10 Indo", photo={"language": "JP"})["verdict"], "ambiguous")        # an MA code is also a claim of Indonesian
         v = verify_title("Leafeon ex SAR 200/187 SV8A EGS 10", photo={"language": "ID"})
         self.assertEqual((v["verdict"], v["identity"]["language_by"]), ("accepted", "foto"))
 

@@ -266,8 +266,11 @@ def verify(listing, catalog, photo=None, tracked=None):
         reasons.append(reason("foreign_language", "Judul atau deskripsi menyebut bahasa lain (Jepang, Inggris, Mandarin ...)"))
         return done("rejected")
     if (photo.get("language") or "").upper() in ("JP", "EN", "OTHER"):
-        reasons.append(reason("foreign_language", "Foto menunjukkan kartu berbahasa " + photo["language"].upper()))
-        return done("rejected")
+        if ev["id_mark"] or ev["ma_set"]:   # the seller says Indonesian and one reading of the photo says otherwise: a person looks, nothing is thrown out on one reading
+            reasons.append(reason("language_conflict", "Teks menulis Indonesia, tetapi foto terbaca berbahasa " + photo["language"].upper() + ": perlu cek manual"))
+        else:
+            reasons.append(reason("foreign_language", "Foto menunjukkan kartu berbahasa " + photo["language"].upper()))
+            return done("rejected")
 
     # 2. grading company
     if "EGS" in ev["companies"]:
