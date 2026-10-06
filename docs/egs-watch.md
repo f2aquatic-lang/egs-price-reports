@@ -129,3 +129,38 @@ Aturannya:
 - Bot tidak pernah mengambil ulang alamat Shopee/Tokopedia. Karena itu baris impor **berhenti dihitung 48 jam setelah terakhir diimpor** (ditandai `stale`, tetap tampil, tidak masuk harga mana pun) kecuali Anda mengimpornya lagi. Ini sama seperti listing toco yang tidak diperiksa dua hari.
 - Di `egs_watch.json` tiap listing membawa `source` (`toco`, `shopee`, `tokopedia`) dan `origin: "import"`; `summary.by_source` menghitung per sumber, dan laporan menampilkan "impor manual". Facebook dan WhatsApp diperlakukan sama: hanya lewat berkas yang Anda isi, tidak pernah diambil bot.
 
+### Lembar kerja: foto kartu dengan kolom kosong di sebelahnya (`--make-worksheet`, `--worksheet`)
+
+Mengisi CSV `--import` dari nol itu berat. Lembar kerja membalik pekerjaannya: bot menyiapkan fotonya, Anda hanya mengetik di kolom di sebelahnya. Bagian yang tidak bisa dibaca bot (nomor di label slab yang buram, bahasa kartu, harga di Tokopedia/Shopee) Anda isi sendiri, dan hanya itu.
+
+Dua jenis baris dalam satu berkas:
+
+| jenis | isinya | yang Anda isi |
+|---|---|---|
+| `antrean` | listing yang belum bisa diputuskan bot: foto listing, judul, harga, alasan ragu | `nomor` (lengkap, mis. 234/193), `rarity`, `bahasa` (ID/EN/JP), `grade`; atau `tolak` di `keputusan` untuk membuangnya |
+| `pasar` | kartu dan grade yang sudah dihitung dari toco: gambar kartu resmi, harga median toco | `bahasa` dan harga plus link listing Tokopedia dan/atau Shopee yang Anda lihat sendiri |
+
+```bash
+# 1. buat lembar dari hasil terakhir (tidak mengubah apa pun selain berkas CSV ini)
+sudo -u egsprice -H python3 /opt/egs-raw/main/tools/egs_watch.py --make-worksheet /opt/egs-raw/lembar.csv \
+  --out /opt/egs-raw/egs_watch.json --catalog /opt/egs-raw/main/catalog.json
+```
+
+Buka di Google Sheets (File → Import → Upload, "Replace spreadsheet"). Kolom `foto` berisi rumus `=IMAGE(...)` sehingga fotonya tampil; besarkan tinggi baris (pilih baris, klik kanan, ubah ukuran baris ke 90 piksel). Jangan ubah kolom `kunci`. Isi kolom di sebelah foto.
+
+Mengirim hasil ke VPS: simpan lagi sebagai CSV (File → Download → CSV) lalu tempel isinya ke `/opt/egs-raw/lembar_terisi.csv` (`sudo nano`), atau terbitkan lembar ke web (File → Share → Publish to web → pilih lembar → CSV) dan pakai alamat yang diberikan. Alamat itu bisa dibuka siapa saja yang memegangnya (isinya hanya judul, harga, dan alamat listing publik).
+
+```bash
+# 2. terapkan hasil isian (berkas atau alamat web), tanpa pencarian toco
+sudo -u egsprice -H /opt/egs-raw/venv/bin/python /opt/egs-raw/main/tools/egs_watch.py --worksheet /opt/egs-raw/lembar_terisi.csv --no-search \
+  --db /opt/egs-raw/egs_watch.sqlite --out /opt/egs-raw/egs_watch.json --latest /opt/egs-raw/main/latest.json --catalog /opt/egs-raw/main/catalog.json
+```
+
+Aturannya:
+
+- Baris `antrean`: isian Anda dicatat seperti bacaan foto tetapi ditandai **manual** ("nomor diisi manual dari foto") dan listingnya dinilai ulang. Hasilnya bisa diterima, tetap ragu (misalnya rarity bertentangan dengan katalog), atau ditolak karena bahasa EN/JP. Tidak ada jawaban yang dipaksakan lolos: aturan identitas yang sama berlaku. `tolak` membuang listing selamanya; putaran pencarian berikutnya tidak memasukkannya lagi ke antrean.
+- Baris `pasar`: harga dicatat sebagai listing impor (`source` shopee/tokopedia, `origin: import`) untuk kartu dan grade pada baris itu, dengan bahasa yang Anda nyatakan. Bahasa selain ID dilewati dan dilaporkan; harga tanpa link (atau sebaliknya) dilaporkan dan dilewati; bahasa yang kosong ditolak.
+- Nilai yang tidak dikenali (nomor "abc", grade "11") membuat **seluruh baris** dilewati dan dilaporkan, tidak diterapkan separuh.
+- Jalankan perintah ini **setelah mengisi**, jangan dipasang di timer: tiap penerapan dianggap "baru dilihat sekarang" untuk baris pasar, sehingga timer akan membuat harga lama tampak segar. Seperti impor biasa, baris pasar berhenti dihitung 48 jam setelah penerapan terakhir.
+- Membuat lembar baru menimpa berkas CSV-nya, bukan lembar Google Anda. Terapkan isian dulu, baru buat lembar baru.
+

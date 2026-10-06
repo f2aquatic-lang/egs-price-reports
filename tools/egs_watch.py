@@ -45,6 +45,7 @@ from urllib.request import Request, urlopen
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import collect_raw  # noqa: E402
 import egs_identity as ident  # noqa: E402
+import egs_worksheet  # noqa: E402
 import watch_queries  # noqa: E402
 
 SITE = collect_raw.SITE
@@ -433,20 +434,26 @@ def read_import(path):
     return records, problems
 
 
+def verdict_cols(v):
+    """The columns that hold what the identity check concluded about a listing."""
+    identity, verdict = v["identity"], v["verdict"]
+    return {
+        "verdict": verdict, "reasons": json.dumps(v["reasons"], ensure_ascii=False), "identity": json.dumps(identity, ensure_ascii=False),
+        "evidence": json.dumps({k: v["evidence"][k] for k in ("companies", "grades_title", "grades_desc", "numbers", "rarities", "bundle", "holo")}, ensure_ascii=False),
+        "suggestions": json.dumps(v["suggestions"], ensure_ascii=False), "cert": identity.get("cert"),
+        "card_key": ident.card_key(identity) if verdict == "accepted" else None,
+        "grade": identity.get("grade") if verdict == "accepted" else None}
+
+
 def upsert(db, n, v, now, photo_read=None, origin="search"):
     """Store one listing seen in a search together with this run's verdict, and record the observation. True when it is new."""
-    identity, verdict, stamp = v["identity"], v["verdict"], now.isoformat()
+    stamp = now.isoformat()
     status = "ok" if n["active"] else "unavailable"
     cols = {
         "slug": n["slug"], "store_id": n["store_id"], "store_name": n["store_name"], "city": n["city"], "title": n["title"],
         "description": n["description"], "photo": n["image"], "photos": json.dumps(n["photos"]), "ask": n["ask"], "list_price": n["list"],
         "stock": n["stock"], "active": 1 if n["active"] else 0, "last_seen": stamp, "last_ok": stamp, "status": status, "status_at": stamp,
-        "verdict": verdict, "reasons": json.dumps(v["reasons"], ensure_ascii=False), "identity": json.dumps(identity, ensure_ascii=False),
-        "evidence": json.dumps({k: v["evidence"][k] for k in ("companies", "grades_title", "grades_desc", "numbers", "rarities", "bundle", "holo")}, ensure_ascii=False),
-        "suggestions": json.dumps(v["suggestions"], ensure_ascii=False), "cert": identity.get("cert"),
-        "card_key": ident.card_key(identity) if verdict == "accepted" else None,
-        "grade": identity.get("grade") if verdict == "accepted" else None,
-        "listed_at": n["listed_at"], "updated_at_src": n["updated_at_src"]}
+        **verdict_cols(v), "listed_at": n["listed_at"], "updated_at_src": n["updated_at_src"]}
     if photo_read:
         cols["photo_read"] = json.dumps(photo_read, ensure_ascii=False)
     exists = db.execute("SELECT 1 FROM listing WHERE url=?", (n["url"],)).fetchone()
@@ -480,6 +487,8 @@ def judge(db, n, catalog, tracked, photo_fn, photo_budget):
     # the address-versus-title check is about toco, whose address keeps the first title of a re-used listing; other sites' addresses are not evidence of that
     listing = {"title": n["title"], "description": n["description"], "ask": n["ask"], "stock": n["stock"], "slug": n["slug"] if source_of(n["url"]) == "toco" else None}
     v = ident.verify(listing, catalog, cached, tracked.get(n["url"]))
+    if cached and cached.get("reject"):     # the owner threw this listing out in the worksheet: it stays out
+        return {**v, "verdict": "rejected", "reasons": [ident.reason("manual_reject", "Ditolak manual lewat lembar kerja")]}, cached
     read = cached
     if (v["verdict"] == "ambiguous" and photo_fn and not cached and photo_budget[0] > 0 and n["image"]
             and NEEDS_PHOTO & {r["code"] for r in v["reasons"]}):
@@ -488,6 +497,26 @@ def judge(db, n, catalog, tracked, photo_fn, photo_budget):
         if read:
             v = ident.verify(listing, catalog, read, tracked.get(n["url"]))
     return v, read
+
+
+def apply_manual(db, reads, catalog, tracked, log):
+    """Apply what the owner filled in the worksheet to listings already in the database: store the reading like a photo reading
+    (marked manual) and judge again. The check time of the listing is not touched: nobody looked at the listing page just now."""
+    done = Counter()
+    for url, read in reads.items():
+        row = db.execute("SELECT * FROM listing WHERE url=?", (url,)).fetchone()
+        if not row:
+            done["unknown"] += 1
+            log(f"  ! lembar kerja: listing tidak ada di database: {url[-60:]}")
+            continue
+        db.execute("UPDATE listing SET photo_read=? WHERE url=?", (json.dumps(read, ensure_ascii=False), url))
+        n = {"title": row["title"], "description": row["description"] or "", "ask": row["ask"], "stock": row["stock"], "slug": row["slug"], "url": url, "image": row["photo"]}
+        v, _ = judge(db, n, catalog, tracked, None, [0])
+        cols = verdict_cols(v)
+        db.execute("UPDATE listing SET " + ", ".join(f"{k}=?" for k in cols) + " WHERE url=?", (*cols.values(), url))
+        done[v["verdict"]] += 1
+    db.commit()
+    return done
 
 
 def recheck_query(row):
@@ -759,6 +788,9 @@ def format_report(d, limit=12):
               f"- pemeriksaan putaran ini: {s['checked_ok_this_run']} berhasil, {s['check_failed_this_run']} gagal; status: " + ", ".join(f"{k} {v}" for k, v in sorted(s["status"].items())),
               f"- perubahan harga 24 jam: {s['price_changes_24h']}",
               *([f"- per sumber: " + ", ".join(f"{k} {v['accepted']} diterima/{v['counted']} dihitung" for k, v in s["by_source"].items())] if len(s.get("by_source") or {}) > 1 else []),
+              *([f"- lembar kerja: {r['worksheet']['filled_rows']} baris antrean diisi ({r['worksheet']['accepted']} diterima, {r['worksheet']['ambiguous']} masih ragu, "
+                 f"{r['worksheet']['rejected']} ditolak), {r['worksheet']['market_rows']} harga pasar dicatat" + (f", {len(r['worksheet']['problems'])} baris bermasalah" if r['worksheet']['problems'] else "")]
+                if r.get("worksheet") else []),
               *([f"- impor manual: {r['imported']['rows']} baris, {r['imported']['accepted']} diterima, {r['imported']['ambiguous']} ambigu, "
                  f"{r['imported']['rejected']} ditolak" + (f", {len(r['imported']['problems'])} baris bermasalah" if r['imported']['problems'] else "")] if r.get("imported") else []),
               f"- kesegaran: {s['freshness']['fresh_8h']} dalam 8 jam, {s['freshness']['fresh_24h']} dalam 24 jam, {s['freshness']['older']} lebih lama", ""]
@@ -893,6 +925,21 @@ def run(cfg, post, status_fn=fetch_status, photo_fn=None, now=None, sleep=time.s
     toco = Toco(post, cfg.cache_dir, cfg.cache_ttl, sleep=sleep, log=log)
     no_search = getattr(cfg, "no_search", False)
     imports, import_problems = read_import(cfg.import_file) if getattr(cfg, "import_file", None) else ([], [])
+    manual, ws_info = Counter(), None
+    if getattr(cfg, "worksheet", None):
+        reads, ws_rows, ws_problems = egs_worksheet.read(cfg.worksheet, collect_raw.fetch)
+        manual = apply_manual(db, reads, catalog, tracked_by_url(db), log)
+        seen = {n["url"]: n for n in imports}
+        for row in ws_rows:
+            rec, problem = normalize_import(row)
+            if problem:
+                ws_problems.append(problem)
+            else:
+                seen[rec["url"]] = rec
+        imports = list(seen.values())
+        ws_info = {"filled_rows": len(reads), "accepted": manual["accepted"], "ambiguous": manual["ambiguous"], "rejected": manual["rejected"],
+                   "unknown": manual["unknown"], "market_rows": len(ws_rows), "problems": ws_problems[:30]}
+        import_problems = import_problems + ws_problems
     for problem in import_problems:
         log(f"  ! impor: {problem}")
     if no_search:
@@ -947,7 +994,8 @@ def run(cfg, post, status_fn=fetch_status, photo_fn=None, now=None, sleep=time.s
                 "checked_ok": cand - sum(rejected.values()) + rc["ok"] + rc["unavailable"],
                 "check_failed": rc["fetch_failed"] + rc["blocked"], "recheck": dict(rc), "photo_reads": cfg.photo_budget - photo_budget[0],
                 "imported": ({"rows": len(imports), "accepted": imported["accepted"], "ambiguous": imported["ambiguous"], "rejected": imported["rejected"],
-                              "problems": import_problems[:20]} if getattr(cfg, "import_file", None) else None),
+                              "problems": import_problems[:20]} if getattr(cfg, "import_file", None) or ws_info else None),
+                "worksheet": ws_info,
                 "dry_run": bool(cfg.dry_run), "finished_at": (now if explicit_clock else datetime.now(timezone.utc)).isoformat()}
     if not items and not imports and not healthy:
         log("Tidak ada hasil pencarian dan sumber tidak sehat. egs_watch.json TIDAK diubah.")
@@ -990,6 +1038,9 @@ def main(argv=None):
     ap.add_argument("--recheck-limit", type=int, default=80, help="listing yang diperiksa satu per satu bila tidak muncul di pencarian")
     ap.add_argument("--import", dest="import_file", metavar="BERKAS",
                     help="CSV atau JSON listing yang dikumpulkan sendiri (kolom: url, judul, harga, toko, foto, stok): dinilai dan dihitung seperti listing toco; tanpa membuka situsnya")
+    ap.add_argument("--worksheet", metavar="BERKAS_ATAU_ALAMAT",
+                    help="lembar kerja yang sudah Anda isi (CSV, atau alamat 'publikasikan ke web' dari Google Sheets): foto antrean yang Anda baca dan harga Tokopedia/Shopee yang Anda catat")
+    ap.add_argument("--make-worksheet", metavar="CSV", help="tulis lembar kerja (foto + kolom isian) dari --out dan --catalog, lalu selesai")
     ap.add_argument("--no-search", action="store_true", help="lewati pencarian toco (berguna bersama --import)")
     ap.add_argument("--no-seed", action="store_true", help="jangan impor latest.json ke database")
     ap.add_argument("--dry-run", action="store_true", help="baca dan nilai saja: database disalin ke memori dan tidak ada berkas hasil ditulis (cache pencarian tetap dipakai)")
@@ -1001,6 +1052,14 @@ def main(argv=None):
     ap.add_argument("--report", metavar="EXPORT", help="cetak laporan teks dari egs_watch.json, lalu selesai")
     ap.add_argument("--validate", metavar="EXPORT", help="periksa egs_watch.json, lalu selesai")
     a = ap.parse_args(argv)
+    if a.make_worksheet:
+        export, catalog = read_json(a.out), read_json(a.catalog)
+        if export is None:
+            print(f"{a.out} tidak terbaca: jalankan pemantau dulu")
+            return 1
+        counts = egs_worksheet.make(export, catalog, a.make_worksheet)
+        print(f"ditulis: {a.make_worksheet} ({counts['pasar']} baris pasar, {counts['antrean']} baris antrean)")
+        return 0
     if a.report or a.validate:
         d = read_json(a.report or a.validate)
         if d is None:

@@ -315,7 +315,7 @@ def verify(listing, catalog, photo=None, tracked=None):
     elif ev["ma_set"]:
         identity["language"], identity["language_by"] = "ID", "kode set MA (hanya dipakai kartu Indonesia)"
     elif (photo.get("language") or "").upper() == "ID":
-        identity["language"], identity["language_by"] = "ID", "foto"
+        identity["language"], identity["language_by"] = "ID", "diisi manual dari foto" if photo.get("manual") else "foto"
     else:
         reasons.append(reason("language_unproven", "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"))
 
@@ -339,7 +339,7 @@ def verify(listing, catalog, photo=None, tracked=None):
     elif pnum and numbers and pnum != numbers[0]:
         reasons.append(reason("photo_conflict", f"Foto menunjukkan nomor {pnum}, teks menulis {numbers[0]}"))
     number = numbers[0] if len(numbers) == 1 else (pnum if not numbers else None)
-    by = "nomor di judul" if numbers and number else ("nomor di foto" if number else None)
+    by = "nomor di judul" if numbers and number else (("nomor diisi manual dari foto" if photo.get("manual") else "nomor di foto") if number else None)
     set_hint = ev["set"] if ev["set"] and ev["set"].upper() in catalog.sets else None
     if ev["set"] and not set_hint:
         set_hint = None

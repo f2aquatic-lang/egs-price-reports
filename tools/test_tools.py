@@ -29,6 +29,7 @@ import collect_raw  # noqa: E402
 import db_report  # noqa: E402
 import egs_identity  # noqa: E402
 import egs_watch  # noqa: E402
+import egs_worksheet  # noqa: E402
 import fetch_catalog  # noqa: E402
 import fetch_jp_prices  # noqa: E402
 import fetch_rates  # noqa: E402
@@ -2832,6 +2833,93 @@ class EgsWatch(unittest.TestCase):
         self.assertTrue(egs_watch.read_import(os.path.join(d, "tidak-ada.csv"))[1])
         self.assertEqual([egs_watch.source_of(u) for u in ("https://toco.id/id/listing/x", "https://www.shopee.co.id/a", "https://shp.ee/abc", "https://www.tokopedia.com/a/b", "https://m.facebook.com/x")],
                          ["toco", "shopee", "shopee", "tokopedia", "m.facebook.com"])
+
+    # -- the worksheet: photos with empty columns, filled by hand, read back
+    def make_sheet(self, fake, **over):
+        export, _ = self.go(fake, **over)
+        path = os.path.join(self.tmp.name, "lembar.csv")
+        counts = egs_worksheet.make(export, egs_catalog_data(), path)
+        with open(path, encoding="utf-8-sig", newline="") as fh:
+            rows = list(csv.DictReader(fh))
+        return export, path, counts, rows
+
+    def filled(self, rows, path, edits):
+        """Write the sheet back the way Google Sheets exports it after the owner typed edits = {kunci-or-kartu-text: {column: value}}."""
+        for r in rows:
+            for key, values in edits.items():
+                if key in (r["kunci"], r["kartu"]):
+                    r.update(values)
+        out = os.path.join(self.tmp.name, "terisi.csv")
+        with open(out, "w", encoding="utf-8", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=egs_worksheet.COLUMNS)
+            w.writeheader()
+            w.writerows(rows)
+        return out
+
+    def test_the_worksheet_has_the_photos_the_prices_and_the_empty_columns_to_fill(self):
+        export, path, counts, rows = self.make_sheet(FakeEgsToco(self.catalog_listings()))
+        self.assertEqual(counts, {"pasar": 3, "antrean": 3})                          # Pikachu ex 10, Pikachu ex 9.5 and Dreepy 10; and the review queue
+        market = [r for r in rows if r["jenis"] == "pasar"]
+        queue = {r["kartu"]: r for r in rows if r["jenis"] == "antrean"}
+        pika = next(r for r in market if r["kartu"].startswith("Pikachu ex 234/193 MA3") and r["grade"] == "10")
+        self.assertEqual((pika["foto"], pika["harga_toco"], pika["kunci"]), ('=IMAGE("https://o/1.png")', "2550000", "Pikachu ex|MA3|234/193|SAR|10"))   # the official picture
+        q = queue["Pikachu EGS 10 ID"]
+        self.assertTrue(q["foto"].startswith('=IMAGE("https://img.example/') and q["kunci"].startswith("https://toco.id/id/listing/") and "nomor" in q["alasan_ragu"].lower())
+        for r in rows:                                                              # nothing is pre-filled where the owner has to type
+            self.assertEqual([r[c] for c in ("nomor", "rarity", "bahasa", "keputusan", "harga_tokopedia", "link_tokopedia", "harga_shopee", "link_shopee", "catatan")], [""] * 9)
+
+    def test_what_is_typed_in_the_worksheet_is_read_strictly(self):
+        export, path, counts, rows = self.make_sheet(FakeEgsToco(self.catalog_listings()))
+        queue = {r["kartu"]: r["kunci"] for r in rows if r["jenis"] == "antrean"}
+        pika = "Pikachu ex|MA3|234/193|SAR|10"
+        dreepy = next(r["kunci"] for r in rows if r["kartu"].startswith("Dreepy"))
+        sheet = self.filled(rows, path, {
+            queue["Pikachu EGS 10 ID"]: {"nomor": "234 / 193", "rarity": "sar", "bahasa": "Indo", "grade": "10"},
+            queue["Paket 3 slab EGS 10 Pikachu Mew Charizard MA3 ID"]: {"keputusan": "Tolak"},
+            queue["Pikachu ex SR 234/193 MA3 ID EGS 10 salah rarity"]: {"nomor": "abc"},                         # not a number: the whole row is refused
+            pika: {"bahasa": "ID", "harga_tokopedia": "Rp 2.600.000", "link_tokopedia": "https://www.tokopedia.com/t/pika?x=1", "harga_shopee": "2.550.000"},   # no shopee link
+            dreepy: {"bahasa": "EN", "harga_shopee": "100.000", "link_shopee": "https://shopee.co.id/d-i.1.2"}})   # an English card is not counted here
+        reads, imports, problems = egs_worksheet.read(sheet)
+        self.assertEqual(reads[queue["Pikachu EGS 10 ID"]], {"manual": True, "is_slab": None, "company": None, "cert": None, "name": None, "number": "234/193", "rarity": "SAR", "language": "ID", "grade": "10"})
+        self.assertEqual(reads[queue["Paket 3 slab EGS 10 Pikachu Mew Charizard MA3 ID"]], {"manual": True, "reject": True})
+        self.assertNotIn(queue["Pikachu ex SR 234/193 MA3 ID EGS 10 salah rarity"], reads)
+        self.assertEqual([(i["url"], i["title"], i["price"]) for i in imports], [("https://www.tokopedia.com/t/pika?x=1", "Pikachu ex 234/193 MA3 SAR EGS 10 ID", "Rp 2.600.000")])
+        text = "\n".join(problems)
+        self.assertIn("nomor 'abc' harus lengkap", text)
+        self.assertIn("harga dan link harus diisi dua-duanya", text)
+        self.assertIn("bahasa EN, bukan kartu Indonesia", text)
+        self.assertEqual(egs_worksheet.read(os.path.join(self.tmp.name, "tidak-ada.csv"))[2][0][:25], "lembar kerja tidak terbac")
+        self.assertIn("tidak dikenali", egs_worksheet.parse("a,b\n1,2\n")[2][0])
+
+    def test_a_filled_worksheet_settles_the_queue_and_adds_market_prices_and_it_sticks(self):
+        items = self.catalog_listings()
+        export, path, counts, rows = self.make_sheet(FakeEgsToco(items))
+        queue = {r["kartu"]: r["kunci"] for r in rows if r["jenis"] == "antrean"}
+        sheet = self.filled(rows, path, {
+            queue["Pikachu EGS 10 ID"]: {"nomor": "234/193", "rarity": "SAR", "bahasa": "ID", "grade": "10"},
+            queue["Paket 3 slab EGS 10 Pikachu Mew Charizard MA3 ID"]: {"keputusan": "tolak"},
+            "Pikachu ex|MA3|234/193|SAR|10": {"bahasa": "ID", "harga_tokopedia": "2.600.000", "link_tokopedia": "https://www.tokopedia.com/t/pika",
+                                              "harga_shopee": "2.450.000", "link_shopee": "https://shopee.co.id/Pikachu-i.9.9?sp=1"}})
+        fake = FakeEgsToco(items)
+        later, code = self.go(fake, now=self.T0 + timedelta(hours=1), no_search=True, worksheet=sheet)
+        self.assertEqual((code, fake.posts, egs_watch.validate(later)), (0, [], []))
+        ws = later["run"]["worksheet"]
+        self.assertEqual((ws["filled_rows"], ws["accepted"], ws["rejected"], ws["market_rows"], ws["problems"]), (2, 1, 1, 2, []))
+        self.assertEqual([q["title"] for q in later["queue"]], ["Pikachu ex SR 234/193 MA3 ID EGS 10 salah rarity"])      # two of the three left the queue
+        settled = next(l for l in later["listings"] if l["title"] == "Pikachu EGS 10 ID")
+        self.assertEqual(settled["identity"]["identified_by"], "nomor diisi manual dari foto")
+        self.assertEqual(settled["identity"]["language_by"], "teks")                    # the title already says ID; only the number came from the owner
+        sources = {l["source"]: l for l in later["listings"] if l["origin"] == "import"}
+        self.assertEqual(sorted(sources), ["shopee", "tokopedia"])
+        self.assertEqual(sources["shopee"]["url"], "https://shopee.co.id/Pikachu-i.9.9")
+        self.assertEqual(later["summary"]["by_source"]["toco"]["counted"] + later["summary"]["by_source"]["shopee"]["counted"] + later["summary"]["by_source"]["tokopedia"]["counted"],
+                         later["summary"]["listings_counted"])
+        self.assertIn("lembar kerja: 2 baris antrean diisi", egs_watch.format_report(later))
+        # an ordinary run afterwards sees the same listings again in the search: the typed answers hold, the thrown-out listing stays out
+        again, _ = self.go(FakeEgsToco(items), now=self.T0 + timedelta(hours=7))
+        self.assertEqual([q["title"] for q in again["queue"]], ["Pikachu ex SR 234/193 MA3 ID EGS 10 salah rarity"])
+        self.assertIn("Pikachu EGS 10 ID", [l["title"] for l in again["listings"]])
+        self.assertNotIn("Paket 3 slab EGS 10 Pikachu Mew Charizard MA3 ID", [x["title"] for x in again["listings"] + again["queue"]])
 
 
 def slug_of_url(url):
