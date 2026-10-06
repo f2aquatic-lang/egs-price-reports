@@ -54,10 +54,15 @@ def rows_for(export, catalog):
 
 
 def make(export, catalog, path):
-    """Write the worksheet; returns {"pasar": n, "antrean": n}. UTF-8 with a byte-order mark so that Sheets and Excel read the accents."""
+    """Write the worksheet; returns {"pasar": n, "antrean": n}. UTF-8 with a byte-order mark so that Sheets and Excel read the accents.
+    A path ending in .tsv is written tab separated and without quoting: pasted into Google Sheets (or opened with Import, separator Tab) it
+    lands in separate columns at once and the =IMAGE() formulas work, with no 'split text to columns' step."""
     rows = rows_for(export, catalog)
-    with open(path, "w", encoding="utf-8-sig", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=COLUMNS)
+    tsv = path.lower().endswith(".tsv")
+    if tsv:
+        rows = [{k: re.sub(r"[\t\r\n]+", " ", str(v)) for k, v in r.items()} for r in rows]
+    with open(path, "w", encoding="utf-8" if tsv else "utf-8-sig", newline="") as fh:     # the .tsv is meant for pasting: no invisible byte-order mark in the first cell
+        w = csv.DictWriter(fh, fieldnames=COLUMNS, delimiter="\t" if tsv else ",", quoting=csv.QUOTE_NONE if tsv else csv.QUOTE_MINIMAL, quotechar=None if tsv else '"', lineterminator="\n")
         w.writeheader()
         w.writerows(rows)
     return {"pasar": sum(1 for r in rows if r["jenis"] == "pasar"), "antrean": sum(1 for r in rows if r["jenis"] == "antrean")}
@@ -130,11 +135,14 @@ def _read_market_row(row):
 def parse(text):
     """(reads, imports, problems) from the worksheet CSV text: reads = {listing url: dict like a photo reading}, imports = rows for egs_watch.normalize_import."""
     reads, imports, problems = {}, [], []
-    rows = list(csv.DictReader(io.StringIO(text.lstrip("﻿"))))
-    if not rows or "kunci" not in {(k or "").strip().lower() for k in rows[0]}:
+    text = text.lstrip("\ufeff")
+    header = text.split("\n", 1)[0]
+    delimiter = "\t" if header.count("\t") > header.count(",") else ","      # CSV from Sheets, or the tab separated sheet pasted back
+    rows = list(csv.DictReader(io.StringIO(text), delimiter=delimiter))
+    if not rows or "kunci" not in {(k or "").strip().lstrip("\ufeff").lower() for k in rows[0]}:
         return {}, [], ["lembar kerja tidak dikenali: baris pertama harus memuat nama kolom (jenis, ..., kunci)"]
     for i, raw in enumerate(rows, 2):
-        row = {(k or "").strip().lower(): v for k, v in raw.items()}
+        row = {(k or "").strip().lstrip("\ufeff").lower(): v for k, v in raw.items()}
         kind = _clean(row.get("jenis")).lower()
         if kind == "antrean":
             read, problem = _read_queue_row(row)

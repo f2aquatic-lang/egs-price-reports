@@ -29,7 +29,7 @@ from classify import NON_POKEMON as BASE_NON_POKEMON, NUMBER, PRODUCT, RARITY, S
 
 NON_POKEMON = re.compile(BASE_NON_POKEMON.pattern + r"|optcg|\bop\d{2}\s?-\s?\d{3}|super saiyan|saiyans|dbscg|\bbt\d{1,2}-\d{3}|gundam|lorcana|flesh and blood|"
                          r"\bst\d{2}-\d{3}|yugioh|weiss|vanguard|one piece", re.I)
-POKEMON_WORD = re.compile(r"pok[e\u00e9]mon|\bptcg\b|\btcg\b", re.I)
+POKEMON_WORD = re.compile(r"pok[e\u00e9]mon|\bptcg\b|\btcg\b|\bpika\b", re.I)   # "pika" is what sellers write for Pikachu
 
 MIN_PRICE = 50_000  # a slab for less than this is a typo, a bundle fee or a different item
 GRADES = ("10", "9.5", "9", "8.5", "8", "7.5", "7")

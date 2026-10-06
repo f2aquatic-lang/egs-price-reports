@@ -2210,6 +2210,8 @@ class EgsIdentity(unittest.TestCase):
                                                                     "number": "330/193", "rarity": None, "language": "EN"})
         self.assertEqual(v["verdict"], "ambiguous")
         self.assertIn("language_conflict", codes(v))
+        self.assertEqual(verify_title("Pika egs 10", price=500000)["verdict"], "ambiguous")                                         # "pika" is Pikachu: a person or a photo decides, it is not thrown out
+        self.assertEqual(codes(verify_title("Ijat EGS", price=500000)), ["no_pokemon_signal"])
         self.assertEqual(verify_title("Charizard ex SAR MA3 EGS10 Indo", photo={"language": "JP"})["verdict"], "ambiguous")        # an MA code is also a claim of Indonesian
         v = verify_title("Leafeon ex SAR 200/187 SV8A EGS 10", photo={"language": "ID"})
         self.assertEqual((v["verdict"], v["identity"]["language_by"]), ("accepted", "foto"))
@@ -2228,10 +2230,11 @@ class EgsIdentity(unittest.TestCase):
         for title in ("Come On!! We\u2019ll Fight You !! - OPTCG - OP09 -020", "SUPER SAIYANS GOTENKS EGS 9", "Takato Matsuki EX2-056 P-R EGS 9"):
             v = verify_title(title)
             self.assertEqual((v["verdict"], codes(v)), ("rejected", ["not_pokemon"]), title)
-        for title in ("Wanted Buggy GEM MINT 9.5 by EGS", "Gol D Roger PSEC* EGS 10 & Gold Don!! Roger", "Pika egs 10"):
+        for title in ("Wanted Buggy GEM MINT 9.5 by EGS", "Gol D Roger PSEC* EGS 10 & Gold Don!! Roger"):
             v = verify_title(title)
             self.assertEqual((v["verdict"], codes(v)), ("rejected", ["no_pokemon_signal"]), title)
         self.assertEqual(verify_title("Dreepy EGS 10 ID")["verdict"], "ambiguous")                  # a catalog name is a signal
+        self.assertEqual(verify_title("Pika egs 10")["verdict"], "ambiguous")                       # so is the nickname sellers use for Pikachu
         self.assertEqual(verify_title("Kartu EGS 10 pokemon langka")["verdict"], "ambiguous")        # so is the word Pokemon
 
     def test_a_listing_re_used_for_another_card_is_caught_by_its_address(self):
@@ -2874,6 +2877,23 @@ class EgsWatch(unittest.TestCase):
         for r in rows:                                                              # nothing is pre-filled where the owner has to type
             self.assertEqual([r[c] for c in ("nomor", "rarity", "bahasa", "keputusan", "harga_tokopedia", "link_tokopedia", "harga_shopee", "link_shopee", "catatan")], [""] * 9)
 
+    def test_a_tab_separated_worksheet_pastes_into_columns_and_reads_back(self):
+        export, _ = self.go(FakeEgsToco(self.catalog_listings()))
+        path = os.path.join(self.tmp.name, "lembar.tsv")
+        egs_worksheet.make(export, egs_catalog_data(), path)
+        with open(path, encoding="utf-8-sig") as fh:
+            lines = fh.read().split("\n")
+        self.assertEqual(lines[0].split("\t"), egs_worksheet.COLUMNS)
+        index = next(n for n, l in enumerate(lines) if l.startswith("pasar") and "Pikachu ex 234/193" in l and "\t10\t" in l)
+        pika = lines[index].split("\t")
+        self.assertEqual(pika[1], '=IMAGE("https://o/1.png")')                       # one plain formula, no quote doubling, so Sheets turns it into the picture
+        self.assertTrue(all(len(l.split("\t")) == len(egs_worksheet.COLUMNS) for l in lines[1:] if l))
+        col = egs_worksheet.COLUMNS.index
+        pika[col("bahasa")], pika[col("harga_shopee")], pika[col("link_shopee")] = "ID", "2.450.000", "https://shopee.co.id/Pikachu-i.9.9"
+        lines[index] = "\t".join(pika)
+        reads, imports, problems = egs_worksheet.parse("\n".join(lines))
+        self.assertEqual((reads, problems, [(x["url"], x["price"]) for x in imports]), ({}, [], [("https://shopee.co.id/Pikachu-i.9.9", "2.450.000")]))
+
     def test_what_is_typed_in_the_worksheet_is_read_strictly(self):
         export, path, counts, rows = self.make_sheet(FakeEgsToco(self.catalog_listings()))
         queue = {r["kartu"]: r["kunci"] for r in rows if r["jenis"] == "antrean"}
@@ -2896,6 +2916,8 @@ class EgsWatch(unittest.TestCase):
         self.assertIn("bahasa EN, bukan kartu Indonesia", text)
         self.assertEqual(egs_worksheet.read(os.path.join(self.tmp.name, "tidak-ada.csv"))[2][0][:25], "lembar kerja tidak terbac")
         self.assertIn("tidak dikenali", egs_worksheet.parse("a,b\n1,2\n")[2][0])
+        invisible = '"\ufeffjenis",kartu,kunci,bahasa,harga_shopee,link_shopee\npasar,Pikachu,Pikachu ex|MA3|234/193|SAR|10,ID,2.450.000,https://shopee.co.id/p-i.1.2\n'
+        self.assertEqual(len(egs_worksheet.parse(invisible)[1]), 1)             # a byte-order mark pasted into the first cell must not hide every row
 
     def test_a_filled_worksheet_settles_the_queue_and_adds_market_prices_and_it_sticks(self):
         items = self.catalog_listings()
