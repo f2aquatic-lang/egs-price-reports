@@ -127,20 +127,6 @@ def parse_saved(path, code, log=print):
     return cards
 
 
-RATE_URL = "https://api.frankfurter.dev/v1/latest?base=JPY&symbols=IDR"
-
-
-def fetch_rate(get=http_get):
-    """(rupiah per yen, date of the rate) from the European Central Bank's daily reference rates (frankfurter.dev, no key); (None, None) when unavailable."""
-    status, body = get(RATE_URL)
-    try:
-        data = json.loads(body) if status == 200 else {}
-        rate = float(data["rates"]["IDR"])
-        return (rate, data.get("date")) if rate > 0 else (None, None)
-    except (ValueError, KeyError, TypeError):
-        return None, None
-
-
 def write_json(path, data):
     """Compact file, one card per line (the file is committed every run: small and easy to diff). The page address and the
     image of a card follow from its set and id, so they are not stored."""
@@ -186,10 +172,8 @@ def run(args, get=http_get, now=None, sleep=time.sleep, log=print):
         cards += got
         sets.append({"code": code, "label": names.get(code), "cards": len(got)})
         log(f"  {code}: {len(got)} kartu ({names.get(code)})")
-    rate, rate_date = fetch_rate(get)
-    log(f"kurs: 1 yen = Rp {rate:g} ({rate_date})" if rate else "kurs yen ke rupiah tidak terbaca; harga Jepang tampil dalam yen saja")
     data = {"schema_version": 1, "source": "yuyu-tei.jp/sell/poc", "currency": "JPY", "condition": "傷無し",
-            "generated_at": now.isoformat(), "jpy_idr": rate, "jpy_idr_date": rate_date, "sets": sets, "cards": cards}
+            "generated_at": now.isoformat(), "sets": sets, "cards": cards}
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     write_json(args.out, data)
     log(f"ditulis: {args.out} ({len(sets)} set, {len(cards)} kartu, {used + 1} permintaan)")

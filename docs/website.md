@@ -10,7 +10,7 @@ Kalau `catalog.json` (katalog resmi, lihat [raw-dataset.md](raw-dataset.md)) ada
 
 Versi foil dari satu nomor kartu (Poké Ball dan Master Ball di set High Class) tampil sebagai baris sendiri dengan tanda versinya, karena harganya berbeda; lihat [raw-dataset.md](raw-dataset.md).
 
-Kolom **Acuan JP** memuat harga jual Yuyutei (Jepang, kondisi tanpa goresan) dalam yen dan perkiraan rupiahnya (kurs harian Bank Sentral Eropa lewat frankfurter.dev), untuk set yang nomor kartunya sama persis di Jepang dan Indonesia (`jp_sets` di `tools/sets.json`). Set lain menulis "belum ada untuk set ini". Kartu yang stoknya habis di Yuyutei diberi tanda "habis". Papan memakai `jp_prices.json` kalau berkasnya ada; lihat [vps-setup.md](vps-setup.md) untuk cara mengambilnya.
+Kolom **Acuan JP** memuat harga jual Yuyutei (Jepang, kondisi tanpa goresan) dalam yen dan perkiraan rupiahnya (dikalikan kurs yen hari itu), untuk set yang nomor kartunya sama persis di Jepang dan Indonesia (`jp_sets` di `tools/sets.json`). Set lain menulis "belum ada untuk set ini". Kartu yang stoknya habis di Yuyutei diberi tanda "habis". Papan memakai `jp_prices.json` kalau berkasnya ada; lihat [vps-setup.md](vps-setup.md) untuk cara mengambilnya.
 
 Nama set tulisan tangan ada di `tools/sets.json`, ditulis tangan dari hasil pencarian web dan dari judul listing. Kolom `basis` di berkas itu menunjukkan seberapa pasti: **pencarian web** (nama dan sebagian tanggal dari Bulbapedia, pokeunlimited, krystalkollectz; halamannya belum dibuka langsung), **judul listing** (nama Indonesia terbaca dari judul), **perkiraan**. Set yang belum ada di berkas itu tetap tampil dengan kodenya saja. Koreksi nama, tanggal, atau jumlah kartu langsung di `sets.json`; halaman memakainya pada putaran berikutnya.
 
@@ -63,3 +63,5 @@ Skrip ini:
 - Basic auth tidak membatasi percobaan tebak kata sandi. Karena itu kata sandinya harus panjang.
 - Ini melindungi dari pengambilan data oleh orang luar yang tidak punya kata sandi. Orang yang sudah masuk tetap bisa menyalin halaman.
 - Satu halaman memuat seluruh data (sekitar 0,7 MB sekarang, naik seiring kartu bertambah). Kalau sudah terlalu berat, halaman dipecah per set.
+
+**Kurs.** Di bawah judul halaman tertulis kurs yang dipakai: `¥1 = Rp…`, `US$1 = Rp…`, dan kapan diperbarui (WIB). Kurs diambil dari Google Finance sekali sehari oleh `tools/fetch_rates.py`, yang dipanggil `publish_raw.sh` dan hanya mengambil lagi kalau berkas `rates.json` lebih tua dari 20 jam. Sebagai pembanding dan cadangan, kurs referensi harian Bank Sentral Eropa (frankfurter.dev) ikut diambil: kurs Google dipakai kecuali di luar kisaran wajar atau berbeda lebih dari 3% dari kurs Bank Sentral Eropa. Kalau yang dipakai bukan Google, halaman menyebut sumbernya di samping angkanya. Kalau pembaruan gagal lebih dari tiga hari, halaman memberi tanda "kurs lama". Kurs dolar disiapkan untuk harga acuan Inggris (belum dipakai).

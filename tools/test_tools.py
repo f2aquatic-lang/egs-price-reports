@@ -15,7 +15,8 @@ import sys
 import tempfile
 import threading
 import unittest
-from datetime import datetime, timezone
+from unittest import mock
+from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlsplit
 from urllib.request import urlopen
@@ -26,6 +27,7 @@ import collect_raw  # noqa: E402
 import db_report  # noqa: E402
 import fetch_catalog  # noqa: E402
 import fetch_jp_prices  # noqa: E402
+import fetch_rates  # noqa: E402
 import probe_pokemon_card  # noqa: E402
 import probe_toco  # noqa: E402
 import probe_toco_fields  # noqa: E402
@@ -291,6 +293,13 @@ class RawFormat(unittest.TestCase):
         d = good_raw()
         d["cards"][0]["listings"][2]["ask_idr"] = 999999
         self.assertTrue(any("outside" in e for e in validate_raw.validate(d)[0]))
+
+
+def rates_file(jpy, usd, source="google", fetched="2026-10-06T07:00:00+00:00"):
+    """rates.json as tools/fetch_rates.py writes it."""
+    return {"schema_version": 1, "generated_at": fetched, "rates": {
+        "JPY": {"idr": jpy, "source": source, "fetched_at": fetched, "google": jpy, "ecb": jpy},
+        "USD": {"idr": usd, "source": source, "fetched_at": fetched, "google": usd, "ecb": usd}}}
 
 
 def jp_card(code, number, name, yen, id=1, in_stock=True):
@@ -792,7 +801,7 @@ class Collector(unittest.TestCase):
         path = os.path.join(self.tmp.name, "catalog.json")
         with open(path, "w", encoding="utf-8") as fh:
             json.dump({"schema_version": 1, "sets": [{"code": "SV8A", "product": "High Class", "fetched": 2}], "cards": cards}, fh)
-        jp = {"generated_at": "2026-10-06T01:00:00+00:00", "jpy_idr": 105.5, "jpy_idr_date": "2026-10-05", "card_url": "https://yuyu-tei.jp/sell/poc/card/{set}/{id}",
+        jp = {"generated_at": "2026-10-06T01:00:00+00:00", "card_url": "https://yuyu-tei.jp/sell/poc/card/{set}/{id}",
               "cards": [jp_card("sv08a", "013/187", "コロモリ", 30, id=7), jp_card("sv08a", "013/187", "コロモリ(モンスターボール柄/ミラー仕様)", 120, id=8),
                         jp_card("sv08a", "013/187", "コロモリ(マスターボール柄/ミラー仕様)", 400, id=9, in_stock=False)]}
         raw = good_raw()
@@ -805,7 +814,7 @@ class Collector(unittest.TestCase):
         self.assertEqual((rows["master_ball"]["basis"], rows["master_ball"]["n"], rows["master_ball"]["image"]), (None, 0, None))   # no Indonesian listing yet
         sv8a = next(m for m in data["sets"] if m["code"] == "SV8A")
         self.assertEqual((sv8a["jp_set"], sv8a["jp_cards"]), ("sv08a", 3))
-        self.assertEqual((data["jp_meta"]["rate"], data["jp_meta"]["cards"]), (105.5, 3))
+        self.assertEqual(data["jp_meta"]["cards"], 3)
         again = build_site.build(tiny_latest(), raw, json.load(open(path, encoding="utf-8")))                                          # without --jp nothing changes but the missing column
         self.assertEqual(sorted(r["variant"] for r in again["raw_cards"]), ["", "poke_ball"])
         self.assertIsNone(again["jp_meta"])
@@ -1444,6 +1453,82 @@ def yuyutei_site():
             "/sell/poc/s/m01l": "<html><div id=\"card-list3\">" + header("RR") + product("m01l", 1, "001/063", "RR", "フシギバナex", 480, "7 点") + "</div></html>"}
 
 
+class FetchRates(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.out = os.path.join(self.tmp.name, "rates.json")
+        self.args = argparse.Namespace(out=self.out, delay=0, max_age_hours=None)
+        self.now = datetime(2026, 10, 6, 0, 0, tzinfo=timezone.utc)
+        self.calls = []
+        g = lambda cur, price: f'<div class="rPF6Lc" data-source="{cur}" data-target="IDR" data-last-price="{price}" data-x="1"><div class="YMlKec fxKbKc">{price}</div></div>'
+        self.pages = {fetch_rates.GOOGLE.format(cur="JPY"): (200, g("JPY", "106.12")), fetch_rates.GOOGLE.format(cur="USD"): (200, g("USD", "16,250.5")),
+                      fetch_rates.ECB.format(cur="JPY"): (200, '{"base":"JPY","rates":{"IDR":106.0}}'), fetch_rates.ECB.format(cur="USD"): (200, '{"base":"USD","rates":{"IDR":16240.0}}')}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def get(self, url):
+        self.calls.append(url)
+        return self.pages.get(url, (404, ""))
+
+    def go(self, **over):
+        for k, v in over.items():
+            setattr(self.args, k, v)
+        self.logs = []
+        return fetch_rates.run(self.args, get=self.get, now=self.now, sleep=lambda s: None, log=self.logs.append)
+
+    def test_google_parsing(self):
+        self.assertEqual(fetch_rates.parse_google('<div data-last-price="106.12">'), 106.12)
+        self.assertEqual(fetch_rates.parse_google('<div class="YMlKec fxKbKc">16,250.50</div>'), 16250.5)
+        self.assertIsNone(fetch_rates.parse_google("<html>consent.google.com</html>"))
+        self.assertEqual(fetch_rates.parse_ecb('{"rates":{"IDR":105.5}}'), 105.5)
+        self.assertIsNone(fetch_rates.parse_ecb("nope"))
+
+    def test_google_is_used_when_it_agrees_with_the_ecb(self):
+        data = self.go()
+        self.assertEqual({c: (r["idr"], r["source"]) for c, r in data["rates"].items()}, {"JPY": (106.12, "google"), "USD": (16250.5, "google")})
+        with open(self.out, encoding="utf-8") as fh:
+            saved = json.load(fh)
+        self.assertEqual((saved["rates"]["JPY"]["ecb"], saved["rates"]["JPY"]["fetched_at"][:10]), (106.0, "2026-10-06"))
+        self.assertEqual(len(self.calls), 4)
+
+    def test_the_ecb_rate_is_used_when_google_cannot_be_read_or_disagrees(self):
+        self.pages[fetch_rates.GOOGLE.format(cur="JPY")] = (200, "<html>Before you continue to Google consent</html>")
+        self.pages[fetch_rates.GOOGLE.format(cur="USD")] = (200, '<div data-last-price="19000.0">')                  # 17% above the ECB rate
+        data = self.go()
+        self.assertEqual({c: (r["idr"], r["source"]) for c, r in data["rates"].items()}, {"JPY": (106.0, "ecb"), "USD": (16240.0, "ecb")})
+        self.assertTrue(os.path.exists(os.path.join(self.tmp.name, "google_JPY.html")))                               # the page that could not be read is kept
+        self.assertTrue(any("kurs tidak terbaca" in l and "consent" in l for l in self.logs))
+
+    def test_a_rate_outside_the_sane_range_is_never_used(self):
+        self.assertEqual(fetch_rates.choose("JPY", 0.0071, None), (None, None, "tidak ada kurs yang masuk akal"))     # the inverse pair (yen per rupiah)
+        self.assertEqual(fetch_rates.choose("USD", 16250.0, 16200.0)[1], "google")
+        self.assertEqual(fetch_rates.choose("USD", 1.0, 16200.0)[1], "ecb")
+
+    def test_nothing_new_keeps_the_old_file_and_a_fresh_file_is_not_fetched_again(self):
+        self.go()
+        with open(self.out, encoding="utf-8") as fh:
+            before = fh.read()
+        self.calls.clear()
+        self.pages.clear()                                                    # every source down
+        later = fetch_rates.run(self.args, get=self.get, now=self.now + timedelta(days=1), sleep=lambda s: None, log=self.logs.append)
+        with open(self.out, encoding="utf-8") as fh:
+            self.assertEqual(fh.read(), before)                               # the old rates stay, nothing is rewritten
+        self.assertEqual(later["rates"]["JPY"]["idr"], 106.12)
+        self.calls.clear()
+        self.go(max_age_hours=20)                                             # 0 hours old: no request at all
+        self.assertEqual(self.calls, [])
+        fetch_rates.run(self.args, get=self.get, now=self.now + timedelta(hours=21), sleep=lambda s: None, log=self.logs.append)
+        self.assertEqual(len(self.calls), 4)                                  # 21 hours old: tried again
+
+    def test_without_any_rate_there_is_no_file_and_the_exit_code_says_so(self):
+        self.pages.clear()
+        self.assertIsNone(self.go())
+        self.assertFalse(os.path.exists(self.out))
+        with mock.patch.object(fetch_rates, "http_get", lambda url: (0, "")):
+            self.assertEqual(fetch_rates.main(["--out", self.out, "--delay", "0"]), 1)
+
+
 class FetchJpPrices(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -1526,17 +1611,6 @@ class FetchJpPrices(unittest.TestCase):
         self.assertNotIn("image", data["cards"][0])
         self.assertEqual(data["card_url"].format(**data["cards"][1]), "https://yuyu-tei.jp/sell/poc/card/m02a/10487")
 
-    def test_the_yen_rate_is_saved_with_the_prices_and_its_absence_is_not_an_error(self):
-        self.pages[fetch_jp_prices.RATE_URL.replace(fetch_jp_prices.BASE, "")] = '{"amount":1.0,"base":"JPY","date":"2026-10-05","rates":{"IDR":105.62}}'
-        data = self.go(sets="m02a")
-        self.assertEqual((data["jpy_idr"], data["jpy_idr_date"]), (105.62, "2026-10-05"))
-        self.assertTrue(any("kurs: 1 yen = Rp 105.62" in l for l in self.logs))
-        del self.pages[fetch_jp_prices.RATE_URL.replace(fetch_jp_prices.BASE, "")]
-        data = self.go(sets="m02a")                                                       # the rate site answers 404: prices are still written
-        self.assertEqual((data["jpy_idr"], len(data["cards"])), (None, 4))
-        self.assertEqual(fetch_jp_prices.fetch_rate(lambda url: (200, "not json")), (None, None))
-        self.assertEqual(fetch_jp_prices.fetch_rate(lambda url: (200, '{"rates":{"IDR":0}}')), (None, None))
-
     def test_a_saved_page_can_be_checked_without_any_request(self):
         path = os.path.join(self.tmp.name, "yuyutei_m02a.html")
         with open(path, "w", encoding="utf-8") as fh:
@@ -1560,7 +1634,6 @@ class FetchJpPrices(unittest.TestCase):
     def test_a_closed_pipe_is_not_an_error(self):
         def closed(*a, **k):
             raise BrokenPipeError
-        from unittest import mock
         with mock.patch.object(fetch_jp_prices, "run", closed):
             self.assertEqual(fetch_jp_prices.main(["--list-sets"]), 0)
 
@@ -1867,9 +1940,9 @@ class BrowserRender(unittest.TestCase):
     def test_board_shows_the_yuyutei_column_with_rupiah_and_sold_out_and_says_so_for_unmapped_sets(self):
         from playwright.sync_api import sync_playwright
         raw, catalog = board_with_official_catalog()
-        jp = {"generated_at": "2026-10-06T01:00:00+00:00", "jpy_idr": 105.5, "jpy_idr_date": "2026-10-05", "card_url": "https://yuyu-tei.jp/sell/poc/card/{set}/{id}",
+        jp = {"generated_at": "2026-10-06T01:00:00+00:00", "card_url": "https://yuyu-tei.jp/sell/poc/card/{set}/{id}",
               "cards": [jp_card("m02a", "114/193", "フェザンディ", 2480, id=114), jp_card("m02a", "115/193", "フー", 30, id=115, in_stock=False)]}
-        html = build_site.render(build_site.build(tiny_latest(), raw, catalog, jp), True)
+        html = build_site.render(build_site.build(tiny_latest(), raw, catalog, jp, rates_file(105.5, 16250.4)), True)
         path = os.path.join(tempfile.mkdtemp(), "board.html")
         with open(path, "w", encoding="utf-8") as fh:
             fh.write(html)
@@ -1887,6 +1960,7 @@ class BrowserRender(unittest.TestCase):
             rows = ev("() => [...document.querySelectorAll('#rawonly-body tbody tr')].map(tr => tr.innerText.replace(/\\s+/g, ' ').trim())")
             link = ev("() => document.querySelector('#rawonly-body td.jp a').getAttribute('href')")
             info = ev("() => document.querySelector('#rawonly-info').innerText")
+            kurs = ev("() => document.querySelector('#kurs').innerText")
             page.click("#rawonly-sets .chip:has-text('MA1')")
             other = ev("() => document.querySelector('#rawonly-info').innerText")
             browser.close()
@@ -1897,7 +1971,10 @@ class BrowserRender(unittest.TestCase):
         self.assertTrue(any("115/193" in r and "¥30" in r and "habis" in r for r in rows), rows)
         self.assertFalse(any("117/193" in r and "¥" in r for r in rows))
         self.assertEqual(link, "https://yuyu-tei.jp/sell/poc/card/m02a/114")
-        self.assertIn("Acuan JP: Yuyutei m02a (2 kartu ada harganya; kurs ¥1 = Rp 105,5, 2026-10-05)", info)
+        self.assertIn("Acuan JP: Yuyutei m02a (2 kartu ada harganya)", info)
+        self.assertIn("¥1 = Rp105,5", kurs)                                                    # the rates are on the home page, not in each set's text
+        self.assertIn("US$1 = Rp16.250", kurs)
+        self.assertIn("diperbarui", kurs)
 
     def test_browser_probe_reports_listings_data_requests_and_serial(self):
         script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "probe_toco_browser.py")

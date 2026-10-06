@@ -33,7 +33,7 @@ main() {
   # This checkout only publishes raw.json. A failed earlier run can leave an unpushed commit or a half-done rebase:
   # start from origin/main again, but refuse to throw away anything other than raw.json.
   git fetch -q origin main
-  foreign="$( { git diff --name-only origin/main...HEAD; git status --porcelain --untracked-files=no | cut -c4-; } | grep -vx -e raw.json -e catalog.json -e jp_prices.json || true)"
+  foreign="$( { git diff --name-only origin/main...HEAD; git status --porcelain --untracked-files=no | cut -c4-; } | grep -vx -e raw.json -e catalog.json -e jp_prices.json -e rates.json || true)"
   if [ -n "$foreign" ]; then
     echo "Berhenti: ada perubahan lokal selain raw.json di folder ini:" >&2
     echo "$foreign" >&2
@@ -51,6 +51,12 @@ main() {
   if [ -f "$JP_PRICES" ] && ! cmp -s "$JP_PRICES" jp_prices.json; then
     cp "$JP_PRICES" jp_prices.json
   fi
+  # today's yen and dollar rates (tools/fetch_rates.py): refreshed when older than 20 hours; a failure keeps the old file and never stops the run
+  RATES="${EGS_RATES:-/opt/egs-raw/rates.json}"
+  "$PYTHON" tools/fetch_rates.py --out "$RATES" --max-age-hours 20 || echo "PERINGATAN: kurs tidak diperbarui (kurs lama dipakai)" >&2
+  if [ -f "$RATES" ] && ! cmp -s "$RATES" rates.json; then
+    cp "$RATES" rates.json
+  fi
   "$PYTHON" tools/collect_raw.py "$@"
 
   # Optional website: rebuild the page from the checkout (latest.json from the bot, raw.json from this run).
@@ -60,6 +66,7 @@ main() {
     local catalog_arg=""
     [ -f catalog.json ] && catalog_arg="--catalog catalog.json"
     [ -f jp_prices.json ] && catalog_arg="$catalog_arg --jp jp_prices.json"
+    [ -f rates.json ] && catalog_arg="$catalog_arg --rates rates.json"
     if "$PYTHON" tools/build_site.py latest.json --raw raw.json $catalog_arg --standalone --out "$EGS_SITE_DIR/.index.html.new" \
         && chmod 644 "$EGS_SITE_DIR/.index.html.new" && mv -f "$EGS_SITE_DIR/.index.html.new" "$EGS_SITE_DIR/index.html"; then
       # robots.txt is static and setup_site.sh creates it (as root): write it only when it is missing, and never fail the run over it
@@ -71,7 +78,7 @@ main() {
     fi
   }
 
-  if [ -z "$(git status --porcelain -- raw.json catalog.json jp_prices.json)" ]; then
+  if [ -z "$(git status --porcelain -- raw.json catalog.json jp_prices.json rates.json)" ]; then
     echo "raw.json tidak berubah"
     build_site
     exit 0
@@ -79,6 +86,7 @@ main() {
   git add raw.json
   [ -f catalog.json ] && git add catalog.json
   [ -f jp_prices.json ] && git add jp_prices.json
+  [ -f rates.json ] && git add rates.json
   git commit -q -m "Update RAW asking report"
   # the bot pushes latest.json to the same branch: on a lost race, take its commit and push again
   for attempt in 1 2 3; do

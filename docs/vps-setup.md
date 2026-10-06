@@ -207,6 +207,16 @@ sudo -u egsprice -H python3 /opt/egs-raw/main/tools/fetch_jp_prices.py --out /op
 
 Halaman yang dibaca tidak menghasilkan kartu? Skrip menyimpannya sebagai `yuyutei_<kode>.html` di folder keluaran dan menulis ringkasan isinya; `--parse-file berkas.html --sets <kode>` memeriksa halaman yang tersimpan tanpa permintaan baru. Sesudah itu `publish_raw.sh` menyalin `/opt/egs-raw/jp_prices.json` ke repo (seperti `catalog.json`).
 
+## Kurs yen dan dolar
+
+Kurs diambil sendiri oleh `publish_raw.sh` (lewat `tools/fetch_rates.py`) sekali sehari, disimpan di `/opt/egs-raw/rates.json`, dan dicantumkan di halaman utama papan. Tidak ada pemicu tambahan. Untuk mencoba pengambilannya sekarang:
+
+```
+sudo -u egsprice -H python3 /opt/egs-raw/main/tools/fetch_rates.py --out /opt/egs-raw/rates.json
+```
+
+Keluarannya menulis per mata uang: kurs yang dipakai, sumbernya (`google` atau `ecb`), dan kedua angka pembandingnya. Kalau Google tidak terbaca, halamannya disimpan sebagai `/opt/egs-raw/google_JPY.html` dan log menulis ringkasan isinya; kurs Bank Sentral Eropa dipakai sementara.
+
 ## Biaya
 
 - Claude: model bawaan `claude-opus-5-5` (US$4 per juta token masukan, US$20 per juta token keluaran). Yang lebih murah, `claude-haiku-4-5` (US$1 dan US$5), dipilih dengan menambah satu baris `EGS_LANG_MODEL=claude-haiku-4-5` di `/opt/egs-raw/env`. Itu keputusan Anda. Kalau memakai yang murah, ulangi Langkah 4 dulu karena akurasinya belum diuji.

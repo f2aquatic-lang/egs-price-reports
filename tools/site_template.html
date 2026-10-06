@@ -32,6 +32,9 @@ h1{font:700 clamp(26px,4.4vw,40px)/1.08 var(--display);margin:0;text-wrap:balanc
 .sub{color:var(--ink-2);max-width:68ch;margin:0}
 .facts{display:flex;flex-wrap:wrap;gap:6px 22px;margin:4px 0 0;padding:0;list-style:none;font:500 13px var(--mono);color:var(--ink-2)}
 .facts b{color:var(--ink);font-weight:500}
+.kurs{margin:8px 0 0;font:500 13px var(--mono);color:var(--ink-2)}
+.kurs b{color:var(--ink);font-weight:500}
+.kurs .stale{color:var(--ink);text-decoration:underline dotted}
 .legend{display:flex;flex-wrap:wrap;gap:6px 18px;color:var(--ink-2);font-size:13px;align-items:center}
 .legend span{display:inline-flex;align-items:center;gap:7px}
 h2{font:600 20px/1.2 var(--display);margin:0}
@@ -123,6 +126,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
     <h1>Papan Harga Kartu Pokémon</h1>
     <p class="sub">Harga penawaran penjual dipakai sebagai harga yang ada. Tidak menunggu terjual. Setiap titik adalah satu listing.</p>
     <ul class="facts" id="facts"></ul>
+    <p class="kurs" id="kurs" hidden></p>
   </header>
 
   <div class="legend" aria-label="Arti titik">
@@ -397,6 +401,19 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
       h('li', null, h('b', {text: String(D.raw_meta.listings)}), ' listing RAW dari ', h('b', {text: String(D.raw_meta.cards)}), ' kartu'),
       h('li', null, 'data RAW ', h('b', {text: D.raw_meta.generated})));
   }
+  function rate(cur){ return D.rates && D.rates[cur] ? D.rates[cur].idr : null; }
+  if (D.rates && rate('JPY') && rate('USD')) {
+    var kurs = $('#kurs'), SRC = {google: 'Google', ecb: 'Bank Sentral Eropa'}, old = false;
+    var parts = [['JPY', '¥1', 2], ['USD', 'US$1', 0]].map(function(c){
+      var r = D.rates[c[0]];
+      old = old || (Date.now() - new Date(r.fetched_at).getTime() > 3 * 86400000);
+      return h('span', {title: 'Sumber: ' + (SRC[r.source] || r.source) + ', diperbarui ' + r.label}, h('b', {text: c[1] + ' = Rp' + r.idr.toLocaleString('id-ID', {maximumFractionDigits: c[2]})}),
+        r.source === 'google' ? null : ' (' + (SRC[r.source] || r.source) + ')');
+    });
+    kurs.replaceChildren.apply(kurs, ['Kurs ', parts[0], ' · ', parts[1], ' · diperbarui ', h('b', {text: D.rates.JPY.label}),
+      old ? h('span', {'class': 'stale', text: ' · kurs lama: pembaruan harian gagal', title: 'Kurs belum diperbarui lebih dari tiga hari'}) : null].filter(Boolean));
+    kurs.hidden = false;
+  }
   $('#cards').append.apply($('#cards'), D.types.map(card));
 
   if (D.raw_cards && D.raw_cards.length) {
@@ -430,7 +447,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
     function yen(n){ return '¥' + n.toLocaleString('ja-JP'); }
     function jpCell(j){
       if (!j) return '—';
-      var rate = D.jp_meta && D.jp_meta.rate;
+      var rate = D.rates && D.rates.JPY ? D.rates.JPY.idr : null;
       var main = j.url ? h('a', {href: j.url, target: '_blank', rel: 'noopener', text: yen(j.yen), title: 'Harga jual Yuyutei (Jepang), kondisi tanpa goresan'}) : yen(j.yen);
       return [main, rate ? h('small', {text: '≈ ' + rp(Math.round(j.yen * rate / 100) * 100)}) : null,
               j.in_stock ? null : h('span', {'class': 'badge', text: 'habis', title: 'Stok Yuyutei habis; harganya tetap harga jual terakhir mereka'})];
@@ -450,8 +467,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
       }
       var jpm = D.jp_meta;
       if (jpm) {
-        facts.push(m.jp_set ? 'Acuan JP: Yuyutei ' + m.jp_set + ' (' + m.jp_cards + ' kartu ada harganya' + (jpm.rate ? '; kurs ¥1 = Rp ' + jpm.rate.toLocaleString('id-ID', {maximumFractionDigits: 1}) + (jpm.rate_date ? ', ' + jpm.rate_date : '') : '') + ')'
-                                : 'Acuan JP: belum ada untuk set ini');
+        facts.push(m.jp_set ? 'Acuan JP: Yuyutei ' + m.jp_set + ' (' + m.jp_cards + ' kartu ada harganya)' : 'Acuan JP: belum ada untuk set ini');
       }
       infoBox.replaceChildren.apply(infoBox, [
         h('h3', null, m.code + (m.name_id ? ' · ' + m.name_id : ' · nama belum diketahui'),

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the "Papan Harga Kartu Pokemon" page (RAW and EGS slab asking prices) from latest.json and raw.json. Read-only on the data.
 
-Usage: python3 tools/build_site.py [latest.json] [--raw raw.json] [--catalog catalog.json] [--jp jp_prices.json] [--out FILE] [--standalone]
+Usage: python3 tools/build_site.py [latest.json] [--raw raw.json] [--catalog catalog.json] [--jp jp_prices.json] [--rates rates.json] [--out FILE] [--standalone]
 
 Every asking price is treated as the price (price_type OBSERVED_ASKING_ONLY);
 nothing waits for a sale. For each tracked card type the page lists every known
@@ -88,7 +88,7 @@ def match_type(text, types):
     return (best[1], best[2]) if best else None
 
 
-def build(d, raw=None, catalog=None, jp=None):
+def build(d, raw=None, catalog=None, jp=None, rates=None):
     gen = datetime.fromisoformat(d["generated_at"])
     types, index = [], {}
     for l in d["listings"]:
@@ -141,6 +141,7 @@ def build(d, raw=None, catalog=None, jp=None):
         "discovery": wib_label(d["discovery"]["generated_at"]),
         "types": types, "others": others, "hidden": hidden,
         "raw_meta": None, "raw_only": [], "raw_cards": [], "sets": [], "families": [],
+        "rates": rates_block(rates),
     }
     if raw:
         attach_raw(data, raw, gen, catalog, jp)
@@ -168,6 +169,14 @@ def variant_orders():
 
 
 BALL_VARIANTS = ("poke_ball", "master_ball", "element")  # the foil versions a Japanese listing can add to an Indonesian card
+
+
+def rates_block(rates):
+    """{currency: {idr, source, label}} from rates.json (tools/fetch_rates.py): the exchange rates shown on the page and used for rupiah conversions."""
+    if not rates:
+        return None
+    return {cur: {"idr": r["idr"], "source": r["source"], "fetched_at": r["fetched_at"], "label": wib_label(r["fetched_at"])}
+            for cur, r in rates["rates"].items()}
 
 
 def jp_variant(card):
@@ -379,8 +388,7 @@ def attach_sets(data, raw, catalog=None, jp=None):
     vorder = {v: i for i, v in enumerate(("", "poke_ball", "master_ball", "element"))}
     rows.sort(key=lambda c: (order[c["set"]], c["sub"], c["den"], c["num"], vorder.get(c["variant"], 9)))
     data["raw_cards"], data["sets"], data["families"] = rows, sets, meta["families"]
-    data["jp_meta"] = ({"generated": wib_label(jp["generated_at"]), "rate": jp.get("jpy_idr"), "rate_date": jp.get("jpy_idr_date"),
-                        "cards": sum(1 for c in rows if c["jp"])} if jp else None)
+    data["jp_meta"] = {"generated": wib_label(jp["generated_at"]), "cards": sum(1 for c in rows if c["jp"])} if jp else None
 
 
 def render(data, standalone):
@@ -407,6 +415,7 @@ def main():
     ap.add_argument("--raw", help="raw.json with the RAW (ungraded) dataset")
     ap.add_argument("--catalog", help="catalog.json from tools/fetch_catalog.py: every official card of each set, with its image")
     ap.add_argument("--jp", help="jp_prices.json from tools/fetch_jp_prices.py: Japanese shop prices beside the Indonesian ones")
+    ap.add_argument("--rates", help="rates.json from tools/fetch_rates.py: today's yen and dollar rates in rupiah")
     ap.add_argument("--out", default="-", help="output file (default: stdout)")
     ap.add_argument("--standalone", action="store_true", help="wrap in a full HTML document")
     a = ap.parse_args()
@@ -424,7 +433,11 @@ def main():
     if a.jp:
         with open(a.jp, encoding="utf-8") as fh:
             jp = json.load(fh)
-    html = render(build(latest, raw, catalog, jp), a.standalone)
+    rates = None
+    if a.rates:
+        with open(a.rates, encoding="utf-8") as fh:
+            rates = json.load(fh)
+    html = render(build(latest, raw, catalog, jp, rates), a.standalone)
     if a.out == "-":
         sys.stdout.write(html)
     else:
