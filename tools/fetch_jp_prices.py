@@ -58,16 +58,14 @@ def parse_set_list(page):
     return out
 
 
-def page_codes(code):
-    """Set page addresses to try: the code as listed, then without the zero before the number (m02a -> m2a, sv08a -> sv8a)."""
-    short = re.sub(r"(?<=[a-z])0+(?=\d)", "", code)
-    return [code] + ([short] if short != code else [])
+# the start tag of one card: any whitespace between the parts, class among other attributes
+CARD_START = re.compile(r'<div\b[^>]*?\bclass\s*=\s*"[^"]*\bcard-product\b[^"]*"[^>]*>')
 
 
 def why_empty(page):
     """One line on what a page without readable cards does contain, to find out what changed in its markup."""
     codes = Counter(re.findall(r'href="https://yuyu-tei\.jp/sell/poc/card/([^/"]+)/\d+"', page))
-    blocks = len(re.findall(r'<div class="card-product', page))
+    blocks = len(CARD_START.findall(page))
     has_list = "ada" if 'id="card-list3"' in page else "tidak ada"
     return f"{len(page)} karakter, card-list3 {has_list}, {blocks} blok card-product, kode di tautan kartu: {dict(codes.most_common(5))}"
 
@@ -78,7 +76,7 @@ def parse_set_page(page, code):
     body = page[start:] if start >= 0 else page
     marks = [(m.start(), "rarity", m.group(1).strip()) for m in re.finditer(
         r'<h3[^>]*>\s*<span[^>]*text-white[^>]*>([^<]+)</span>\s*Card List', body)]
-    marks += [(m.start(), "card", None) for m in re.finditer(r'<div class="card-product\b', body)]
+    marks += [(m.start(), "card", None) for m in CARD_START.finditer(body)]
     marks.sort()
     cards, rarity = [], None
     for i, (pos, kind, value) in enumerate(marks):
@@ -90,7 +88,7 @@ def parse_set_page(page, code):
         link = re.search(r'href="https://yuyu-tei\.jp/sell/poc/card/([^/"]+)/(\d+)"', block)
         if not link or link.group(1) != code:
             continue
-        number = re.search(r'<span class="d-block border[^"]*">\s*([^<]+?)\s*</span>', block)
+        number = re.search(r'<span\b[^>]*\bclass\s*=\s*"d-block border[^"]*"[^>]*>\s*([^<]+?)\s*</span>', block)
         name = re.search(r"<h4[^>]*>(.*?)</h4>", block, re.S)
         yen = re.search(r"<strong[^>]*>\s*([\d,]+)\s*円", block)
         stock = re.search(r"在庫\s*:\s*(?:(×)|(\d+)\s*点)", block)
@@ -99,9 +97,19 @@ def parse_set_page(page, code):
             continue
         cards.append({"set": code, "number": text_of(number.group(1)), "rarity": rarity,
                       "name": text_of(name.group(1)) if name else None, "yen": int(yen.group(1).replace(",", "")),
-                      "stock": 0 if (stock and stock.group(1)) or "sold-out" in block[:120] else int(stock.group(2)) if stock and stock.group(2) else None,
+                      "stock": 0 if (stock and stock.group(1)) or "sold-out" in CARD_START.match(block).group(0) else int(stock.group(2)) if stock and stock.group(2) else None,
                       "url": f"{BASE}/sell/poc/card/{code}/{link.group(2)}", "image": image.group(1) if image else None,
                       "id": int(link.group(2))})
+    return cards
+
+
+def parse_saved(path, code, log=print):
+    """Read a page saved earlier (yuyutei_<code>.html) and show what the parser makes of it; no request is made."""
+    with open(path, encoding="utf-8") as fh:
+        cards = parse_set_page(fh.read(), code)
+    log(f"{code}: {len(cards)} kartu, {sum(1 for c in cards if c['stock'])} ada stok; per rarity: {dict(Counter(c['rarity'] for c in cards))}")
+    for c in cards[:4]:
+        log(f"  {c['number']:>8} {str(c['rarity']):4} {c['yen']:>7,} yen stok {c['stock']} {c['name']}")
     return cards
 
 
@@ -124,21 +132,13 @@ def run(args, get=http_get, now=None, sleep=time.sleep, log=print):
         if args.max_requests is not None and used >= args.max_requests:
             log("anggaran permintaan habis; sisanya tidak diambil")
             break
-        got, status, text = [], 0, None   # status: the best answer so far (200 wins); text: the first page that answered 200
-        for attempt in page_codes(code):  # the page of m02a answers under m2a: try the other spelling when nothing is readable
-            sleep(args.delay)
-            used += 1
-            st, body = get(f"{BASE}/sell/poc/s/{attempt}")
-            if st == 200:
-                status, text = 200, body if text is None else text
-                got = parse_set_page(body, code)
-                if got:
-                    break
-            elif status != 200:
-                status = st
-        if text is None:
+        sleep(args.delay)
+        used += 1
+        status, text = get(f"{BASE}/sell/poc/s/{code}")
+        if status != 200:
             log(f"  ! {code}: status {status}")
             continue
+        got = parse_set_page(text, code)
         if not got:
             dump = os.path.join(os.path.dirname(os.path.abspath(args.out)), f"yuyutei_{code}.html")
             with open(dump, "w", encoding="utf-8") as fh:
@@ -166,8 +166,13 @@ def main(argv=None):
     ap.add_argument("--include", default=DEFAULT_INCLUDE, help="ekspresi reguler kode set yang diambil")
     ap.add_argument("--max-requests", type=int)
     ap.add_argument("--list-sets", action="store_true", help="hanya tampilkan set di situs, lalu selesai")
+    ap.add_argument("--parse-file", help="baca halaman yang sudah disimpan (dengan --sets <satu kode>), tanpa permintaan ke situs")
+    args = ap.parse_args(argv)
     try:
-        run(ap.parse_args(argv))
+        if args.parse_file:
+            parse_saved(args.parse_file, (args.sets or "").strip())
+            return 0
+        run(args)
     except BrokenPipeError:  # "| head" closed the pipe: not an error
         pass
     return 0

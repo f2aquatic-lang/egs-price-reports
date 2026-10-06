@@ -1460,13 +1460,26 @@ class FetchJpPrices(unittest.TestCase):
             saved = json.load(fh)
         self.assertEqual((saved["currency"], saved["condition"], saved["generated_at"][:10]), ("JPY", "傷無し", "2026-10-05"))
 
-    def test_a_set_page_that_answers_under_the_short_code_is_found_there(self):
-        self.pages["/sell/poc/s/m2a"] = self.pages["/sell/poc/s/m02a"]
-        self.pages["/sell/poc/s/m02a"] = "<html><div>Tidak ada</div></html>"        # answers 200 but lists nothing, as seen on the real site
-        data = self.go(sets="m02a")
-        self.assertEqual([(s["code"], s["cards"]) for s in data["sets"]], [("m02a", 4)])
-        self.assertEqual(self.calls, ["/top/poc", "/sell/poc/s/m02a", "/sell/poc/s/m2a"])
-        self.assertEqual({c["set"] for c in data["cards"]}, {"m02a"})
+    def test_markup_with_line_breaks_and_other_attribute_order_is_read_the_same(self):
+        plain = self.pages["/sell/poc/s/m02a"]
+        spaced = plain.replace('<div class="card-product', '<div\n   class="card-product').replace('<span class="d-block border', '<span\n class="d-block border')
+        tabbed = plain.replace('<div class="card-product position-relative', '<div id="x" class="mt-4 card-product position-relative')
+        want = fetch_jp_prices.parse_set_page(plain, "m02a")
+        self.assertEqual(len(want), 4)
+        for page in (spaced, tabbed):
+            self.assertEqual(fetch_jp_prices.parse_set_page(page, "m02a"), want)
+        self.assertEqual(fetch_jp_prices.parse_set_page(spaced, "m02a")[0]["stock"], 0)       # sold-out is read from the card's own tag
+
+    def test_a_saved_page_can_be_checked_without_any_request(self):
+        path = os.path.join(self.tmp.name, "yuyutei_m02a.html")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(self.pages["/sell/poc/s/m02a"])
+        logs = []
+        cards = fetch_jp_prices.parse_saved(path, "m02a", log=logs.append)
+        self.assertEqual(len(cards), 4)
+        self.assertIn("4 kartu, 3 ada stok", logs[0])
+        self.assertEqual(self.calls, [])
+        self.assertEqual(fetch_jp_prices.main(["--parse-file", path, "--sets", "m02a"]), 0)
 
     def test_a_page_with_no_readable_cards_is_saved_and_described(self):
         self.pages["/sell/poc/s/m01l"] = '<html><div id="card-list3"><div class="card-product x"><a href="https://yuyu-tei.jp/sell/poc/card/m09/5">x</a></div></div></html>'
