@@ -321,18 +321,27 @@ def load_sets(path=SETS_PATH):
         return {"families": [], "sets": []}
 
 
-def set_family(code, known):
+SERIES_FAMILY = {"evolusi mega": "MA", "scarlet & violet": "SV", "pedang & perisai": "SS", "matahari & bulan": "SM"}   # the series names the official site uses
+
+
+def set_family(code, known, series=None):
+    """The family (series) of a set: from tools/sets.json, else from the series name of the official site, else from the code prefix, else 'Lainnya'."""
     if code in known:
         return known[code]["family"]
-    for family in ("MA", "SV", "AC"):   # MA6, MAT (Deck Taktik), MATL ... are all MEGA series; anything else is "Lainnya" until it is named
+    if series and series.strip().lower() in SERIES_FAMILY:
+        return SERIES_FAMILY[series.strip().lower()]
+    for family in ("MA", "SV", "AC"):   # MA6, MAT, MATL ... are all MEGA series; anything else is "Lainnya" until it is named
         if code.startswith(family):
             return family
     return "AC"
 
 
 def set_sort_key(meta, family_order):
+    """Family order, then newest release first (sets without a date after the dated ones, by the number in their code)."""
     num = re.search(r"\d+", meta["code"])
-    return (family_order.get(meta["family"], 99), -(int(num.group(0)) if num else 0), meta["code"])
+    released = meta.get("released")
+    when = -date.fromisoformat(released).toordinal() if released else None
+    return (family_order.get(meta["family"], 99), when is None, when or 0, -(int(num.group(0)) if num else 0), meta["code"])
 
 
 def egs_lowest(t):
@@ -424,7 +433,7 @@ def attach_sets(data, raw, catalog=None, jp=None):
     sets = []
     for code, cards in per_set.items():
         o = official_sets.get(code, {})
-        m = known.get(code, {"code": code, "family": set_family(code, known), "name_id": None, "name_en": None,
+        m = known.get(code, {"code": code, "family": set_family(code, known, o.get("series")), "name_id": None, "name_en": None,
                              "released": None, "base": None, "total": None, "basis": None, "note": ""})
         base = m.get("base") or Counter(c["den"] for c in cards).most_common(1)[0][0]
         for c in cards:  # the set's own numbering first, then side series such as the n/30 Pikachu of MA6

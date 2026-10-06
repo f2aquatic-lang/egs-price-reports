@@ -162,7 +162,15 @@ sudo -u egsprice -H nohup python3 /opt/egs-raw/main/tools/fetch_catalog.py \
 tail -n 3 /opt/egs-raw/catalog.log
 ```
 
-Bawaannya **semua set yang dicantumkan situs** (booster, deck, promo, dan seri lama), karena papan harus memuat semua kartu resmi dengan fotonya lebih dulu, baru harganya dicari. Lihat dulu daftarnya dengan `--list-sets`. Untuk membatasi ke set booster utama (`MA1`..`MA6`, `SV1S`..`SV11S`, `SV1A`/`SV2A`/`SV4A`/`SV8A`, `AC3A`/`AC3B`) pakai `--include '^(MA\d+|SV\d+[A-Z]|AC\d[AB])$'`; `--sets KODE,KODE` mengambil set tertentu. Set yang sudah ada di `catalog.sqlite` tidak diambil ulang, jadi menambah set hanya mengambil yang baru. Tiap set juga menelusuri rarity (satu daftar tersaring per kode rarity); matikan dengan `--no-rarities`.
+Bawaannya **semua set yang dicantumkan situs** (booster, deck, promo, dan seri lama), karena papan harus memuat semua kartu resmi dengan fotonya lebih dulu, baru harganya dicari. Lihat dulu daftarnya dengan `--list-sets`. Untuk membatasi ke set booster utama (`MA1`..`MA6`, `SV1S`..`SV11S`, `SV1A`/`SV2A`/`SV4A`/`SV8A`, `AC3A`/`AC3B`) pakai `--include '^(MA\d+|SV\d+[A-Z]|AC\d[AB])$'`; `--sets KODE,KODE` mengambil set tertentu. Set yang sudah ada di `catalog.sqlite` tidak diambil ulang, jadi menambah set hanya mengambil yang baru.
+
+Untuk mengambil semua set sebagai layanan latar belakang yang tetap jalan walau SSH terputus (dan bisa dilanjutkan kalau terhenti):
+
+```bash
+sudo systemd-run --unit=egs-katalog -p User=egsprice -p WorkingDirectory=/opt/egs-raw/main -p Nice=10 -p Environment=PYTHONUNBUFFERED=1 \
+  /usr/bin/python3 /opt/egs-raw/main/tools/fetch_catalog.py --db /opt/egs-raw/catalog.sqlite --out /opt/egs-raw/catalog.json
+sudo journalctl -u egs-katalog -f        # Ctrl+C keluar dari tampilan, pengambilan tetap jalan
+``` Tiap set juga menelusuri rarity (satu daftar tersaring per kode rarity); matikan dengan `--no-rarities`.
 
 Sesudah itu `publish_raw.sh` menyalin `/opt/egs-raw/catalog.json` ke repo dan membangun halaman dengannya, jadi papan menampilkan semua kartu tiap set. Untuk memperbarui katalog tiap minggu (set dan kartu baru), tambahkan layanan dan pemicu:
 

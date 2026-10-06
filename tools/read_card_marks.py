@@ -10,6 +10,7 @@ written. An entry marked "by": "manual" is yours and is never overwritten; edit 
 Usage (needs the openai or anthropic package and the key in the environment, see docs/vps-setup.md):
   python3 tools/read_card_marks.py --catalog /opt/egs-raw/catalog.json --sets MA6 --limit 3 --dry-run   # what would be read, nothing is called
   python3 tools/read_card_marks.py --catalog /opt/egs-raw/catalog.json --sets MA6 --limit 3             # a trial: three pictures
+  python3 tools/read_card_marks.py --catalog /opt/egs-raw/catalog.json --sets MA6 --only 189/130,195/130,196/130   # exactly these cards
   python3 tools/read_card_marks.py --catalog /opt/egs-raw/catalog.json --sets MA6,AC3D                  # every candidate of those sets
 Candidates: cards without a rarity whose number is above the printed total (secret and special cards), and every card of a set in which no card
 has a rarity (decks). Cards already in the file are skipped unless --again.
@@ -86,8 +87,20 @@ def agree(answers):
     return out
 
 
+def combine_marks(answers):
+    """agree() plus what each reader said, so that a card that is not recorded can be understood from the log."""
+    out = agree(answers)
+    out["readings"] = [("-" if a["rarity"] is None else a["rarity"]) + ("/AA" if a.get("alt_art") else "") for a in answers]
+    return out
+
+
 def make_reader(provider, models):
-    return egs_watch.make_photo_reader(provider, models, prompt=MARK_PROMPT, parse=parse_mark, combine=agree)
+    return egs_watch.make_photo_reader(provider, models, prompt=MARK_PROMPT, parse=parse_mark, combine=combine_marks)
+
+
+def norm_number(number):
+    m = re.fullmatch(r"\s*0*(\d+)\s*/\s*(\d+)\s*", str(number))
+    return f"{int(m.group(1))}/{m.group(2)}" if m else str(number).strip()
 
 
 def run(args, reader=None, now=None, log=print):
@@ -96,7 +109,10 @@ def run(args, reader=None, now=None, log=print):
     with open(args.catalog, encoding="utf-8") as fh:
         catalog = json.load(fh)
     marks = load_marks(args.marks)
-    todo = [c for c in candidates(catalog, args.sets) if args.again or key_of(c) not in marks["cards"]]
+    only = {norm_number(x) for x in args.only.split(",") if x.strip()} if getattr(args, "only", None) else None
+    pool = candidates(catalog, args.sets) if not only else [c for c in catalog["cards"] if not c.get("rarity") and c.get("image") and c.get("number")
+                                                            and norm_number(c["number"]) in only and (not args.sets or c["set"].upper() in {x.strip().upper() for x in args.sets.split(",")})]
+    todo = [c for c in pool if args.again or key_of(c) not in marks["cards"]]
     todo = [c for c in todo if marks["cards"].get(key_of(c), {}).get("by") != "manual"]
     if args.limit:
         todo = todo[:args.limit]
@@ -115,8 +131,10 @@ def run(args, reader=None, now=None, log=print):
         result = answer
         if result.get("rarity") in (None, "?"):
             count["skipped"] += 1
-            log(f"  - {c['set']} {c['number']} {c['name']}: kedua pembaca tidak sepakat atau tidak ada tanda tercetak; tidak dicatat")
+            said = f" (bacaan: {' | '.join(result['readings'])})" if result.get("readings") else ""
+            log(f"  - {c['set']} {c['number']} {c['name']}: kedua pembaca tidak sepakat atau tidak ada tanda tercetak{said}; tidak dicatat")
             continue
+        result = {k: v for k, v in result.items() if k != "readings"}
         marks["cards"][key_of(c)] = {**result, "name": c["name"], "by": "foto resmi (dua model sepakat)", "at": now.date().isoformat()}
         count["written"] += 1
         log(f"  + {c['set']} {c['number']} {c['name']}: {label(result)}")
@@ -138,6 +156,7 @@ def main(argv=None):
     ap.add_argument("--catalog", default="catalog.json")
     ap.add_argument("--marks", default=MARKS_PATH)
     ap.add_argument("--sets", help="kode set dipisah koma (bawaan: semua kandidat)")
+    ap.add_argument("--only", help="hanya nomor kartu ini (dipisah koma, mis. 189/130,195/130), kartu mana pun tanpa rarity resmi; --sets membatasi setnya")
     ap.add_argument("--limit", type=int, help="paling banyak sekian gambar putaran ini")
     ap.add_argument("--again", action="store_true", help="baca ulang kartu yang sudah ada di berkas (entri manual tetap dilindungi)")
     ap.add_argument("--dry-run", action="store_true", help="hanya tampilkan kandidatnya")

@@ -397,6 +397,18 @@ class Board(unittest.TestCase):
         deck_row = next(c for c in data["raw_cards"] if c["set"] == "AC3D")
         self.assertEqual((deck_row["basis"], deck_row["image"]), (None, "x"))                    # ... but with no price of their own until a listing exists
 
+    def test_a_set_finds_its_family_by_the_series_the_official_site_names_and_sets_are_ordered_by_release(self):
+        for code, series, family in (("S12A", "Pedang & Perisai", "SS"), ("SC1A", "pedang & perisai", "SS"), ("AS1A", "Matahari & Bulan", "SM"), ("AC3D", "Matahari & Bulan", "SM"),
+                                     ("MATL", "Evolusi Mega", "MA"), ("MATL", None, "MA"), ("ZZ9", "Seri Baru", "AC"), ("SV9S", None, "SV")):
+            self.assertEqual(build_site.set_family(code, {}, series), family, code)
+        self.assertEqual(build_site.set_family("AC3A", {"AC3A": {"family": "SM"}}, "Lainnya"), "SM")                      # tools/sets.json wins
+        order = {"SS": 0}
+        keys = {c: build_site.set_sort_key({"code": c, "family": "SS", "released": r}, order)
+                for c, r in (("S12", "2022-11-25"), ("S12A", "2022-12-23"), ("S11", "2022-09-23"), ("S", None))}
+        self.assertEqual(sorted(keys, key=keys.get), ["S12A", "S12", "S11", "S"])                                          # newest first although S12 and S12A share a number; undated last
+        families = [f["id"] for f in build_site.load_sets()["families"]]
+        self.assertEqual(families, ["MA", "SV", "SS", "SM", "AC"])
+
     def test_each_set_knows_its_dearest_card_and_unknown_codes_find_their_family_by_prefix(self):
         import copy
         raw, catalog = board_with_official_catalog()
@@ -2561,6 +2573,19 @@ class CardMarks(unittest.TestCase):
             cards = json.load(fh)["cards"]
         self.assertEqual((cards["MA6|189/130"]["rarity"], cards["MA6|189/130"]["by"]), ("SR", "manual"))   # even with --again
         self.assertEqual(cards["MA6|195/130"]["rarity"], "SR")
+
+    def test_only_reads_exactly_the_named_cards_and_the_log_shows_what_each_reader_said(self):
+        answers = {"https://o/3.png": read_card_marks.combine_marks([{"rarity": None, "alt_art": None}, {"rarity": "SR", "alt_art": True}]),   # they disagree
+                   "https://o/4.png": read_card_marks.combine_marks([{"rarity": "SR", "alt_art": True}, {"rarity": "SR", "alt_art": True}])}
+        count = read_card_marks.run(self.args(sets="MA6", only="189/130, 195/130"), self.reader(answers), log=self.logs.append)
+        self.assertEqual(count, {"read": 2, "written": 1, "skipped": 1})
+        text = "\n".join(self.logs)
+        self.assertIn("bacaan: - | SR/AA", text)
+        self.assertNotIn("readings", open(self.marks, encoding="utf-8").read())                  # the log line is not stored in the file
+        self.seen.clear()
+        read_card_marks.run(self.args(only="001/172"), self.reader({}), log=self.logs.append)    # a deck card named by number, with no set given
+        self.assertEqual(self.seen, ["https://o/6.png"])
+        self.assertEqual(read_card_marks.norm_number("001/130"), "1/130")
 
     def test_the_main_command_wants_two_models(self):
         self.assertEqual(read_card_marks.main(["--catalog", self.catalog, "--marks", self.marks, "--model", "gpt-4.1"]), 1)
