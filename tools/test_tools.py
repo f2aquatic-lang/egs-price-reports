@@ -2730,7 +2730,31 @@ class EgsWatch(unittest.TestCase):
         self.assertEqual((two["number"], two["cert"], two["language"], two["rarity"], two["readers"]), (None, None, "ID", "SAR", 2))
         self.assertEqual(sorted(two["disagree"]), ["cert", "number"])
         same = egs_watch.consensus([{**self.PHOTO_READS[1], "number": "234 / 193", "cert": "a018960"}, {**self.PHOTO_READS[1], "language": "UNCLEAR"}])
-        self.assertEqual((same["number"], same["cert"].upper(), same["disagree"], same["language"]), ("234 / 193", "A018960", {}, None))   # spacing and case are not disagreement; UNCLEAR is no answer
+        self.assertEqual((same["number"], same["cert"].upper(), same["disagree"], same["language"]), ("234/193", "A018960", {}, None))   # spacing and case are not disagreement; UNCLEAR is no answer
+
+    def test_the_same_number_written_two_ways_is_not_a_disagreement(self):
+        base = {"is_slab": True, "company": "EGS", "grade": "9", "cert": None, "name": "Mew VMAX", "rarity": None, "language": "ID"}
+        c = egs_watch.consensus([{**base, "number": "118/100"}, {**base, "number": "HR - 118/100"}])
+        self.assertEqual((c["number"], c["disagree"]), ("118/100", {}))                 # from the first real run: the readers agreed, only the prefix differed
+        c = egs_watch.consensus([{**base, "number": "001"}, {**base, "number": "#001"}])
+        self.assertEqual(c["disagree"], {})
+        c = egs_watch.consensus([{**base, "number": "234/193"}, {**base, "number": "230/182"}])
+        self.assertEqual((c["number"], sorted(c["disagree"])), (None, ["number"]))
+
+    def test_the_report_says_how_many_listings_the_photo_moved_and_how_many_photos_were_read(self):
+        items = [egs_item("Pikachu SAR MA3 ID EGS 10", 2500000, "s1"), egs_item("Mimikyu RR MA3 ID EGS 10", 100000, "s2")]
+        first, _ = self.go(FakeEgsToco(items))
+        self.assertEqual((first["summary"]["accepted_total"], first["summary"]["ambiguous"], first["run"]["promoted"]), (0, 2, 0))
+
+        def reader(url):
+            both = {"is_slab": True, "company": "EGS", "grade": "10", "cert": None, "name": None, "rarity": "SAR", "language": "ID"}
+            return egs_watch.consensus([{**both, "number": "234/193"}, {**both, "number": "234/193"}]) if "pikachu" in url else \
+                egs_watch.consensus([{**both, "number": "150/193"}, {**both, "number": "151/193"}])
+        second, _ = self.go(FakeEgsToco(items), now=self.T0 + timedelta(hours=6), photo_fn=reader, photo_budget=5)
+        self.assertEqual((second["summary"]["accepted_total"], second["summary"]["ambiguous"], second["run"]["promoted"], second["run"]["photo_reads"]), (1, 1, 1, 2))
+        text = egs_watch.format_report(second)
+        self.assertIn("naik dari ambigu ke diterima putaran ini: 1", text)
+        self.assertIn("foto dibaca putaran ini: 2 listing; 1 di antrean karena pembaca tidak sepakat soal nomor", text)
 
     def test_a_number_the_readers_disagree_on_keeps_the_listing_in_the_queue_with_the_reason(self):
         fake = FakeEgsToco([egs_item("Pikachu SAR MA3 ID EGS 10", 2500000, "s1")])

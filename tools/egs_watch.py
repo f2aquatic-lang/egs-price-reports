@@ -782,7 +782,10 @@ def format_report(d, limit=12):
                  + ("" if r.get("source_ok", True) else "; sumber tidak sehat, data lama dipertahankan"))
     lines += [f"- kandidat ditemukan (menyebut EGS): {s['candidates_found']}",
               f"- diterima: {s['accepted_total']} ({s['accepted_existing']} dari bot lama, {s['accepted_auto']} otomatis, {s['accepted_new_this_run']} baru putaran ini)",
+              *([f"- naik dari ambigu ke diterima putaran ini: {r['promoted']}"] if r.get("promoted") else []),
               f"- ambigu (antrean, tanpa harga): {s['ambiguous']}",
+              *([f"- foto dibaca putaran ini: {r['photo_reads']} listing; {sum(1 for q in d['queue'] if any(x['code'] == 'photo_unsure' for x in q['reasons']))} di antrean "
+                 f"karena pembaca tidak sepakat soal nomor"] if r.get("photo_reads") else []),
               f"- ditolak putaran ini: {s['rejected_this_run']}" + ("".join(f"; {k} {v}" for k, v in s["rejected_reasons"].items())),
               f"- dihitung ke harga: {s['listings_counted']} listing, {s['cards']} kartu, {s['sellers_unique']} seller unik",
               f"- pemeriksaan putaran ini: {s['checked_ok_this_run']} berhasil, {s['check_failed_this_run']} gagal; status: " + ", ".join(f"{k} {v}" for k, v in sorted(s["status"].items())),
@@ -835,11 +838,22 @@ DEFAULT_PHOTO_MODELS = {"openai": "gpt-4.1,gpt-4o", "anthropic": collect_raw.DEF
 READ_KEYS = ("company", "grade", "cert", "name", "number", "rarity", "language")
 
 
+NUMBER_IN = re.compile(r"(\d{1,3})\s*/\s*(\d{2,3})")
+
+
+def canon_read(key, value):
+    """A photo field in a form where the same reading written two ways compares equal ('HR - 118/100' and '118/100', '#001' and '001')."""
+    text = str(value)
+    if key == "number":
+        m = NUMBER_IN.search(text)
+        return f"{int(m.group(1))}/{m.group(2)}" if m else re.sub(r"[#\s]+", "", text).lstrip("0").upper()
+    return re.sub(r"\s+", "", text).upper()
+
+
 def consensus(answers):
     """One reading out of the answers of several readers (models) looking at the same photo. A field is kept only when every reader gave it and they all
     agree; where two readers gave different values the field is dropped and the disagreement is recorded. The first real photo gave three models three
     different card numbers and certificates, so one reading is never trusted for a number."""
-    norm = lambda v: re.sub(r"\s+", "", str(v)).upper()
     out, disagree = {}, {}
     slab = [a.get("is_slab") for a in answers]
     out["is_slab"] = True if all(v is True for v in slab) else False if all(v is False for v in slab) else None
@@ -847,11 +861,12 @@ def consensus(answers):
         values = [a.get(key) for a in answers]
         values = [None if (key == "language" and v == "UNCLEAR") else v for v in values]
         present = [v for v in values if v not in (None, "")]
-        if len(present) == len(values) and len({norm(v) for v in present}) == 1:
-            out[key] = present[0]
+        forms = {canon_read(key, v) for v in present}
+        if len(present) == len(values) and len(forms) == 1:
+            out[key] = (NUMBER_IN.search(str(present[0])) and canon_read(key, present[0])) or present[0] if key == "number" else present[0]
         else:
             out[key] = None
-            if len({norm(v) for v in present}) > 1:
+            if len(forms) > 1:
                 disagree[key] = [str(v) for v in present]
     out["readers"], out["disagree"] = len(answers), disagree
     return out
@@ -986,6 +1001,7 @@ def run(cfg, post, status_fn=fetch_status, photo_fn=None, now=None, sleep=time.s
         log(f"  {d['query']!r}: {d['pages']} halaman, {d['listings']} listing dari total {d['total']} [{d['stopped']}]")
 
     tracked = tracked_by_url(db)
+    before = {r["url"]: r["verdict"] for r in db.execute("SELECT url, verdict FROM listing")}
     photo_budget = [cfg.photo_budget]
     cand = accepted_new = ignored = 0
     rejected = Counter()
@@ -1021,12 +1037,13 @@ def run(cfg, post, status_fn=fetch_status, photo_fn=None, now=None, sleep=time.s
     else:
         log("! sumber tidak sehat: status listing tidak diubah dan tidak ada yang dianggap hilang")
     db.commit()
+    promoted = sum(1 for r in db.execute("SELECT url FROM listing WHERE verdict='accepted'") if before.get(r["url"]) == "ambiguous")
     run_info = {"started_at": started.isoformat(), "queries": len(queries), "requests": toco.requests, "ok_requests": toco.ok,
                 "failed_requests": toco.failed, "cached_requests": toco.cached, "retries": toco.retried, "blocked": toco.blocked,
                 "source_ok": healthy, "results_seen": len(items), "ignored_not_egs": ignored, "candidates": cand, "accepted_new": accepted_new,
                 "rejected": sum(rejected.values()), "rejected_reasons": dict(rejected),
                 "checked_ok": cand - sum(rejected.values()) + rc["ok"] + rc["unavailable"],
-                "check_failed": rc["fetch_failed"] + rc["blocked"], "recheck": dict(rc), "photo_reads": cfg.photo_budget - photo_budget[0],
+                "check_failed": rc["fetch_failed"] + rc["blocked"], "recheck": dict(rc), "photo_reads": cfg.photo_budget - photo_budget[0], "promoted": promoted,
                 "imported": ({"rows": len(imports), "accepted": imported["accepted"], "ambiguous": imported["ambiguous"], "rejected": imported["rejected"],
                               "problems": import_problems[:20]} if getattr(cfg, "import_file", None) or ws_info else None),
                 "worksheet": ws_info,
