@@ -205,6 +205,8 @@ python3 /opt/egs-raw/main/tools/fetch_jp_prices.py --sets m02a,m01l --out /tmp/j
 sudo -u egsprice -H python3 /opt/egs-raw/main/tools/fetch_jp_prices.py --out /opt/egs-raw/jp_prices.json
 ```
 
+Harga Jepang diperbarui otomatis sekali sehari: `publish_raw.sh` memanggil `fetch_jp_prices.py --max-age-hours 20` sebelum pengumpul (sekitar 70 detik, hanya kalau berkasnya lebih tua dari 20 jam). Kalau sehari situs menjawab buruk dan kartu yang terbaca kurang dari 70% dari berkas sebelumnya, berkas lama dipertahankan.
+
 Halaman yang dibaca tidak menghasilkan kartu? Skrip menyimpannya sebagai `yuyutei_<kode>.html` di folder keluaran dan menulis ringkasan isinya; `--parse-file berkas.html --sets <kode>` memeriksa halaman yang tersimpan tanpa permintaan baru. Sesudah itu `publish_raw.sh` menyalin `/opt/egs-raw/jp_prices.json` ke repo (seperti `catalog.json`).
 
 ## Kurs yen dan dolar

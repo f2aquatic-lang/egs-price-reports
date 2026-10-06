@@ -48,6 +48,8 @@ main() {
   fi
   # the Japanese reference prices (tools/fetch_jp_prices.py) are fetched separately too and published the same way
   JP_PRICES="${EGS_JP_PRICES:-/opt/egs-raw/jp_prices.json}"
+  # refreshed once a day (about 70 seconds, one request per set every 2 seconds); a failure keeps the old file and never stops the run
+  "$PYTHON" tools/fetch_jp_prices.py --out "$JP_PRICES" --max-age-hours 20 || echo "PERINGATAN: harga Jepang tidak diperbarui (harga lama dipakai)" >&2
   if [ -f "$JP_PRICES" ] && ! cmp -s "$JP_PRICES" jp_prices.json; then
     cp "$JP_PRICES" jp_prices.json
   fi

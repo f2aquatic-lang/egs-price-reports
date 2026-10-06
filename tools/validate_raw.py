@@ -15,7 +15,7 @@ STATS = ("n", "min", "p25", "median", "p75", "max")
 LISTING = ("url", "ask_idr", "city", "observed_at", "conf", "lang", "lang_by", "title")
 
 
-VARIANTS = ("poke_ball", "master_ball", "element")
+VARIANTS = ("poke_ball", "master_ball", "element", "holo")
 
 
 def key(c):
@@ -38,7 +38,7 @@ def validate(d):
         err(f"language is {d['language']!r}, expected ID")
     gen = datetime.fromisoformat(d["generated_at"])
 
-    seen, urls, counted, newest, defaults = set(), set(), 0, None, 0
+    seen, urls, counted, newest, defaults, outliers = set(), set(), 0, None, 0, 0
     for c in d["cards"]:
         gone = [k for k in CARD if k not in c]
         if gone:
@@ -95,6 +95,19 @@ def validate(d):
             if obs > gen:
                 err(f"{label}: observed_at is after generated_at")
             newest = obs if newest is None or obs > newest else newest
+        for l in c.get("outliers") or []:  # asks far above the Yuyu-tei price: shown, not counted
+            gone = [k for k in LISTING if k not in l]
+            if gone:
+                err(f"{label}: outlier listing missing keys {', '.join(gone)}")
+                continue
+            if not c.get("catalog") or c.get("price_basis") == "default":
+                err(f"{label}: only a priced catalog card can have outliers")
+            if l["url"] in urls:
+                err(f"{label}: duplicate listing url {l['url'][-30:]}")
+            urls.add(l["url"])
+            outliers += 1
+            if l["lang"] != "ID" or l["conf"] != "katalog":
+                err(f"{label}: an outlier listing must be an Indonesian catalog listing")
         hist = c.get("history")
         if hist is not None:
             dates = [h.get("date_wib") for h in hist]
@@ -119,6 +132,8 @@ def validate(d):
         err(f"coverage.default_priced_cards={cov.get('default_priced_cards')} but {defaults} cards have price_basis=default")
     if cov.get("listings_counted") != counted:
         err(f"coverage.listings_counted={cov.get('listings_counted')} but stats.n sums to {counted}")
+    if cov.get("outlier_listings", outliers) < outliers:
+        err(f"coverage.outlier_listings={cov.get('outlier_listings')} is smaller than the {outliers} outliers given")
     if newest and cov.get("last_observed_at") != newest.isoformat():
         warn("coverage.last_observed_at is not the newest listing observed_at (listings are a capped sample)")
     return errors, warnings

@@ -388,6 +388,21 @@ class Board(unittest.TestCase):
         self.assertNotIn("AC3D", [m["code"] for m in data["sets"]])
         self.assertNotIn("AC3D", {c["set"] for c in data["raw_cards"]})
 
+    def test_the_board_counts_outliers_and_puts_the_holo_version_after_the_named_patterns(self):
+        import copy
+        raw, catalog = board_with_official_catalog()
+        listed = next(c for c in raw["cards"] if c.get("card_number") == "114/193")
+        listed["outliers"] = [dict(copy.deepcopy(listed["listings"][0]), ask_idr=999999, url="https://toco.id/listing/out-1")]
+        holo = copy.deepcopy(listed)
+        holo.update(variant="holo", outliers=[])
+        for l in holo["listings"]:
+            l["url"] += "-holo"
+        raw["cards"].append(holo)
+        raw["coverage"].update(cards=len(raw["cards"]), listings_counted=sum(c["stats"]["n"] for c in raw["cards"]))
+        data = build_site.build(tiny_latest(), raw, catalog)
+        rows = [(c["number"], c["variant"], c["outliers"]) for c in data["raw_cards"] if c["set"] == "MA3" and c["number"] == "114/193"]
+        self.assertEqual(rows, [("114/193", "", 1), ("114/193", "holo", 0)])
+
     def test_card_keys_ignore_zero_padding(self):
         self.assertEqual(build_site.card_key("SV1S", "014/078"), build_site.card_key("sv1s", "14/78"))
         self.assertEqual(build_site.card_key("MA6", "5 / 30"), ("ma6", "5/30", ""))
@@ -844,6 +859,61 @@ class Collector(unittest.TestCase):
         finally:
             db.close()
         self.assertIn("2/193#master_ball", days)                                  # each version keeps its own history
+
+    def ma3_catalog(self):
+        cards = [{"set": "MA3", "number": "002/193", "num": 2, "den": 193, "name": "Yanma", "rarity": None, "image": f"https://o/{i}.png", "id": i} for i in (1, 2, 3)]
+        cards += [{"set": "MA3", "number": "005/193", "num": 5, "den": 193, "name": "Sableye", "rarity": "RR", "image": "https://o/9.png", "id": 9}]
+        cards += [{"set": "MA3", "number": f"{n:03d}/193", "num": n, "den": 193, "name": name, "rarity": None, "image": f"https://o/{n}.png", "id": 100 + n}
+                  for n, name in ((54, "Tapu Koko"), (86, "Lunatone"), (87, "Solrock"))]
+        path = os.path.join(self.tmp.name, "catalog.json")
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump({"schema_version": 1, "sets": [{"code": "MA3", "product": "High Class", "fetched": len(cards)}], "cards": cards}, fh)
+        return path
+
+    def test_a_listing_that_only_says_holo_on_a_number_with_foil_versions_is_a_holo_card_not_the_regular_one(self):
+        self.catalog = API_CATALOG + [
+            api_item("h-1", "Yanma MA3 002/193 Kartu Pokemon Indonesia", 3000),
+            api_item("h-2", "Yanma MA3 002/193 Holo Indonesia", 9000),                  # which pattern is not said
+            api_item("h-3", "Yanma MA3 002/193 Holo Pokeball Indonesia", 10000),        # a named pattern keeps its own version
+            api_item("h-4", "Sableye RR MA3 005/193 holo Indonesia", 20000)]            # this number has no foil versions: holo is just the card
+        raw, _ = self.go(lang_mode="text", catalog=True, catalog_json=self.ma3_catalog(), default_prices=None)
+        found = {(c["set_code"], c["card_number"], c.get("variant", "")): c for c in raw["cards"] if c.get("catalog")}
+        self.assertEqual(sorted(k for k in found if k[1] in ("2/193", "5/193")),
+                         [("MA3", "2/193", ""), ("MA3", "2/193", "holo"), ("MA3", "2/193", "poke_ball"), ("MA3", "5/193", "")])
+        self.assertEqual([found[("MA3", "2/193", v)]["stats"]["median"] for v in ("", "holo", "poke_ball")], [3000, 9000, 10000])
+        self.assertEqual(found[("MA3", "5/193", "")]["stats"]["median"], 20000)
+        self.assertEqual(validate_raw.validate(raw)[0], [])
+
+    def test_asks_far_above_the_yuyutei_price_are_shown_but_not_counted(self):
+        jp = os.path.join(self.tmp.name, "jp_prices.json")
+        with open(jp, "w", encoding="utf-8") as fh:
+            json.dump({"cards": [jp_card("m02a", "054/193", "タプ・コケコ", 30), jp_card("m02a", "086/193", "ルナトーン", 80), jp_card("m02a", "087/193", "ソルロック", 1000)]}, fh)
+        rates = os.path.join(self.tmp.name, "rates.json")
+        with open(rates, "w", encoding="utf-8") as fh:
+            json.dump(rates_file(113.0, 16000.0), fh)
+        self.catalog = API_CATALOG + [
+            api_item("o-1", "Tapu Koko MA3 054/193 Pokemon TCG Indonesia", 7600),
+            api_item("o-2", "Tapu Koko MA3 054/193 Kartu Pokemon Indonesia", 495000),     # 145x the Yuyu-tei price
+            api_item("o-3", "Lunatone MA3 086/193 Pokemon TCG Indonesia", 300000),        # the only listing, and far above
+            api_item("o-4", "Solrock MA3 087/193 Pokemon TCG Indonesia", 60000)]          # above Rp50.000 but the card sells for Rp113.000 in Japan
+        path = self.ma3_catalog()
+        raw, _ = self.go(lang_mode="text", catalog=True, catalog_json=path, default_prices=None, jp_json=jp, rates_json=rates)
+        found = {c["card_number"]: c for c in raw["cards"] if c.get("catalog") and c["set_code"] == "MA3"}
+        tapu = found["54/193"]
+        self.assertEqual((tapu["stats"]["n"], tapu["stats"]["median"], [l["ask_idr"] for l in tapu["listings"]]), (1, 7600, [7600]))
+        self.assertEqual([(o["ask_idr"], o["conf"]) for o in tapu["outliers"]], [(495000, "katalog")])
+        self.assertNotIn("86/193", found)                                              # nothing but an outlier: no price from listings
+        self.assertEqual(found["87/193"]["stats"]["median"], 60000)
+        self.assertNotIn("outliers", found["87/193"])
+        self.assertEqual(raw["coverage"]["outlier_listings"], 2)
+        errors, _ = validate_raw.validate(raw)
+        self.assertEqual(errors, [])
+        again, _ = self.go(lang_mode="text", catalog=True, catalog_json=path, default_prices=None, jp_json=jp, rates_json=None)      # no yen rate: nothing judged
+        self.assertEqual(again["coverage"]["outlier_listings"], 0)
+        self.assertEqual({c["card_number"]: c["stats"]["n"] for c in again["cards"] if c.get("catalog") and c["set_code"] == "MA3"}["54/193"], 2)
+        broken = json.loads(json.dumps(raw))
+        next(c for c in broken["cards"] if c.get("outliers"))["outliers"][0]["conf"] = "nomor"
+        self.assertTrue(any("outlier listing must be" in e for e in validate_raw.validate(broken)[0]))
 
     def test_a_seller_who_writes_the_wrong_total_still_lands_on_the_official_card(self):
         cards = [{"set": "SV9S", "number": "001/139", "num": 1, "den": 139, "name": "Caterpie", "rarity": "C", "image": "i", "id": 1},
@@ -1534,7 +1604,7 @@ class FetchJpPrices(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.pages, self.calls = yuyutei_site(), []
         self.args = argparse.Namespace(out=os.path.join(self.tmp.name, "jp.json"), delay=0, sets=None, include=fetch_jp_prices.DEFAULT_INCLUDE,
-                                       max_requests=None, list_sets=False)
+                                       max_requests=None, max_age_hours=None, list_sets=False)
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -1610,6 +1680,28 @@ class FetchJpPrices(unittest.TestCase):
         self.assertNotIn("url", data["cards"][0])
         self.assertNotIn("image", data["cards"][0])
         self.assertEqual(data["card_url"].format(**data["cards"][1]), "https://yuyu-tei.jp/sell/poc/card/m02a/10487")
+
+    def test_a_fresh_file_is_not_fetched_again_and_a_poor_day_does_not_shrink_it(self):
+        self.go()
+        self.assertGreater(len(self.calls), 3)
+        self.calls.clear()
+        self.args.max_age_hours = 20
+        now = datetime(2026, 10, 5, 0, 0, tzinfo=timezone.utc)
+        fetch_jp_prices.run(self.args, get=self.get, now=now + timedelta(hours=5), sleep=lambda s: None, log=self.logs.append)
+        self.assertEqual(self.calls, [])                                                    # 5 hours old
+        data = fetch_jp_prices.run(self.args, get=self.get, now=now + timedelta(hours=21), sleep=lambda s: None, log=self.logs.append)
+        self.assertGreater(len(self.calls), 3)                                              # 21 hours old: fetched again
+        self.assertEqual(len(data["cards"]), 5)
+        with open(self.args.out, encoding="utf-8") as fh:                                   # an earlier, bigger file
+            bigger = json.load(fh)
+        bigger["cards"] = bigger["cards"] * 4
+        fetch_jp_prices.write_json(self.args.out, bigger)
+        self.args.max_age_hours = None
+        kept = self.go()
+        self.assertEqual(len(kept["cards"]), 20)                                            # 5 new cards against 20 before: the old file stays
+        self.assertTrue(any("berkas lama dipertahankan" in l for l in self.logs))
+        with open(self.args.out, encoding="utf-8") as fh:
+            self.assertEqual(len(json.load(fh)["cards"]), 20)
 
     def test_a_saved_page_can_be_checked_without_any_request(self):
         path = os.path.join(self.tmp.name, "yuyutei_m02a.html")

@@ -356,12 +356,13 @@ def attach_sets(data, raw, catalog=None, jp=None):
              "rarity": (o or {}).get("rarity") or c["rarity"], **c["stats"], "trend": trend_of(history),
              "url": c["listings"][0]["url"] if c["listings"] else None, "photo": photo,
              "image": official[key].get("image") if key in official else None,  # an unofficial version shows the seller's photo
-             "basis": "default" if base else "listing", "tracked": t is not None, "egs": egs_lowest(t) if t else []})
+             "basis": "default" if base else "listing", "tracked": t is not None, "egs": egs_lowest(t) if t else [],
+             "outliers": len(c.get("outliers") or [])})
     for key, o in official.items():  # official cards nobody lists and that have no base price
         if key not in seen and o["set"].upper() in official_sets and o.get("num") is not None:
             add({"name": o["name"], "set": o["set"].upper(), "number": o["number"], "num": o["num"], "den": o["den"], "variant": o["variant"],
                  "rarity": o.get("rarity"), "n": 0, "min": None, "p25": None, "median": None, "p75": None, "max": None,
-                 "trend": None, "url": None, "photo": None, "image": o.get("image"), "basis": None, "tracked": False, "egs": []})
+                 "trend": None, "url": None, "photo": None, "image": o.get("image"), "basis": None, "tracked": False, "egs": [], "outliers": 0})
     sets = []
     for code, cards in per_set.items():
         o = official_sets.get(code, {})
@@ -385,7 +386,7 @@ def attach_sets(data, raw, catalog=None, jp=None):
                                        if released else None})
     sets.sort(key=lambda m: set_sort_key(m, family_order))
     order = {m["code"]: i for i, m in enumerate(sets)}
-    vorder = {v: i for i, v in enumerate(("", "poke_ball", "master_ball", "element"))}
+    vorder = {v: i for i, v in enumerate(("", "poke_ball", "master_ball", "element", "holo"))}
     rows.sort(key=lambda c: (order[c["set"]], c["sub"], c["den"], c["num"], vorder.get(c["variant"], 9)))
     data["raw_cards"], data["sets"], data["families"] = rows, sets, meta["families"]
     data["jp_meta"] = {"generated": wib_label(jp["generated_at"]), "cards": sum(1 for c in rows if c["jp"])} if jp else None

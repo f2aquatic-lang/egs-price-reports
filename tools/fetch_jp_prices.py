@@ -19,7 +19,7 @@ import re
 import sys
 import time
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -138,8 +138,25 @@ def write_json(path, data):
     os.replace(path + ".tmp", path)
 
 
+def load_old(path):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return None
+
+
 def run(args, get=http_get, now=None, sleep=time.sleep, log=print):
     now = now or datetime.now(timezone.utc)
+    old = load_old(args.out)
+    if args.max_age_hours and old and not args.sets and not args.list_sets:
+        try:
+            age = now - datetime.fromisoformat(old["generated_at"])
+        except (KeyError, ValueError):
+            age = None
+        if age is not None and age < timedelta(hours=args.max_age_hours):
+            log(f"harga Jepang masih baru (kurang dari {args.max_age_hours:g} jam); tidak diambil lagi")
+            return old
     status, page = get(f"{BASE}/top/poc")
     if status != 200:
         log(f"! daftar set tidak terbaca (status {status})")
@@ -172,6 +189,10 @@ def run(args, get=http_get, now=None, sleep=time.sleep, log=print):
         cards += got
         sets.append({"code": code, "label": names.get(code), "cards": len(got)})
         log(f"  {code}: {len(got)} kartu ({names.get(code)})")
+    if old and not args.sets and len(cards) < 0.7 * len(old.get("cards", [])):
+        # a day when the site answered badly must not shrink the file: keep what we had
+        log(f"! hanya {len(cards)} kartu terbaca, padahal sebelumnya {len(old['cards'])}; berkas lama dipertahankan")
+        return old
     data = {"schema_version": 1, "source": "yuyu-tei.jp/sell/poc", "currency": "JPY", "condition": "傷無し",
             "generated_at": now.isoformat(), "sets": sets, "cards": cards}
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
@@ -188,6 +209,7 @@ def main(argv=None):
     ap.add_argument("--sets", help="kode set Yuyutei dipisah koma, mis. m02a,m01l (bawaan: semua yang cocok --include)")
     ap.add_argument("--include", default=DEFAULT_INCLUDE, help="ekspresi reguler kode set yang diambil")
     ap.add_argument("--max-requests", type=int)
+    ap.add_argument("--max-age-hours", type=float, help="jangan mengambil lagi kalau berkas keluaran lebih baru dari ini (hanya untuk pengambilan penuh)")
     ap.add_argument("--list-sets", action="store_true", help="hanya tampilkan set di situs, lalu selesai")
     ap.add_argument("--parse-file", help="baca halaman yang sudah disimpan (dengan --sets <satu kode>), tanpa permintaan ke situs")
     args = ap.parse_args(argv)
@@ -195,7 +217,9 @@ def main(argv=None):
         if args.parse_file:
             parse_saved(args.parse_file, (args.sets or "").strip())
             return 0
-        run(args)
+        data = run(args)
+        if data is None and not args.list_sets:
+            return 1
     except BrokenPipeError:  # "| head" closed the pipe: not an error
         pass
     return 0

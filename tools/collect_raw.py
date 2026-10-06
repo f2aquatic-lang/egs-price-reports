@@ -436,6 +436,38 @@ def catalog_key(title, sets_by_total, known=None):
     return (code, c["number"]) if code else None
 
 
+# a foil version the seller only calls "holo" (the pattern is not named): its own card, not the regular one
+HOLO_WORD = re.compile(r"\b(holo\w*|mirror|reverse|foil)\b", re.I)
+OUTLIER_FACTOR, OUTLIER_MIN = 6, 50_000   # an ask above 6x the Yuyu-tei price (and above Rp50.000) is not counted
+
+
+def load_json(path):
+    """A published data file (jp_prices.json, rates.json), or None when it is missing or unreadable."""
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+    except (OSError, ValueError, TypeError):
+        return None
+
+
+def foil_numbers(official, jp):
+    """{(set, number)} of the cards that exist in more than one version: the official site lists a foil entry, or Yuyu-tei sells one."""
+    out = {(o["set"].lower(), build_site.card_key(o["set"], o["number"])[1]) for o in official.values() if o["variant"]}
+    return out | {(code.lower(), number) for code, number in build_site.jp_versions(jp)}
+
+
+def outlier_check(jp, rates):
+    """is_outlier(set, number, variant, ask): True when the same card sells for far less at Yuyu-tei; always False without the yen rate."""
+    rate = ((rates or {}).get("rates") or {}).get("JPY", {}).get("idr")
+    mapping, jpx = build_site.jp_sets(), build_site.jp_index(jp)
+
+    def is_outlier(code, number, variant, ask):
+        jpcode = mapping.get(code.upper())
+        card = jpx.get(build_site.card_key(jpcode, number, variant)) if jpcode and rate else None
+        return bool(card) and ask > OUTLIER_FACTOR * card["yen"] * rate and ask > OUTLIER_MIN
+    return is_outlier
+
+
 def load_official(path):
     """{card_key: official card} from catalog.json (tools/fetch_catalog.py); {} when there is no file."""
     if not path or not os.path.exists(path):
@@ -480,7 +512,7 @@ def majority(values):
     return min(counts, key=lambda v: (-counts[v], len(v), v)) if counts else ""
 
 
-def build_raw(db, types, now, max_age_hours, record=True, catalog=False, official=None, defaults=None):
+def build_raw(db, types, now, max_age_hours, record=True, catalog=False, official=None, defaults=None, jp=None, rates=None):
     cutoff = (now - timedelta(hours=max_age_hours)).isoformat()
     rows = db.execute(
         "SELECT l.url, l.title, l.ask_idr, l.city, l.stock, l.card_set, l.card_number, l.conf, l.last_seen, g.lang, g.lang_by, l.image_url, l.variant "
@@ -536,10 +568,15 @@ def build_raw(db, types, now, max_age_hours, record=True, catalog=False, officia
         cards.append({"name": t["name"], "set_code": t["set"], "card_number": t["number"], "rarity": t["rarity"],
                       "stats": stats, "history": history, "listings": listings})
     cards.sort(key=lambda c: -c["stats"]["n"])
-    extra = []
+    extra, outlier_listings, is_outlier = [], 0, outlier_check(jp, rates)
     for key, items in found_catalog.items():
-        found = sorted(r for r, _, _, _ in items)
         cset, cnum, variant = items[0][1], items[0][2], items[0][3]
+        everything = sorted(r for r, _, _, _ in items)
+        odd = [r for r in everything if is_outlier(cset, cnum, variant, r[0])]   # asks far above what Yuyu-tei sells the card for
+        found = [r for r in everything if r not in odd]
+        outlier_listings += len(odd)
+        if not found:
+            continue  # nothing but outliers: the card has no price from listings (it falls back to the base price)
         snap_no = f"{cnum}#{variant}" if variant else cnum  # a foil version has its own history
         prices = [f[0] for f in found]
         stats = {"n": len(prices), "min": prices[0], "p25": quantile(prices, .25),
@@ -562,12 +599,16 @@ def build_raw(db, types, now, max_age_hours, record=True, catalog=False, officia
         history = [{"date_wib": d, "n": n, "median": m, "min": lo} for d, n, m, lo in db.execute(
             "SELECT day, n, median, min_idr FROM snapshot WHERE card_set=? AND card_number=? ORDER BY day DESC LIMIT ?",
             (cset, snap_no, HISTORY_DAYS))][::-1]
-        titles = [r[2] for r, _, _, _ in items]
+        titles = [r[2] for r in found]
         extra.append({"name": majority(guess_name(t) for t in titles), "set_code": cset, "card_number": cnum,
                       "rarity": majority((classify_title(t)["rarity"] or [""])[0] for t in titles),
                       "catalog": True, "stats": stats, "history": history, "listings": listings})
         if variant:
             extra[-1]["variant"] = variant
+        if odd:  # shown, not counted
+            extra[-1]["outliers"] = [{"url": url, "ask_idr": ask, "city": city, "observed_at": seen, "conf": conf, "lang": "ID", "lang_by": lang_by,
+                                      "title": title, **({"photo": image} if image else {})}
+                                     for ask, url, title, city, seen, conf, lang_by, image in odd[:5]]
     official = official or {}
     for c in extra:  # the official name and rarity beat what could be guessed from a seller's title
         o = official.get(build_site.card_key(c["set_code"], c["card_number"], c.get("variant", ""))) \
@@ -596,7 +637,7 @@ def build_raw(db, types, now, max_age_hours, record=True, catalog=False, officia
     return {"schema_version": 1, "kind": "RAW", "price_type": "OBSERVED_ASKING_ONLY", "language": "ID",
             "source": "toco_public", "generated_at": now.isoformat(),
             "coverage": {"cards": len(cards), "catalog_cards": len(extra) + len(base_priced), "default_priced_cards": len(base_priced),
-                         "listings_counted": sum(c["stats"]["n"] for c in cards),
+                         "listings_counted": sum(c["stats"]["n"] for c in cards), "outlier_listings": outlier_listings,
                          "last_observed_at": max(newest) if newest else now.isoformat()},
             "cards": cards, "unmatched": {"count": unmatched, "language_unverified": unverified}}
 
@@ -627,6 +668,8 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
     listings = [l for l in map(to_listing, items.values())]
     sets_by_total = denominator_sets(l["title"] for l in listings) if catalog_on else {}
     official = load_official(getattr(cfg, "catalog_json", None)) if catalog_on else {}
+    jp, rates = load_json(getattr(cfg, "jp_json", None)), load_json(getattr(cfg, "rates_json", None))
+    foil = foil_numbers(official, jp) if catalog_on else set()
     known_sets = {o["set"].upper() for o in official.values()}
     by_set_num = defaultdict(list)
     for o in official.values():
@@ -652,6 +695,8 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
                     regular_card = official.get(build_site.card_key(cset, cnum))
                     if regular_card and re.search(r"\bball\b", regular_card["name"], re.I):
                         variant = ""  # the trainer card "Poke Ball" is not a Poke Ball holo version of something
+                    elif not variant and HOLO_WORD.search(l["title"]) and (cset.lower(), build_site.card_key(cset, cnum)[1]) in foil:
+                        variant = "holo"  # "Holo" on a number that has foil versions: not the regular card, pattern unknown
             ctr["cocok_" + (conf or "tidak")] += 1
         db.execute(
             "INSERT INTO listing(url,title,ask_idr,list_idr,city,stock,image_url,kind,card_set,card_number,conf,first_seen,last_seen,variant) "
@@ -675,7 +720,7 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
     db.commit()
     raw = build_raw(db, types, now, cfg.max_age_hours, record=not cfg.dry_run, catalog=catalog_on,
                     official=load_official(getattr(cfg, "catalog_json", None)),
-                    defaults=load_defaults(getattr(cfg, "default_prices", None)))
+                    defaults=load_defaults(getattr(cfg, "default_prices", None)), jp=jp, rates=rates)
     db.commit()  # the daily snapshots written by build_raw must survive the run
     db.close()
     ctr.update({"listing_dibaca": len(items), "foto_dicek_sekarang": checker.calls})
@@ -725,6 +770,10 @@ def main(argv=None):
                     help="berhenti kalau kurang dari bagian ini dari satu halaman menyebut kode set")
     ap.add_argument("--catalog-json", default="catalog.json" if os.path.exists("catalog.json") else None,
                     help="katalog resmi (tools/fetch_catalog.py): nama dan rarity resmi, dan kartu tanpa listing")
+    ap.add_argument("--jp-json", default="jp_prices.json" if os.path.exists("jp_prices.json") else None,
+                    help="jp_prices.json (tools/fetch_jp_prices.py): dipakai untuk mengenali versi foil dan listing yang kemahalan")
+    ap.add_argument("--rates-json", default="rates.json" if os.path.exists("rates.json") else None,
+                    help="rates.json (tools/fetch_rates.py): kurs yen untuk membandingkan dengan harga Yuyutei")
     ap.add_argument("--default-prices", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "default_prices.json"),
                     help="harga dasar per rarity untuk kartu tanpa listing (hanya berlaku bersama --catalog-json)")
     ap.add_argument("--no-catalog", dest="catalog", action="store_false",

@@ -418,7 +418,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
 
   if (D.raw_cards && D.raw_cards.length) {
     $('#rawonly').hidden = false;
-    var LIMIT = 80, VARIANT_LABEL = {poke_ball: 'Poké Ball', master_ball: 'Master Ball', element: 'Elemen'};
+    var LIMIT = 80, VARIANT_LABEL = {poke_ball: 'Poké Ball', master_ball: 'Master Ball', element: 'Elemen', holo: 'Holo'};
     var ro = {set: D.sets[0].code, q: '', all: false, priced: false};
     var bySet = {};
     D.sets.forEach(function(m){ bySet[m.code] = m; });
@@ -501,9 +501,10 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
             multi ? h('td', {'class': 'num', text: c.set}) : null,
             h('td', {'class': 'num', text: c.number}),
             h('td', null, c.name + (c.rarity ? ' ' + c.rarity : ''),
-              c.variant ? h('span', {'class': 'badge variant', text: VARIANT_LABEL[c.variant] || c.variant, title: 'Versi foil yang berbeda dari kartu biasa dengan nomor yang sama; harganya sendiri'}) : null,
+              c.variant ? h('span', {'class': 'badge variant', text: VARIANT_LABEL[c.variant] || c.variant, title: c.variant === 'holo' ? 'Versi foil dari nomor ini; penjual hanya menulis Holo, jadi pola bola atau simbolnya belum jelas. Harganya sendiri, bukan harga kartu biasa' : 'Versi foil yang berbeda dari kartu biasa dengan nomor yang sama; harganya sendiri'}) : null,
               c.tracked ? h('span', {'class': 'badge', text: 'dipantau'}) : null),
-            h('td', {'class': 'num', text: c.basis === 'listing' ? String(c.n) : '—'}),
+            h('td', {'class': 'num'}, c.basis === 'listing' ? String(c.n) : '—',
+              c.outliers ? h('span', {'class': 'badge', text: c.outliers + ' kemahalan', title: 'Listing yang harganya lebih dari 6 kali harga Yuyutei (dan di atas Rp50.000) tidak dihitung ke harga di sini'}) : null),
             c.basis === 'listing' ? [h('td', {'class': 'num', text: rp(c.min)}), h('td', {'class': 'num', text: rp(c.median)}), h('td', {'class': 'num', text: rp(c.max)})]
               : c.basis === 'default' ? [h('td', {'class': 'num', text: '—'}), h('td', {'class': 'num'}, rp(c.median), h('span', {'class': 'badge', text: 'harga dasar', title: 'Belum ada listing: harga dasar, bukan harga pasar'})), h('td', {'class': 'num', text: '—'})]
               : h('td', {'class': 'nodata', colspan: 3, text: 'belum ada listing'}),
