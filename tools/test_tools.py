@@ -9,6 +9,7 @@ import collections
 import importlib.util
 import json
 import os
+import re
 import sqlite3
 import subprocess
 import sys
@@ -25,9 +26,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_site  # noqa: E402
 import collect_raw  # noqa: E402
 import db_report  # noqa: E402
+import egs_identity  # noqa: E402
+import egs_watch  # noqa: E402
 import fetch_catalog  # noqa: E402
 import fetch_jp_prices  # noqa: E402
 import fetch_rates  # noqa: E402
+import probe_marketplaces  # noqa: E402
 import probe_pokemon_card  # noqa: E402
 import probe_toco  # noqa: E402
 import probe_toco_fields  # noqa: E402
@@ -2068,6 +2072,43 @@ class BrowserRender(unittest.TestCase):
         self.assertIn("US$1 = Rp16.250", kurs)
         self.assertIn("diperbarui", kurs)
 
+    def test_board_shows_the_egs_watch_summary_the_queue_and_marks_thin_data(self):
+        from playwright.sync_api import sync_playwright
+        export = make_egs_export(tempfile.mkdtemp())
+        html = build_site.render(build_site.build(tiny_latest(), None, None, None, None, export), True)
+        path = os.path.join(tempfile.mkdtemp(), "board.html")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(html)
+        errors = []
+        gif = bytes.fromhex("47494638396101000100800000000000ffffff21f90401000000002c00000000010001000002024401003b")
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path=chrome_path(), headless=True, args=["--no-sandbox"] if os.geteuid() == 0 else [])
+            page = browser.new_page()
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            page.route("https://**/*", lambda route: route.fulfill(status=200, content_type="image/gif", body=gif))
+            page.goto("file://" + path)
+            page.wait_for_timeout(300)
+            ev = page.evaluate
+            visible = ev("() => !document.querySelector('#egswatch').hidden")
+            facts = ev("() => document.querySelector('#egswatch-facts').innerText")
+            title = ev("() => document.querySelector('#egswatch-queue-title').innerText")
+            page.click("#egswatch-queue summary")
+            rows = ev("() => [...document.querySelectorAll('#egswatch-body tbody tr')].map(tr => tr.innerText.replace(/\\s+/g, ' ').trim())")
+            links = ev("() => [...document.querySelectorAll('#egswatch-body a')].map(a => a.href)")
+            imgs = ev("() => document.querySelectorAll('#egswatch-body img').length")
+            strips = ev("() => [...document.querySelectorAll('.grow small')].map(s => s.innerText)")
+            browser.close()
+        self.assertEqual(errors, [])
+        self.assertTrue(visible)
+        for want in ("12 kandidat ditemukan", "6 diterima", "3 ambigu", "3 ditolak"):
+            self.assertIn(want, facts)
+        self.assertIn("Antrean ambigu: 3 listing", title)
+        self.assertEqual(len(rows), 3)
+        self.assertTrue(any("salah rarity" in r and "Rarity di judul (SR)" in r and "Rp900.000" in r for r in rows), rows)
+        self.assertTrue(all(l.startswith("https://toco.id/id/listing/") for l in links))
+        self.assertEqual(imgs, 3)
+        self.assertTrue(any("data terbatas · 1 listing" in s for s in strips), strips)
+
     def test_browser_probe_reports_listings_data_requests_and_serial(self):
         script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "probe_toco_browser.py")
         done = subprocess.run([sys.executable, script, self.site.base], capture_output=True, text=True,
@@ -2107,6 +2148,664 @@ class BrowserRender(unittest.TestCase):
         self.assertIn("/img/big.png", text)
         self.assertIn("CHINESE", text)
         self.assertIn("tidak ada alamat toco/... untuk diturunkan", text)
+
+
+# ---- EGS slab watch -----------------------------------------------------------------------------
+
+def egs_catalog_data():
+    def card(set_, num, den, name, rarity, cid):
+        return {"set": set_, "number": f"{num:03d}/{den}", "num": num, "den": den, "name": name, "rarity": rarity, "image": f"https://o/{cid}.png", "id": cid}
+    cards = [card("MA3", 234, 193, "Pikachu ex", "SAR", 1), card("MA3", 223, 193, "Mega Charizard X ex", "SAR", 2),
+             card("MA3", 211, 193, "Dreepy", "AR", 3), card("MA3", 212, 193, "Drakloak", "AR", 4),
+             card("MA3", 54, 193, "Tapu Koko", None, 5), card("MA3", 54, 193, "Tapu Koko", None, 6), card("MA3", 54, 193, "Tapu Koko", None, 7),
+             card("MA3", 100, 193, "Pikachu", None, 8), card("MA3", 150, 193, "Mimikyu", "RR", 9), card("MA3", 151, 193, "Mimikyu", "RR", 10),
+             card("SV8A", 200, 187, "Leafeon ex", "SAR", 11), card("MA1", 128, 126, "Ivysaur", "AR", 12), card("MA1", 173, 126, "Mega Venusaur ex", "SAR", 13)]
+    sets = [{"code": "MA3", "name": "Evolusi Mega Impian ex", "fetched": 10}, {"code": "SV8A", "name": "Festival Terastal ex", "fetched": 1},
+            {"code": "MA1", "name": "Evolusi Mega", "fetched": 2}]
+    return {"schema_version": 1, "sets": sets, "cards": cards}
+
+
+EGS_CATALOG = egs_identity.Catalog(egs_catalog_data())
+
+
+def verify_title(title, description="", price=500000, **kw):
+    return egs_identity.verify({"title": title, "description": description, "ask": price, **kw.pop("listing", {})}, EGS_CATALOG, **kw)
+
+
+def codes(v):
+    return [r["code"] for r in v["reasons"]]
+
+
+class EgsIdentity(unittest.TestCase):
+    def test_everything_consistent_is_accepted_with_its_evidence(self):
+        v = verify_title("Pikachu ex SAR 234/193 MA3 ID EGS 10")
+        self.assertEqual((v["verdict"], v["reasons"]), ("accepted", []))
+        i = v["identity"]
+        self.assertEqual((i["name"], i["set_code"], i["card_number"], i["rarity"], i["grade"], i["company"], i["language"], i["identified_by"]),
+                         ("Pikachu ex", "MA3", "234/193", "SAR", "10", "EGS", "ID", "nomor di judul"))
+        self.assertEqual(egs_identity.card_key(i), "MA3|234/193|SAR|")
+
+    def test_a_wrong_rarity_is_ambiguous_never_corrected_silently(self):
+        v = verify_title("Pikachu ex SR 234/193 MA3 ID EGS 10")
+        self.assertEqual((v["verdict"], codes(v)), ("ambiguous", ["rarity_mismatch"]))
+        self.assertIn("SR", v["reasons"][0]["text"])
+        self.assertIn("SAR", v["reasons"][0]["text"])
+        self.assertEqual(codes(verify_title("Pikachu ex SR SAR 234/193 MA3 ID EGS 10")), ["rarity_multiple"])
+        self.assertEqual(codes(verify_title("Pikachu ex 234/193 MA3 ID EGS 10")), [])           # no rarity written: the number settles it
+
+    def test_language_needs_proof_and_foreign_text_is_rejected(self):
+        self.assertEqual(verify_title("Rayquaza VMAX CSR EGS 10 CHINESE")["verdict"], "rejected")
+        self.assertEqual(codes(verify_title("Pikachu ex SAR 234/193 EGS 10 Japanese")), ["foreign_language"])
+        v = verify_title("Pikachu ex SAR 234/193 MA3 ID EGS 10 bukan English")
+        self.assertEqual((v["verdict"], codes(v)), ("ambiguous", ["language_conflict"]))
+        v = verify_title("Leafeon ex SAR 200/187 SV8A EGS 10")                                  # no marker at all: not proof
+        self.assertEqual((v["verdict"], codes(v)), ("ambiguous", ["language_unproven"]))
+        self.assertEqual(verify_title("Pikachu ex SAR 234/193 MA3 EGS 10")["identity"]["language_by"], "kode set MA (hanya dipakai kartu Indonesia)")
+        v = verify_title("Leafeon ex SAR 200/187 SV8A EGS 10", photo={"language": "JP"})
+        self.assertEqual((v["verdict"], codes(v)), ("rejected", ["foreign_language"]))
+        v = verify_title("Leafeon ex SAR 200/187 SV8A EGS 10", photo={"language": "ID"})
+        self.assertEqual((v["verdict"], v["identity"]["language_by"]), ("accepted", "foto"))
+
+    def test_the_grading_company_must_be_egs(self):
+        self.assertEqual(codes(verify_title("Pikachu ex SAR 234/193 MA3 ID PSA 10")), ["other_grader"])
+        self.assertEqual(verify_title("Pikachu ex SAR 234/193 MA3 ID BGS 9.5")["verdict"], "rejected")
+        self.assertEqual(codes(verify_title("Pikachu ex SAR 234/193 MA3 ID EGS 10 setara PSA 10")), ["company_conflict"])
+        self.assertEqual(verify_title("Pikachu ex SAR 234/193 MA3 ID EGS 10 clear slab not TAG Grading")["verdict"], "accepted")   # negated: not a TAG slab
+        v = verify_title("Pikachu ex SAR 234/193 MA3 ID slab 10")
+        self.assertEqual((v["verdict"], "no_egs" in codes(v)), ("ambiguous", True))
+        self.assertEqual(codes(verify_title("Pikachu ex SAR 234/193 MA3 ID NM"))[0], "not_slab")
+        self.assertEqual(verify_title("Pikachu ex SAR 234/193 MA3 ID NM")["verdict"], "rejected")
+
+    def test_sellers_who_glue_the_grade_to_the_company_are_read_too(self):
+        for title, grade in (("Pikachu ex SAR 234/193 MA3 ID EGS10", "10"), ("Pikachu ex SAR 234/193 MA3 ID EGS9.5", "9.5"), ("Pikachu ex SAR 234/193 MA3 ID EGS-9", "9")):
+            self.assertEqual((verify_title(title)["verdict"], verify_title(title)["identity"]["grade"]), ("accepted", grade), title)
+        self.assertTrue(egs_watch.EGS_WORD.search("slab EGS10 pokemon"))
+        self.assertFalse(egs_watch.EGS_WORD.search("legs 10"))
+        self.assertFalse(egs_watch.EGS_WORD.search("EGSA 10"))
+
+    def test_grades_are_separate_and_a_disagreement_is_ambiguous(self):
+        self.assertEqual({verify_title(f"Pikachu ex SAR 234/193 MA3 ID EGS {g}")["identity"]["grade"] for g in ("10", "9.5", "9", "9,5")}, {"10", "9.5", "9"})
+        self.assertEqual(verify_title("Pikachu ex SAR 234/193 MA3 ID 9.5 EGS")["identity"]["grade"], "9.5")
+        self.assertEqual(verify_title("Pikachu ex SAR 234/193 MA3 ID EGS Gem Mint 10")["identity"]["grade"], "10")
+        self.assertEqual(codes(verify_title("Pikachu ex SAR 234/193 MA3 ID EGS 10", "slab EGS 9.5 mint")), ["grade_conflict"])
+        self.assertEqual(codes(verify_title("Pikachu ex SAR 234/193 MA3 ID EGS 10 EGS 9"))[0], "grade_conflict")
+        self.assertEqual(codes(verify_title("Pikachu ex SAR 234/193 MA3 ID EGS slab"))[0], "grade_missing")
+        v = verify_title("Pikachu ex SAR 234/193 MA3 ID EGS 10", photo={"grade": "9"})
+        self.assertEqual((v["verdict"], codes(v), v["identity"]["grade"]), ("ambiguous", ["photo_conflict"], None))
+        self.assertEqual(verify_title("Pikachu ex SAR 234/193 MA3 ID EGS slab", photo={"grade": "10"})["identity"]["grade"], "10")
+
+    def test_bundles_and_several_cards_are_never_one_card(self):
+        v = verify_title("Paket 3 slab EGS 10 Pikachu Mew Charizard MA3 ID")
+        self.assertEqual((v["verdict"], "bundle" in codes(v)), ("ambiguous", True))
+        self.assertIn("bundle", codes(verify_title("Pikachu ex SAR 234/193 MA3 ID EGS 10 bisa pilih opsi lain")))
+        self.assertEqual(codes(verify_title("Pikachu ex 234/193 dan Dreepy 211/193 MA3 ID EGS 10"))[:1], ["number_multiple"])
+        self.assertEqual(verify_title("Pikachu ex SAR 234/193 MA3 ID EGS 10 stok 1 pcs")["verdict"], "accepted")   # "1 pcs" is not a bundle
+        self.assertEqual(verify_title("Booster box MA3 ID EGS")["verdict"], "rejected")
+        self.assertEqual(verify_title("One Piece OP05-119 EGS 10")["verdict"], "rejected")
+
+    def test_a_missing_number_is_found_only_when_the_catalog_has_exactly_one_card(self):
+        v = verify_title("Dreepy AR MA3 ID EGS 10")
+        self.assertEqual((v["verdict"], v["identity"]["card_number"], v["identity"]["identified_by"]),
+                         ("accepted", "211/193", "nama, set dan rarity (satu-satunya di katalog)"))
+        v = verify_title("Mimikyu RR MA3 ID EGS 10")                                              # two Mimikyu RR in MA3
+        self.assertEqual((v["verdict"], codes(v)), ("ambiguous", ["number_missing"]))
+        self.assertEqual([s["card_number"] for s in v["suggestions"]], ["150/193", "151/193"])
+        self.assertIn("2 kartu", v["reasons"][0]["text"])
+        v = verify_title("Pikachu EGS 10 ID")                                                     # a name alone is never enough
+        self.assertEqual((v["verdict"], codes(v)[-1]), ("ambiguous", "number_missing"))
+        self.assertEqual(verify_title("Ivysaur AR #128 MA1 ID EGS 10")["identity"]["identified_by"], "nomor #128 dan set")
+        self.assertEqual(verify_title("Ivysaur AR #129 MA1 ID EGS 10")["verdict"], "ambiguous")   # #129 is not in the catalog (and the name would not fit)
+        self.assertEqual(verify_title("Leafeon SAR Festival Terastal ex ID EGS 10")["identity"]["card_number"], "200/187")   # set named, not coded
+        v = verify_title("Dreepy EGS 10 ID MA3")                                                  # no rarity written: not enough
+        self.assertEqual((v["verdict"], codes(v)), ("ambiguous", ["number_missing"]))
+
+    def test_a_photo_can_supply_what_the_title_lacks_but_not_override_it(self):
+        photo = {"is_slab": True, "company": "EGS", "grade": "10", "cert": "12345678", "number": "234/193", "rarity": "SAR", "language": "ID", "name": "Pikachu ex"}
+        v = verify_title("Pikachu SAR MA3 EGS 10", photo=photo)
+        self.assertEqual((v["verdict"], v["identity"]["card_number"], v["identity"]["identified_by"], v["identity"]["cert"]),
+                         ("accepted", "234/193", "nomor di foto", "12345678"))
+        v = verify_title("Pikachu SAR MA3 EGS 10 234/193", photo={**photo, "number": "223/193"})
+        self.assertEqual((v["verdict"], codes(v)), ("ambiguous", ["photo_conflict"]))
+        v = verify_title("Pikachu ex 234/193 MA3 ID EGS 10", photo={**photo, "rarity": "SR"})
+        self.assertIn("photo_conflict", codes(v))
+        v = verify_title("Pikachu ex 234/193 MA3 ID EGS 10 cert 99999999", photo={**photo, "cert": "12345678"})
+        self.assertIn("photo_conflict", codes(v))
+        self.assertEqual(verify_title("Pikachu SAR MA3 slab 10", photo={**photo, "company": "PSA"})["verdict"], "rejected")
+
+    def test_the_catalog_must_agree_with_the_title(self):
+        self.assertEqual(codes(verify_title("Charizard SAR 234/193 MA3 ID EGS 10")), ["name_mismatch"])      # 234/193 is Pikachu ex
+        self.assertEqual(codes(verify_title("Arceus V SR AA S9 ID EGS 9.5 100/100"))[0], "set_unknown")
+        self.assertIn("set S9 tidak ada di katalog", verify_title("Arceus V SR AA S9 ID EGS 9.5 100/100")["reasons"][0]["text"])
+        self.assertEqual(codes(verify_title("Pikachu SAR 999/193 MA3 ID EGS 10"))[0], "card_not_in_catalog")
+        self.assertEqual(verify_title("Pikachu ex SAR 234/193 EGS 10 ID")["identity"]["set_code"], "MA3")      # set from the printed total
+        v = verify_title("Pikachu ex SAR 234/777 EGS 10 ID")
+        self.assertEqual((v["verdict"], codes(v)[0]), ("ambiguous", "set_unknown"))
+
+    def test_foil_versions_a_bare_holo_and_a_named_pattern(self):
+        v = verify_title("Tapu Koko MA3 054/193 EGS 9 holo ID")
+        self.assertEqual((v["verdict"], codes(v)), ("ambiguous", ["variant_unclear"]))
+        v = verify_title("Tapu Koko MA3 054/193 EGS 9 pokeball holo ID")
+        self.assertEqual((v["verdict"], v["identity"]["variant"], egs_identity.card_key(v["identity"])), ("accepted", "poke_ball", "MA3|54/193|-|poke_ball"))
+        self.assertEqual(verify_title("Pikachu ex SAR 234/193 MA3 ID EGS 10 holo")["verdict"], "accepted")   # this number has no foil versions
+
+    def test_prices_a_reused_listing_and_the_card_the_bot_already_tracks(self):
+        v = verify_title("Pikachu ex SAR 234/193 MA3 ID EGS 10", price=20000)
+        self.assertEqual((v["verdict"], codes(v)), ("ambiguous", ["price_implausible"]))
+        v = verify_title("Silvally AR MA5 EGS 10", listing={"slug": "pertarungan-penentuan-gladion-sar-ma5-egs-10-1790735079133-72e4"})
+        self.assertIn("title_changed", codes(v))
+        self.assertEqual(verify_title("Dreepy AR MA3 ID EGS 10", listing={"slug": "dreepy-ar-ma3-id-egs-10-1790675893834-b99c"})["verdict"], "accepted")
+        tracked = {"name": "Mega Venusaur ex", "set_code": "MA1", "card_number": "173/126", "rarity": "SAR", "grade": "10"}
+        v = verify_title("Mega Venusaur EGS 10 Evolusi Mega", tracked=tracked)                       # no number, no marker: trusted because the bot tracks it
+        self.assertEqual((v["verdict"], v["identity"]["card_number"], v.get("tracked")), ("accepted", "173/126", True))
+        self.assertTrue(v["disagreements"])                                                         # but what is missing is still shown
+
+    def test_certificate_numbers_and_negations_are_read_from_the_text(self):
+        ev = egs_identity.text_evidence("Pikachu EGS 10", "Sertifikat EGS no 12345678, grade 10")
+        self.assertEqual(ev["cert"], "12345678")
+        self.assertEqual(egs_identity.text_evidence("slab bukan PSA EGS 10")["companies"], ["EGS"])
+        self.assertEqual(egs_identity.text_evidence("10/10 EGS 10 Pikachu 234/193")["numbers"], ["234/193"])   # "10/10" is a score
+
+
+def egs_slug(title):
+    return re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-") + "-1790000000000-ab12"
+
+
+def egs_item(title, price, store="s1", stock=1, description="", slug=None, photo=True, **extra):
+    slug = slug or egs_slug(title)
+    return {"slug": slug, "title": title, "description": description, "price": price, "price_special": None, "stock": stock, "city": "Kota Jambi",
+            "primary_photo": f"https://img.example/{slug}.webp" if photo else None, "photos": [], "show": True, "archived": False, "deleted": False,
+            "store_id": store, "store_name": "Toko " + store, **extra}
+
+
+class FakeEgsToco:
+    """toco's search as the watcher sees it: AND search over title and description, 'from' and 'size' paging, scripted failures."""
+
+    def __init__(self, items):
+        self.items, self.posts, self.script = list(items), [], []
+
+    def post(self, body):
+        b = body["body"]
+        self.posts.append((b["query"], b["from"]))
+        if self.script:
+            step = self.script.pop(0)
+            if step is not None:
+                return step
+        words = re.findall(r"[a-z0-9]+", b["query"].lower())
+        hits = [i for i in self.items if all(w in re.findall(r"[a-z0-9]+", f"{i['title']} {i['description']}".lower()) for w in words)]
+        return 200, json.dumps({"total": len(hits), "results": hits[b["from"]:b["from"] + b["size"]]}), None
+
+
+EGS_HITS = {"grades": ["10", "9.5", "9"], "base_queries": ["EGS", "slab EGS"], "base_pages": 6, "hit_pages": 3, "tracked_pages": 2,
+            "hits": ["Pikachu"], "deep_hits": [], "set_codes": []}
+
+
+def make_egs_export(tmpdir):
+    """A real export of the watcher over a small fake toco (the one used by the EgsWatch tests)."""
+    case = EgsWatch("test_a_full_run_counts_dedupes_judges_and_explains")
+    case.tmp = tempfile.TemporaryDirectory(dir=tmpdir)
+    for name, data in (("catalog.json", egs_catalog_data()), ("hits.json", EGS_HITS)):
+        with open(os.path.join(case.tmp.name, name), "w", encoding="utf-8") as fh:
+            json.dump(data, fh)
+    case.logs = []
+    export, _ = case.go(FakeEgsToco(case.catalog_listings()))
+    return export
+
+
+class EgsWatch(unittest.TestCase):
+    T0 = datetime(2026, 10, 6, 2, 0, tzinfo=timezone.utc)
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        d = self.tmp.name
+        for name, data in (("catalog.json", egs_catalog_data()), ("hits.json", EGS_HITS)):
+            with open(os.path.join(d, name), "w", encoding="utf-8") as fh:
+                json.dump(data, fh)
+        self.latest = None
+        self.logs = []
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def cfg(self, **over):
+        d = self.tmp.name
+        base = dict(db=os.path.join(d, "w.sqlite"), out=os.path.join(d, "out.json"), latest=os.path.join(d, "latest.json"), catalog=os.path.join(d, "catalog.json"),
+                    hits=os.path.join(d, "hits.json"), size=45, delay=0, budget=200, min_share=0.2, cache_dir=None, cache_ttl=0, recheck_limit=50,
+                    no_seed=False, dry_run=False, photo_budget=0)
+        base.update(over)
+        return argparse.Namespace(**base)
+
+    def write_latest(self, listings=(), candidates=()):
+        row = lambda ask, at: {"observed_at": at, "asking_idr": ask, "in_stock": True}
+        out = []
+        for name, set_code, number, rarity, grade, url, ask in listings:
+            days = [{"date_wib": f"2026-10-0{n}", **row(ask, f"2026-10-0{n}T01:00:00+00:00")} for n in (5, 4)]
+            out.append({"name": name, "set_code": set_code, "card_number": number, "rarity": rarity, "grade": grade, "url": url,
+                        "latest": row(ask, "2026-10-05T22:30:00+00:00"), "previous_day": days[0], "change_from_previous_day_idr": 0, "daily_latest": days})
+        d = {"generated_at": "2026-10-06T00:10:00+00:00", "coverage": {}, "listings": out,
+             "discovery": {"generated_at": "2026-10-06T00:00:00+00:00", "candidates": [{"url": u, "search_text": s, "grade_hint": "10", "tracked": False} for u, s in candidates]}}
+        with open(os.path.join(self.tmp.name, "latest.json"), "w", encoding="utf-8") as fh:
+            json.dump(d, fh)
+
+    def go(self, fake, now=None, status=lambda url: 404, photo_fn=None, **over):
+        cfg = self.cfg(**over)
+        return egs_watch.run(cfg, fake.post, status, photo_fn, now=now or self.T0, sleep=lambda s: None, log=self.logs.append)
+
+    # -- discovery
+    def test_pages_are_followed_until_the_results_run_out(self):
+        fake = FakeEgsToco([egs_item(f"Pikachu ex SAR 234/193 MA3 ID EGS 10 copy{i}", 400000 + i) for i in range(100)])
+        toco = egs_watch.Toco(fake.post, sleep=lambda s: None)
+        items, diag, blocked = egs_watch.discover(toco, [("EGS", 15)], 45, 0, 100, 0.2, sleep=lambda s: None, log=self.logs.append)
+        self.assertEqual((len(items), diag[0]["pages"], diag[0]["stopped"], blocked), (100, 3, "hasil habis", False))
+        self.assertEqual([p[1] for p in fake.posts], [0, 45, 90])
+
+    def test_a_repeated_page_stops_the_query(self):
+        page = [egs_item(f"Pikachu EGS 10 ID {i}", 400000) for i in range(45)]
+        calls = []
+
+        def post(body):
+            calls.append(body["body"]["from"])
+            return 200, json.dumps({"total": 900, "results": page}), None
+        items, diag, _ = egs_watch.discover(egs_watch.Toco(post, sleep=lambda s: None), [("EGS", 15)], 45, 0, 100, 0.2, sleep=lambda s: None, log=self.logs.append)
+        self.assertEqual((len(items), diag[0]["pages"], diag[0]["stopped"]), (45, 2, "halaman berulang"))
+
+    def test_a_query_stops_when_its_pages_stop_being_about_egs(self):
+        fake = FakeEgsToco([egs_item(f"Pikachu EGS 10 ID a{i}", 400000) for i in range(45)] + [egs_item(f"Pikachu kartu raw ID b{i}", 5000, description="EGS") for i in range(0)]
+                           + [egs_item(f"Pikachu raw b{i}", 5000) for i in range(100)])
+        toco = egs_watch.Toco(fake.post, sleep=lambda s: None)
+        items, diag, _ = egs_watch.discover(toco, [("Pikachu", 15)], 45, 0, 100, 0.2, sleep=lambda s: None, log=self.logs.append)
+        self.assertEqual((diag[0]["pages"], diag[0]["stopped"]), (2, "halaman tidak lagi tentang EGS"))
+
+    def test_the_request_budget_is_a_hard_limit(self):
+        fake = FakeEgsToco([egs_item(f"Pikachu EGS 10 ID {i}", 400000) for i in range(500)])
+        toco = egs_watch.Toco(fake.post, sleep=lambda s: None)
+        items, diag, _ = egs_watch.discover(toco, [("EGS", 15), ("Pikachu", 15)], 45, 0, 4, 0.2, sleep=lambda s: None, log=self.logs.append)
+        self.assertEqual((len(fake.posts), diag[-1]["stopped"]), (4, "anggaran permintaan habis"))
+
+    def test_transient_errors_are_retried_with_growing_waits_and_a_block_is_not(self):
+        waits = []
+        fake = FakeEgsToco([egs_item("Pikachu EGS 10 ID", 400000)])
+        fake.script = [(429, "slow down", "5"), (503, "", None)]
+        toco = egs_watch.Toco(fake.post, sleep=waits.append, log=self.logs.append)
+        self.assertEqual(len(toco.search("EGS", 0, 45)["results"]), 1)
+        self.assertEqual((toco.requests, toco.ok, toco.retried), (3, 1, 2))
+        self.assertEqual(waits, [5, 8])                                              # the site asked for 5 s (more than the graded 3 s), then the graded 8 s
+        fake.script = [(403, "Forbidden", None)]
+        toco = egs_watch.Toco(fake.post, sleep=waits.append, log=self.logs.append)
+        with self.assertRaises(egs_watch.Blocked):
+            toco.search("EGS", 0, 45)
+        self.assertEqual((toco.requests, toco.blocked is not None), (1, True))        # no retry, no way around it
+        fake.script = [(200, "<html>Just a moment... captcha</html>", None)]
+        with self.assertRaises(egs_watch.Blocked):
+            egs_watch.Toco(fake.post, sleep=waits.append).search("EGS", 0, 45)
+        fake.script = [(500, "", None)] * 4
+        toco = egs_watch.Toco(fake.post, sleep=waits.append)
+        with self.assertRaises(egs_watch.SearchFailed):
+            toco.search("EGS", 0, 45)
+        self.assertEqual((toco.requests, toco.failed), (4, 1))
+
+    def test_a_search_page_is_cached_for_a_while(self):
+        fake = FakeEgsToco([egs_item("Pikachu EGS 10 ID", 400000)])
+        clock = [1000.0]
+        toco = egs_watch.Toco(fake.post, cache_dir=os.path.join(self.tmp.name, "cache"), ttl=600, sleep=lambda s: None, clock=lambda: clock[0])
+        toco.search("EGS", 0, 45)
+        os.utime(os.path.join(self.tmp.name, "cache", os.listdir(os.path.join(self.tmp.name, "cache"))[0]), (1000, 1000))
+        clock[0] = 1300
+        toco.search("EGS", 0, 45)
+        self.assertEqual((len(fake.posts), toco.cached), (1, 1))
+        clock[0] = 1700                                                               # older than the 10 minutes: fetched again
+        toco.search("EGS", 0, 45)
+        self.assertEqual(len(fake.posts), 2)
+
+    def test_queries_cover_the_base_words_tracked_cards_hits_grades_and_the_old_candidates(self):
+        cfg = dict(EGS_HITS, deep_hits=["Pikachu"], set_codes=["MA3"])
+        tracked = [{"name": "Mega Venusaur ex", "set": "MA1", "number": "173/126", "rarity": "SAR"}]
+        qs = [q for q, _ in egs_watch.build_queries(cfg, tracked, ["Dreepy"], ["Arceus V SR AA S9 ID EGS 9.5"])]
+        for want in ("EGS", "slab EGS", "Mega Venusaur ex 173/126 egs", "Pikachu EGS", "Pikachu slab EGS", "Pikachu EGS 10", "Pikachu EGS 9.5", "MA3 EGS", "Dreepy EGS", "Arceus V SR AA S9 ID EGS 9.5"):
+            self.assertIn(want, qs)
+        self.assertEqual(len(qs), len({q.lower() for q in qs}))
+        self.assertEqual(egs_watch.title_of("Sisa 1 Arceus V SR AA S9 ID EGS 9.5 Rp600.000 Kota Jambi"), "Arceus V SR AA S9 ID EGS 9.5")
+
+    # -- a whole run
+    def catalog_listings(self):
+        return [
+            egs_item("Pikachu ex SAR 234/193 MA3 ID EGS 10", 2500000, "s1"),
+            egs_item("Pikachu ex SAR 234/193 MA3 ID EGS 10 ready", 2700000, "s2", description="Sertifikat EGS no 11112222"),
+            egs_item("Pikachu ex SAR 234/193 MA3 ID EGS 10 repost", 2650000, "s2"),                      # the same seller again: one offer
+            egs_item("Pikachu ex SAR 234/193 MA3 ID EGS 10 lagi", 2600000, "s3", description="Sertifikat EGS no 11112222"),   # the same certificate: one slab
+            egs_item("Pikachu ex SAR 234/193 MA3 ID EGS 9.5", 1500000, "s1"),                           # another grade
+            egs_item("Dreepy AR MA3 ID EGS 10", 200000, "s2"),
+            egs_item("Pikachu ex SR 234/193 MA3 ID EGS 10 salah rarity", 900000, "s4", slug="pikachu-ex-sr-234-193-ma3-id-egs-10-salah-rarity-1790000000000-ab12"),
+            egs_item("Pikachu ex SAR 234/193 MA3 ID PSA 10 bukan EGS", 2000000, "s5"),
+            egs_item("Pikachu EGS 10 ID", 700000, "s6"),                                                # no number
+            egs_item("Rayquaza VMAX CSR EGS 10 CHINESE", 1800000, "s7"),
+            egs_item("Paket 3 slab EGS 10 Pikachu Mew Charizard MA3 ID", 3000000, "s8"),
+            egs_item("Booster box MA3 ID EGS promo", 900000, "s9"),
+            egs_item("Gengar VMAX CSR", 150000, "s10")]                                                 # not EGS at all
+
+    def test_a_full_run_counts_dedupes_judges_and_explains(self):
+        fake = FakeEgsToco(self.catalog_listings())
+        export, code = self.go(fake)
+        self.assertEqual(code, 0)
+        s = export["summary"]
+        self.assertEqual((s["candidates_found"], s["accepted_total"], s["ambiguous"], s["rejected_this_run"]), (12, 6, 3, 3))
+        self.assertEqual(s["rejected_reasons"], {"other_grader": 1, "foreign_language": 1, "product": 1})
+        self.assertEqual(export["run"]["results_seen"], 12)                     # the search never returned the one listing that does not say EGS
+        cards = {(c["name"], g["grade"]): g for c in export["cards"] for g in c["grades"]}
+        pika10 = cards[("Pikachu ex", "10")]
+        self.assertEqual((pika10["n"], pika10["sellers"], pika10["min"], pika10["max"], pika10["median"], pika10["mean"], pika10["limited"]),
+                         (2, 2, 2500000, 2600000, 2550000, 2550000, True))     # s1; and one slab for s2's cert listing, its repost and s3's listing with the same cert
+        self.assertEqual(cards[("Pikachu ex", "9.5")]["n"], 1)                  # a grade of its own
+        self.assertEqual(cards[("Pikachu ex", "9.5")]["label"], "data terbatas")
+        self.assertEqual(cards[("Dreepy", "10")]["limited"], True)
+        excluded = {l["title"]: l["excluded"] for l in export["listings"] if l["excluded"]}
+        self.assertEqual(len(excluded), 2)                                      # the cert twin of s2 and s2's repost
+        self.assertTrue(all(v.startswith("duplicate:") for v in excluded.values()))
+        queue = {q["title"]: q for q in export["queue"]}
+        self.assertEqual(set(queue), {"Pikachu ex SR 234/193 MA3 ID EGS 10 salah rarity", "Pikachu EGS 10 ID", "Paket 3 slab EGS 10 Pikachu Mew Charizard MA3 ID"})
+        wrong = queue["Pikachu ex SR 234/193 MA3 ID EGS 10 salah rarity"]
+        self.assertEqual(([r["code"] for r in wrong["reasons"]], wrong["photo"].startswith("https://img.example/")), (["rarity_mismatch"], True))
+        self.assertTrue(queue["Pikachu EGS 10 ID"]["suggestions"])               # catalog cards that fit the name, for the reviewer
+        self.assertEqual(egs_watch.validate(export), [])
+        for l in export["listings"]:                                            # evidence on every accepted listing
+            self.assertTrue(l["url"].startswith("https://toco.id/id/listing/") and l["photo"] and l["asking_idr"] and l["last_ok"] and l["latest"] and l["seller"])
+        self.assertEqual(s["sellers_unique"], 3)                                 # s1, s3 and s2 (whose Dreepy is counted)
+        with open(self.cfg().out, encoding="utf-8") as fh:
+            self.assertEqual(json.load(fh)["summary"], s)
+
+    def test_the_old_watchlist_and_its_history_are_kept_and_the_old_candidates_are_judged(self):
+        tracked = [("Mega Venusaur ex", "MA1", "173/126", "SAR", "10", "https://toco.id/id/listing/mega-venusaur-ex-sar-173-ma1-egs-10-1790389583180-2c05", 650000)]
+        self.write_latest(tracked, [("https://toco.id/id/listing/dreepy-ar-ma3-id-egs-10-1790000000000-ab12", "Sisa 1 Dreepy AR MA3 ID EGS 10 Rp200.000 Kota Jambi")])
+        fake = FakeEgsToco([egs_item("Mega Venusaur ex SAR 173/126 MA1 ID EGS 10", 640000, "s1", slug="mega-venusaur-ex-sar-173-ma1-egs-10-1790389583180-2c05"),
+                            egs_item("Dreepy AR MA3 ID EGS 10", 200000, "s2")])
+        export, code = self.go(fake)
+        by = {l["url"]: l for l in export["listings"]}
+        old = by[tracked[0][5]]
+        self.assertEqual((old["origin"], old["asking_idr"], [d["date_wib"] for d in old["daily_latest"]][-2:]), ("bot", 640000, ["2026-10-05", "2026-10-04"]))
+        self.assertEqual(len(old["daily_latest"]), 3)                           # the two imported days and today's check
+        self.assertEqual(export["summary"]["accepted_existing"], 1)
+        self.assertEqual(export["summary"]["accepted_auto"], 1)                  # the old pending candidate, judged by the new rules
+        self.assertTrue(any(q[0].startswith("Dreepy AR MA3 ID EGS 10") for q in fake.posts))     # it was searched for by its own title
+        self.assertEqual(old["change_from_previous_day_idr"], 640000 - 650000)
+
+    def test_a_listing_of_the_old_bot_is_looked_up_by_the_words_of_its_address(self):
+        url = "https://toco.id/id/listing/egs-10-mega-venusaur-ex-sar-173-ma1-pokemon-evolusi-mega-id-1790389583180-2c05"
+        self.write_latest([("Mega Venusaur ex", "MA1", "173/126", "SAR", "10", url, 650000)])
+        fake = FakeEgsToco([egs_item("EGS 10 Mega Venusaur ex SAR 173 MA1 Pokemon Evolusi Mega ID", 640000, "s1", slug=egs_watch.slug_of(url))])
+        cfg = self.cfg()
+        db = egs_watch.open_db(cfg.db)
+        egs_watch.seed(db, json.load(open(cfg.latest)), self.T0, log=self.logs.append)
+        row = db.execute("SELECT * FROM listing").fetchone()
+        self.assertEqual(egs_watch.recheck_query(row), "egs 10 mega venusaur ex sar 173 ma1 pokemon evolusi mega id")
+        toco = egs_watch.Toco(fake.post, sleep=lambda s: None)
+        count = egs_watch.recheck(db, toco, lambda u: 404, set(), EGS_CATALOG, egs_watch.tracked_by_url(db), None, [0], self.T0, 10, 0, lambda s: None, self.logs.append)
+        self.assertEqual(dict(count)["ok"], 1)
+        self.assertEqual(db.execute("SELECT ask, status FROM listing").fetchone()[:], (640000, "ok"))
+        db.close()
+
+    def test_statuses_unavailable_unreachable_gone_and_missing_are_different_things(self):
+        titles = ["Pikachu ex SAR 234/193 MA3 ID EGS 10", "Dreepy AR MA3 ID EGS 10", "Drakloak AR MA3 ID EGS 10", "Ivysaur AR #128 MA1 ID EGS 10", "Tapu Koko MA3 054/193 ID EGS 9"]
+        fake = FakeEgsToco([egs_item(t, 100000 + 1000 * i, f"s{i}") for i, t in enumerate(titles)])
+        first, _ = self.go(fake)
+        self.assertEqual(first["summary"]["accepted_total"], 5)
+        # six hours later: #0 sold out (stock 0), #1 and #2 and #3 vanished from the search, #4 unchanged
+        fake.items[0]["stock"] = 0
+        gone = [fake.items[i] for i in (1, 2, 3)]
+        fake.items = [fake.items[0], fake.items[4]]
+        pages = {egs_slug(titles[1]): 404, egs_slug(titles[2]): 200, egs_slug(titles[3]): 0}
+        second, code = self.go(fake, now=self.T0 + timedelta(hours=6), status=lambda url: pages[slug_of_url(url)])
+        by = {l["title"]: l for l in second["listings"]}
+        self.assertEqual({t: by[t]["status"] for t in titles}, {titles[0]: "unavailable", titles[1]: "gone", titles[2]: "missing_from_search",
+                                                                titles[3]: "fetch_failed", titles[4]: "ok"})
+        self.assertEqual(by[titles[0]]["excluded"], "unavailable")
+        self.assertEqual(by[titles[1]]["excluded"], "status:gone")
+        self.assertIsNone(by[titles[2]]["excluded"])                              # not in the results, but the page exists and the last check is fresh: still counted
+        self.assertIsNone(by[titles[3]]["excluded"])
+        self.assertEqual(second["summary"]["status"], {"unavailable": 1, "gone": 1, "missing_from_search": 1, "fetch_failed": 1, "ok": 1})
+        # three days on, with no good check since: shown, no longer counted
+        third, _ = self.go(fake, now=self.T0 + timedelta(days=3), status=lambda url: 200)
+        by = {l["title"]: l for l in third["listings"]}
+        self.assertEqual(by[titles[2]]["status"], "missing_from_search")
+        self.assertEqual(by[titles[2]]["excluded"], "status:missing_from_search")
+        self.assertFalse(by[titles[2]]["counted"])
+        for l in gone:                                                              # a vanished listing is never called sold
+            self.assertNotIn("terjual", json.dumps(by.get(l["title"], {}), ensure_ascii=False).lower())
+
+    def test_a_listing_is_counted_only_while_its_last_good_check_is_recent(self):
+        row = {"verdict": "accepted", "card_key": "MA3|211/193|AR|", "grade": "10", "active": 1, "ask": 200000, "status": "ok", "last_ok": self.T0.isoformat()}
+        self.assertTrue(egs_watch.counts_now(row, self.T0 + timedelta(hours=47)))
+        self.assertFalse(egs_watch.counts_now(row, self.T0 + timedelta(hours=49)))          # still "ok" on paper, but nobody has looked for two days
+        self.assertFalse(egs_watch.counts_now({**row, "status": "unavailable"}, self.T0))
+        self.assertFalse(egs_watch.counts_now({**row, "status": "gone"}, self.T0))
+        self.assertFalse(egs_watch.counts_now({**row, "verdict": "ambiguous"}, self.T0))
+        self.assertFalse(egs_watch.counts_now({**row, "last_ok": None}, self.T0))
+
+    def test_price_history_changes_and_freshness(self):
+        fake = FakeEgsToco([egs_item("Dreepy AR MA3 ID EGS 10", 200000, "s2")])
+        self.go(fake)
+        fake.items[0]["price"] = 180000
+        export, _ = self.go(fake, now=self.T0 + timedelta(hours=6))
+        l = export["listings"][0]
+        self.assertEqual((l["asking_idr"], l["latest"]["asking_idr"]), (180000, 180000))
+        self.assertEqual(export["summary"]["price_changes_24h"], 1)
+        self.assertEqual(export["summary"]["price_changes"][0]["from"], 200000)
+        self.assertEqual((export["summary"]["price_changes"][0]["to"], export["summary"]["freshness"]["fresh_8h"]), (180000, 1))
+        self.assertEqual(len(l["daily_latest"]), 1)                                # both observations are on the same WIB day: one entry, the latest
+
+    def test_extreme_prices_are_shown_but_not_counted(self):
+        items = [egs_item(f"Dreepy AR MA3 ID EGS 10 v{i}", p, f"s{i}") for i, p in enumerate((200000, 210000, 190000, 205000))]
+        items.append(egs_item("Dreepy AR MA3 ID EGS 10 mahal", 5000000, "s9"))
+        export, _ = self.go(FakeEgsToco(items))
+        g = export["cards"][0]["grades"][0]
+        self.assertEqual((g["n"], g["max"], g["limited"]), (4, 210000, False))
+        self.assertEqual([l["excluded"] for l in export["listings"] if l["asking_idr"] == 5000000], ["outlier"])
+        self.assertEqual(egs_watch.validate(export), [])
+
+    def test_a_source_that_fails_never_overwrites_the_last_good_file(self):
+        fake = FakeEgsToco(self.catalog_listings())
+        good, _ = self.go(fake)
+        out = self.cfg().out
+        with open(out, "rb") as fh:
+            before = fh.read()
+        dead = FakeEgsToco([])
+        dead.script = [(403, "Forbidden", None)] * 400
+        export, code = self.go(dead, now=self.T0 + timedelta(hours=6))
+        self.assertEqual((export, code), (None, 2))
+        with open(out, "rb") as fh:
+            self.assertEqual(fh.read(), before)
+        self.assertTrue(any("TIDAK diubah" in l for l in self.logs))
+        flaky = FakeEgsToco(self.catalog_listings())
+        flaky.script = [(500, "", None)] * 400
+        export, code = self.go(flaky, now=self.T0 + timedelta(hours=6))
+        self.assertEqual((export, code), (None, 2))
+        with open(out, "rb") as fh:
+            self.assertEqual(fh.read(), before)
+        db = sqlite3.connect(self.cfg().db)
+        try:
+            self.assertEqual({r[0] for r in db.execute("SELECT status FROM listing")}, {"ok"})        # nothing was marked missing because of an error
+        finally:
+            db.close()
+
+    def test_a_block_half_way_keeps_what_was_learned_and_says_so(self):
+        fake = FakeEgsToco(self.catalog_listings())
+        fake.script = [None, (403, "Forbidden", None)]
+        export, code = self.go(fake)
+        self.assertEqual(code, 2)
+        self.assertFalse(export["run"]["source_ok"])
+        self.assertIn("pembatasan akses", export["run"]["blocked"])
+        self.assertGreater(export["summary"]["accepted_total"], 0)
+        self.assertEqual(export["run"]["recheck"], {})                             # no one-by-one lookups after a block
+
+    def test_an_invalid_result_is_not_written(self):
+        fake = FakeEgsToco(self.catalog_listings())
+        real = egs_watch.build_export
+
+        def broken(db, now, run_info):
+            d = real(db, now, run_info)
+            d["listings"][0]["counted"] = True
+            d["summary"]["listings_counted"] += 5
+            return d
+        egs_watch.build_export = broken
+        try:
+            export, code = self.go(fake)
+        finally:
+            egs_watch.build_export = real
+        self.assertEqual((export, code), (None, 3))
+        self.assertFalse(os.path.exists(self.cfg().out))
+
+    def test_a_dry_run_changes_nothing_on_disk(self):
+        fake = FakeEgsToco(self.catalog_listings())
+        export, code = self.go(fake, dry_run=True)
+        self.assertEqual(code, 0)
+        self.assertGreater(export["summary"]["accepted_total"], 0)
+        self.assertEqual(sorted(os.listdir(self.tmp.name)), ["catalog.json", "hits.json"])
+        self.assertFalse(os.path.exists(self.cfg().out))
+        self.assertFalse(os.path.exists(self.cfg().db))
+
+    def test_a_photo_reader_settles_a_missing_number_once_and_within_its_budget(self):
+        fake = FakeEgsToco([egs_item("Pikachu SAR MA3 ID EGS 10", 2500000, "s1"), egs_item("Mimikyu RR MA3 ID EGS 10", 100000, "s2")])
+        seen = []
+
+        def reader(url):
+            seen.append(url)
+            return {"is_slab": True, "company": "EGS", "grade": "10", "cert": None, "number": "234/193" if "pikachu" in url else None,
+                    "rarity": "SAR" if "pikachu" in url else None, "language": "ID", "name": None}
+        export, _ = self.go(fake, photo_fn=reader, photo_budget=5)
+        self.assertEqual(sorted(l["title"] for l in export["listings"]), ["Pikachu SAR MA3 ID EGS 10"])
+        self.assertEqual(export["listings"][0]["identity"]["identified_by"], "nomor di foto")
+        self.assertEqual([q["title"] for q in export["queue"]], ["Mimikyu RR MA3 ID EGS 10"])
+        self.assertEqual(len(seen), 2)
+        self.go(fake, photo_fn=reader, photo_budget=5, now=self.T0 + timedelta(hours=6))
+        self.assertEqual(len(seen), 2)                                              # each photo is read once, then remembered
+        fake2 = FakeEgsToco([egs_item(f"Mimikyu RR MA3 ID EGS 10 v{i}", 100000, f"s{i}") for i in range(5)])
+        seen.clear()
+        self.go(fake2, photo_fn=reader, photo_budget=2, db=os.path.join(self.tmp.name, "other.sqlite"), out=os.path.join(self.tmp.name, "other.json"))
+        self.assertEqual(len(seen), 2)                                              # the budget is a hard limit
+
+    def test_the_board_takes_the_accepted_listings_and_shows_the_review_queue(self):
+        export, _ = self.go(FakeEgsToco(self.catalog_listings()))
+        latest = tiny_latest()
+        data = build_site.build(latest, None, None, None, None, export)
+        rows = {(t["name"], t["number"]): t["rows"] for t in data["types"]}
+        self.assertEqual(len(latest["listings"]), 1)                                      # latest.json itself is never changed
+        self.assertEqual(sorted(len(r) for r in rows.values()), [1, 1, 3])                # the old Mega Venusaur, Dreepy, and Pikachu ex with its two grades
+        pika = rows[("Pikachu ex", "234/193")]
+        self.assertEqual(sorted((r["grade"], r["ask"]) for r in pika), [("10", 2500000), ("10", 2600000), ("9.5", 1500000)])
+        self.assertTrue(all(r["tracked"] and r["conf"] == "dipantau" for r in pika))
+        w = data["egs_watch"]
+        self.assertEqual((w["queue_total"], w["summary"]["accepted_total"], w["source_ok"]), (3, 6, True))
+        q = next(x for x in w["queue"] if "salah rarity" in x["title"])
+        self.assertTrue(q["photo"] and q["url"].startswith("https://toco.id/id/listing/") and "Rarity di judul (SR)" in q["reasons"][0])
+        again = build_site.build(tiny_latest(), None, None, None, None, None)
+        self.assertIsNone(again["egs_watch"])
+
+    def test_the_photo_answer_is_parsed_defensively(self):
+        ok = egs_watch.parse_photo_answer('Here you go: {"is_slab": true, "company": "EGS", "grade": "9.5", "cert": null, "card_name": "Pikachu ex", '
+                                         '"number": "234/193", "rarity": "SAR", "language": "Indonesian"}')
+        self.assertEqual((ok["company"], ok["grade"], ok["cert"], ok["number"], ok["language"], ok["is_slab"]), ("EGS", "9.5", None, "234/193", "ID", True))
+        self.assertIsNone(egs_watch.parse_photo_answer("I cannot read this"))
+        self.assertIsNone(egs_watch.parse_photo_answer("{not json}"))
+        self.assertIsNone(egs_watch.parse_photo_answer('["a"]'))
+
+    def test_report_and_validation_commands(self):
+        fake = FakeEgsToco(self.catalog_listings())
+        export, _ = self.go(fake)
+        out = self.cfg().out
+        self.assertEqual(egs_watch.main(["--validate", out]), 0)
+        text = egs_watch.format_report(export)
+        for want in ("kandidat ditemukan", "ambigu", "Pikachu ex 234/193 MA3 SAR EGS 10", "data terbatas", "alasan:", "foto: https://img.example/"):
+            self.assertIn(want, text)
+        with open(out, encoding="utf-8") as fh:
+            broken = json.load(fh)
+        broken["listings"][0]["asking_idr"] = 0
+        broken["listings"][0]["last_ok"] = None
+        errors = egs_watch.validate(broken)
+        self.assertTrue(any("tanpa bukti" in e for e in errors))
+        broken["queue"].append(dict(broken["queue"][0]))
+        self.assertTrue(any("antrean ganda" in e for e in egs_watch.validate(broken)))
+
+
+def slug_of_url(url):
+    return url.rstrip("/").rsplit("/", 1)[-1]
+
+
+class MarketplaceProbe(unittest.TestCase):
+    def serve(self, routes):
+        """A throw-away HTTP server: routes maps a path prefix to (status, headers, body)."""
+        class H(BaseHTTPRequestHandler):
+            def do_GET(self):
+                for prefix, (status, headers, body) in routes.items():
+                    if self.path.startswith(prefix):
+                        self.send_response(status)
+                        for k, v in headers.items():
+                            self.send_header(k, v)
+                        self.end_headers()
+                        self.wfile.write(body.encode())
+                        return
+                self.send_response(404)
+                self.end_headers()
+
+            def log_message(self, *a):
+                pass
+        server = HTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.shutdown)
+        self.addCleanup(server.server_close)
+        return f"http://127.0.0.1:{server.server_port}"
+
+    def run_probe(self, base, **kw):
+        lines = []
+        v = probe_marketplaces.probe_site("Situs", base, "/search?q={q}", lines.append, sleep=lambda s: None, **kw)
+        return v, "\n".join(lines)
+
+    def test_a_page_with_listings_is_ok_and_robots_rules_are_shown(self):
+        page = "<html>" + "".join(f"<div>Pokemon EGS 10 Rp{n},000</div>" for n in (450, 500, 650)).replace(",000", ".000") + "</html>"
+        base = self.serve({"/robots.txt": (200, {}, "User-agent: *\nDisallow: /search?\nCrawl-delay: 5\n"), "/search": (200, {}, page)})
+        v, text = self.run_probe(base)
+        self.assertEqual(v, {"page": "ok"})
+        self.assertIn("Disallow: /search?", text)
+        self.assertIn("OK: 3 harga terbaca", text)
+
+    def test_a_challenge_a_login_a_block_and_an_empty_shell_are_told_apart_and_none_is_worked_around(self):
+        cases = [("captcha", (403, {}, "<html>Please verify you are human. captcha</html>")),
+                 ("captcha", (200, {}, "<html>Just a moment... Cloudflare cf-chl</html>")),
+                 ("blocked", (429, {}, "slow down")),
+                 ("empty", (200, {}, "<html><div id='root'></div><script>loadProducts()</script></html>")),
+                 ("error", (503, {}, ""))]
+        for want, route in cases:
+            base = self.serve({"/search": route})
+            v, text = self.run_probe(base)
+            self.assertEqual(v["page"], want, text)
+        base = self.serve({"/search": (302, {"Location": "/buyer/login?next=%2Fsearch"}, ""), "/buyer/login": (200, {}, "<html>Masuk atau daftar</html>")})
+        v, text = self.run_probe(base)
+        self.assertEqual(v["page"], "login")
+        self.assertIn("/buyer/login", text)
+
+    def test_shopee_style_refusal_of_its_own_search_call_is_reported_as_blocked(self):
+        base = self.serve({"/api/search": (200, {"Content-Type": "application/json"}, json.dumps({"error": 90309999, "data": None})),
+                           "/search": (200, {}, "<html></html>")})
+        lines = []
+        v = probe_marketplaces.probe_site("Shopee", base, "/search?keyword={q}", lines.append, sleep=lambda s: None, api_path="/api/search?keyword={q}")
+        text = "\n".join(lines)
+        self.assertEqual(v, {"page": "empty", "api": "blocked"})
+        self.assertIn("anti-bot Shopee (90309999)", text)
+        self.assertIn("tidak dilewati", text)
+        ok = self.serve({"/api/search": (200, {"Content-Type": "application/json"}, json.dumps({"error": None, "items": [{"item_basic": {"name": "EGS"}}]}))})
+        lines.clear()
+        self.assertEqual(probe_marketplaces.probe_site("Shopee", ok, "/x?{q}", lines.append, sleep=lambda s: None, api_path="/api/search?keyword={q}")["api"], "ok")
+
+    def test_the_summary_says_when_no_route_is_usable(self):
+        blocked = self.serve({"/search": (403, {}, "no")})
+        out = []
+        real = probe_marketplaces.time.sleep
+        probe_marketplaces.time.sleep = lambda s: None
+        try:
+            with mock.patch("builtins.print", lambda *a, **k: out.append(" ".join(map(str, a)))):
+                probe_marketplaces.main(["--tokopedia", blocked, "--shopee", blocked])
+        finally:
+            probe_marketplaces.time.sleep = real
+        text = "\n".join(out)
+        self.assertIn("tokopedia: page=blocked  -> belum ada jalur yang bisa dipakai tanpa melewati pembatasan", text)
+        self.assertIn("shopee: page=blocked, api=blocked", text)
 
 
 if __name__ == "__main__":

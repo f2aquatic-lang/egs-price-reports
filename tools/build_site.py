@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the "Papan Harga Kartu Pokemon" page (RAW and EGS slab asking prices) from latest.json and raw.json. Read-only on the data.
 
-Usage: python3 tools/build_site.py [latest.json] [--raw raw.json] [--catalog catalog.json] [--jp jp_prices.json] [--rates rates.json] [--out FILE] [--standalone]
+Usage: python3 tools/build_site.py [latest.json] [--raw raw.json] [--catalog catalog.json] [--jp jp_prices.json] [--rates rates.json] [--egs egs_watch.json] [--out FILE] [--standalone]
 
 Every asking price is treated as the price (price_type OBSERVED_ASKING_ONLY);
 nothing waits for a sale. For each tracked card type the page lists every known
@@ -88,7 +88,8 @@ def match_type(text, types):
     return (best[1], best[2]) if best else None
 
 
-def build(d, raw=None, catalog=None, jp=None, rates=None):
+def build(d, raw=None, catalog=None, jp=None, rates=None, watch=None):
+    d = merge_egs_watch(d, watch)
     gen = datetime.fromisoformat(d["generated_at"])
     types, index = [], {}
     for l in d["listings"]:
@@ -141,7 +142,7 @@ def build(d, raw=None, catalog=None, jp=None, rates=None):
         "discovery": wib_label(d["discovery"]["generated_at"]),
         "types": types, "others": others, "hidden": hidden,
         "raw_meta": None, "raw_only": [], "raw_cards": [], "sets": [], "families": [],
-        "rates": rates_block(rates),
+        "rates": rates_block(rates), "egs_watch": watch_block(watch),
     }
     if raw:
         attach_raw(data, raw, gen, catalog, jp)
@@ -169,6 +170,40 @@ def variant_orders():
 
 
 BALL_VARIANTS = ("poke_ball", "master_ball", "element")  # the foil versions a Japanese listing can add to an Indonesian card
+
+
+def merge_egs_watch(d, watch):
+    """latest.json plus the listings the EGS watch (tools/egs_watch.py) accepted and counts, as tracked listings. In memory only:
+    latest.json is never written. Listings that are already in it, duplicates, outliers and unavailable ones are not added."""
+    if not watch:
+        return d
+    have = {l["url"] for l in d["listings"]}
+    extra = []
+    for l in watch["listings"]:
+        i = l["identity"]
+        if l["url"] in have or not l["counted"] or not l["latest"]:
+            continue
+        extra.append({"name": i["name"], "set_code": i["set_code"], "card_number": i["card_number"], "rarity": i["rarity"] or "", "grade": i["grade"],
+                      "url": l["url"], "latest": l["latest"], "previous_day": l["previous_day"],
+                      "change_from_previous_day_idr": l["change_from_previous_day_idr"], "daily_latest": l["daily_latest"]})
+    return {**d, "listings": d["listings"] + extra}
+
+
+def watch_block(watch, limit=60):
+    """What the page shows of the EGS watch: the counters and the review queue with photo, link and the reasons for the doubt."""
+    if not watch:
+        return None
+    s, r = watch["summary"], watch["run"]
+    return {"generated": wib_label(watch["generated_at"]), "source_ok": r.get("source_ok", True), "blocked": r.get("blocked"),
+            "requests": r.get("requests", 0), "failed_requests": r.get("failed_requests", 0),
+            "summary": {k: s[k] for k in ("candidates_found", "accepted_total", "accepted_existing", "accepted_auto", "accepted_new_this_run", "ambiguous",
+                                          "rejected_this_run", "listings_counted", "cards", "sellers_unique", "checked_ok_this_run",
+                                          "check_failed_this_run", "price_changes_24h", "status", "freshness")},
+            "queue": [{"url": q["url"], "photo": q["photo"], "title": q["title"], "ask": q["asking_idr"], "seller": q["seller"], "city": q["city"],
+                       "reasons": [x["text"] for x in q["reasons"]],
+                       "suggestions": [f"{x['name']} {x['card_number']} {x['set_code']}" + (f" {x['rarity']}" if x.get("rarity") else "") for x in q["suggestions"]]}
+                      for q in watch["queue"][:limit]],
+            "queue_total": len(watch["queue"])}
 
 
 def rates_block(rates):
@@ -416,6 +451,7 @@ def main():
     ap.add_argument("--raw", help="raw.json with the RAW (ungraded) dataset")
     ap.add_argument("--catalog", help="catalog.json from tools/fetch_catalog.py: every official card of each set, with its image")
     ap.add_argument("--jp", help="jp_prices.json from tools/fetch_jp_prices.py: Japanese shop prices beside the Indonesian ones")
+    ap.add_argument("--egs", help="egs_watch.json from tools/egs_watch.py: more slab listings, with the review queue of the doubtful ones")
     ap.add_argument("--rates", help="rates.json from tools/fetch_rates.py: today's yen and dollar rates in rupiah")
     ap.add_argument("--out", default="-", help="output file (default: stdout)")
     ap.add_argument("--standalone", action="store_true", help="wrap in a full HTML document")
@@ -438,7 +474,11 @@ def main():
     if a.rates:
         with open(a.rates, encoding="utf-8") as fh:
             rates = json.load(fh)
-    html = render(build(latest, raw, catalog, jp, rates), a.standalone)
+    watch = None
+    if a.egs:
+        with open(a.egs, encoding="utf-8") as fh:
+            watch = json.load(fh)
+    html = render(build(latest, raw, catalog, jp, rates, watch), a.standalone)
     if a.out == "-":
         sys.stdout.write(html)
     else:

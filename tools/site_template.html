@@ -136,6 +136,12 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
     <span id="legend-raw" hidden><i class="mk raw"></i>RAW: garis = rentang, kotak = tengah 50%, tanda = median</span>
   </div>
 
+  <section class="sec" id="egswatch" hidden>
+    <div class="sechead"><h2>Pemantauan slab EGS</h2><p id="egswatch-note"></p></div>
+    <ul class="facts" id="egswatch-facts"></ul>
+    <details class="panel" id="egswatch-queue"><summary id="egswatch-queue-title"></summary><div class="tablewrap" id="egswatch-body"></div></details>
+  </section>
+
   <section class="sec">
     <div class="sechead"><h2>Kartu yang dipantau</h2><p>Satu strip per grade. Klik titik untuk membuka listing.</p></div>
     <div class="grid" id="cards"></div>
@@ -331,7 +337,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
       var sub = [];
       if (prices.length > 1) sub.push('median ' + rp(median(prices)));
       sub.push(!prices.length ? 'hanya listing mirip, perlu dicek'
-        : prices.length === 1 ? 'baru 1 listing' : prices.length + ' listing');
+        : prices.length < 3 ? 'data terbatas · ' + prices.length + ' listing' : prices.length + ' listing');
       if (tr) sub.push(tr.flat ? 'tetap ' + tr.days + ' hari' : 'berubah dalam ' + tr.days + ' hari');
       if (raw && prices.length) sub.push((median(prices) / raw.median).toLocaleString('id-ID', {maximumFractionDigits: 1}) + '× RAW');
       var extra = rows.length - cnt.length;
@@ -413,6 +419,33 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
     kurs.replaceChildren.apply(kurs, ['Kurs ', parts[0], ' · ', parts[1], ' · diperbarui ', h('b', {text: D.rates.JPY.label}),
       old ? h('span', {'class': 'stale', text: ' · kurs lama: pembaruan harian gagal', title: 'Kurs belum diperbarui lebih dari tiga hari'}) : null].filter(Boolean));
     kurs.hidden = false;
+  }
+  if (D.egs_watch) {
+    var W = D.egs_watch, S = W.summary, F = S.freshness;
+    $('#egswatch').hidden = false;
+    $('#egswatch-note').textContent = 'Penemuan listing slab EGS di toco dan pemeriksaan identitasnya, diperbarui ' + W.generated + '. Harga penawaran, bukan transaksi; listing yang hilang bukan bukti terjual.'
+      + (W.source_ok ? '' : ' Putaran terakhir tidak bisa membaca sumber' + (W.blocked ? ' (' + W.blocked + ')' : '') + ': data di bawah masih dari putaran sebelumnya.');
+    $('#egswatch-facts').append(
+      h('li', null, h('b', {text: String(S.candidates_found)}), ' kandidat ditemukan'),
+      h('li', null, h('b', {text: String(S.accepted_total)}), ' diterima (' + S.accepted_existing + ' dari bot lama, ' + S.accepted_auto + ' otomatis)'),
+      h('li', null, h('b', {text: String(S.ambiguous)}), ' ambigu, belum dihitung'),
+      h('li', null, h('b', {text: String(S.rejected_this_run)}), ' ditolak'),
+      h('li', null, h('b', {text: String(S.listings_counted)}), ' listing dihitung · ' + S.cards + ' kartu · ' + S.sellers_unique + ' seller'),
+      h('li', null, h('b', {text: String(S.checked_ok_this_run)}), ' diperiksa berhasil, ' + S.check_failed_this_run + ' gagal'),
+      h('li', null, h('b', {text: String(S.price_changes_24h)}), ' perubahan harga 24 jam'),
+      h('li', null, 'segar: ' + F.fresh_8h + ' ≤8 jam, ' + F.fresh_24h + ' ≤24 jam, ' + F.older + ' lebih lama'));
+    $('#egswatch-queue-title').textContent = 'Antrean ambigu: ' + W.queue_total + ' listing (foto, tautan, dan alasan keraguan)';
+    $('#egswatch-body').append(h('table', null,
+      h('thead', null, h('tr', null, ['Foto', 'Listing', 'Harga', 'Alasan', 'Kemungkinan'].map(function(c){ return h('th', {text: c}); }))),
+      h('tbody', null, W.queue.map(function(q){
+        return h('tr', null,
+          h('td', {'class': 'ph'}, D.photos && q.photo ? h('img', {src: q.photo, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer', width: 44, height: 44, onerror: function(e){ e.target.remove(); }}) : null),
+          h('td', null, h('a', {href: q.url, target: '_blank', rel: 'noopener', text: q.title}), h('small', {text: [q.seller, q.city].filter(Boolean).join(' · ')})),
+          h('td', {'class': 'num', text: rp(q.ask)}),
+          h('td', null, q.reasons.map(function(x){ return h('div', {text: x}); })),
+          h('td', null, q.suggestions.length ? q.suggestions.map(function(x){ return h('div', {text: x}); }) : '—'));
+      }))));
+    if (!W.queue.length) $('#egswatch-queue').hidden = true;
   }
   $('#cards').append.apply($('#cards'), D.types.map(card));
 

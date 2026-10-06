@@ -1,0 +1,13 @@
+{
+  "about": "Kata kunci pencarian untuk pemantau slab EGS (tools/egs_watch.py). base_queries dijalankan paling dalam; tiap nama di hits dicari dengan 'EGS' dan 'slab EGS'; nama di deep_hits juga dicari per grade. Tambah nama kartu hit di sini, tidak perlu mengubah kode.",
+  "grades": ["10", "9.5", "9", "8.5", "8"],
+  "base_queries": ["EGS", "slab EGS", "EGS 10", "EGS 9.5", "EGS 9", "EGS 8.5", "egs pokemon", "slab pokemon egs", "egs indonesia", "egs graded pokemon"],
+  "base_pages": 15,
+  "hit_pages": 5,
+  "tracked_pages": 4,
+  "hits": ["Charizard", "Pikachu", "Eevee", "Vaporeon", "Jolteon", "Flareon", "Espeon", "Umbreon", "Leafeon", "Glaceon", "Sylveon",
+           "Gengar", "Rayquaza", "Mewtwo", "Mew", "Lugia", "Dragonite", "Gardevoir", "Greninja", "Lucario", "Zoroark", "Arceus",
+           "Giratina", "Blastoise", "Venusaur", "Snorlax", "Garchomp", "Miraidon", "Koraidon", "Mimikyu", "Gyarados", "Alakazam"],
+  "deep_hits": ["Charizard", "Pikachu", "Eevee", "Umbreon", "Gengar", "Rayquaza", "Mewtwo"],
+  "set_codes": ["MA1", "MA2", "MA3", "MA4", "MA5", "MA6", "SV8A", "SV4A", "SV2A"]
+}

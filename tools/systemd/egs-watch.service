@@ -1,0 +1,16 @@
+[Unit]
+Description=EGS slab watch (discovery, identity check, evidence) - tools/egs_watch.py
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=egsprice
+WorkingDirectory=/opt/egs-raw/main
+Environment=PYTHONDONTWRITEBYTECODE=1
+EnvironmentFile=-/opt/egs-raw/env
+ExecStart=/usr/bin/python3 /opt/egs-raw/main/tools/egs_watch.py \
+  --db /opt/egs-raw/egs_watch.sqlite --out /opt/egs-raw/egs_watch.json \
+  --latest /opt/egs-raw/main/latest.json --catalog /opt/egs-raw/main/catalog.json
+TimeoutStartSec=2400
+Nice=10

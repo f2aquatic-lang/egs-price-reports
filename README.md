@@ -21,3 +21,10 @@ These scripts only read `latest.json`; they never write it and are not part of t
 Dataset kedua untuk kartu bahasa Indonesia yang belum di-slab, supaya papan harga bisa menunjukkan RAW dan slab EGS berdampingan. Format, aturan hitung, dan alur pengumpul ada di [docs/raw-dataset.md](docs/raw-dataset.md). `latest.json` tidak berubah.
 - `python3 tools/collect_raw.py --dry-run` (di VPS) mengumpulkan listing RAW lewat pencarian toco dan menulis `raw.json`; `tools/run_raw.sh` menjalankannya dengan kunci API (Claude atau OpenAI; atau `--lang-mode text` tanpa kunci) dan venv-nya, dan `tools/publish_raw.sh` menerbitkannya ke `main` (hanya mau jalan dari branch `main`). Langkah pemasangan ada di [docs/vps-setup.md](docs/vps-setup.md). Situs papan harga dengan kata sandi (Caddy, `tools/setup_site.sh`) dijelaskan di [docs/website.md](docs/website.md).
 - `tools/probe_toco*.py` adalah skrip diagnostik yang dipakai untuk mempelajari cara kerja toco.
+
+## Pemantau slab EGS
+
+Memperluas daftar slab EGS dari enam listing ke puluhan tanpa mengubah bot lama atau `latest.json`: penemuan di toco (halaman demi halaman, banyak kata kunci), pengecekan identitas terhadap katalog resmi, bukti per pengamatan, statistik per kartu dan grade, dan ekspor `egs_watch.json`. Kandidat yang meragukan masuk antrean dengan foto dan alasannya, bukan ke harga. Aturan, pemasangan, dan jalan mundur ada di [docs/egs-watch.md](docs/egs-watch.md).
+- `python3 tools/egs_watch.py --dry-run` (di VPS) membaca toco dan mencetak laporan tanpa menulis apa pun; `--report` dan `--validate` membaca `egs_watch.json`.
+- `python3 tools/egs_identity.py "judul listing"` menunjukkan putusan identitas untuk satu judul.
+- `python3 tools/probe_marketplaces.py` menguji apakah Tokopedia dan Shopee bisa dibaca tanpa melewati pembatasan.

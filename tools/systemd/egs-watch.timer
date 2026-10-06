@@ -1,0 +1,12 @@
+[Unit]
+Description=EGS slab watch, four times a day, about 40 minutes before the RAW collector publishes
+
+[Timer]
+# WIB. The RAW timer starts at 01, 07, 13 and 19 o'clock :20 on the server clock (UTC+8) = 00:20, 06:20, 12:20, 18:20 WIB. This timer
+# starts 30 minutes earlier (05:50, 11:50, 17:50, 23:50 WIB), finishes before it, and the RAW run publishes egs_watch.json.
+# The old bot's own runs are not touched.
+OnCalendar=*-*-* 05,11,17,23:50:00 Asia/Jakarta
+Persistent=true
+
+[Install]
+WantedBy=timers.target
