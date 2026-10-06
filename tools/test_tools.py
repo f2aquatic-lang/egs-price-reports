@@ -3253,6 +3253,40 @@ class MarketplaceProbe(unittest.TestCase):
         self.assertIn("Disallow: /search?", text)
         self.assertIn("OK: 3 harga terbaca", text)
 
+    def test_a_candidate_site_is_not_read_when_robots_txt_forbids_it_and_its_terms_are_pointed_to(self):
+        page = ("<html><a href='/syarat-ketentuan'>Syarat &amp; Ketentuan</a><a href=\"/about\">Tentang</a><a href=\"/privacy\">x</a>"
+                + "".join(f"<div>Pokemon Rp{n}.000</div>" for n in (450, 500, 650)) + "</html>")
+        allowed = self.serve({"/robots.txt": (200, {}, "User-agent: *\nDisallow: /admin\n"), "/search": (200, {}, page)})
+        lines = []
+        v = probe_marketplaces.probe_site("Situs", allowed, "/search?q={q}", lines.append, sleep=lambda s: None, respect_robots=True)
+        text = "\n".join(lines)
+        self.assertEqual(v, {"page": "ok"})
+        self.assertIn(allowed + "/syarat-ketentuan", text)                      # the terms page is shown to be read ...
+        self.assertIn(allowed + "/privacy", text)
+        self.assertNotIn("/about", text.split("syarat dan ketentuan:")[1])
+        self.assertIn("baca sebelum membangun pengambil", text)                 # ... before anything is built
+        closed = self.serve({"/robots.txt": (200, {}, "User-agent: *\nDisallow: /\n"), "/search": (200, {}, page)})
+        lines = []
+        v = probe_marketplaces.probe_site("Situs", closed, "/search?q={q}", lines.append, sleep=lambda s: None, respect_robots=True)
+        self.assertEqual(v, {"page": "robots"})
+        self.assertIn("melarang bot", "\n".join(lines))
+        self.assertNotIn("halaman pencarian", "\n".join(lines))                  # the page itself was never requested
+        lines = []
+        v = probe_marketplaces.probe_site("Situs", closed, "/search?q={q}", lines.append, sleep=lambda s: None)   # the old two sites keep their behaviour
+        self.assertEqual(v, {"page": "ok"})
+
+    def test_site_option_and_candidate_list(self):
+        self.assertEqual([c[0] for c in probe_marketplaces.CANDIDATES], ["Cardtell", "Pokepedia", "Carousell Indonesia"])
+        base = self.serve({"/robots.txt": (404, {}, ""), "/cari": (200, {}, "".join(f"<div>Rp{n}.000</div>" for n in (450, 500, 650)))})
+        lines = []
+        with mock.patch("builtins.print", lambda *a, **k: lines.append(" ".join(str(x) for x in a))), mock.patch.object(probe_marketplaces.time, "sleep", lambda s: None):
+            probe_marketplaces.main(["--skip-marketplaces", "--site", f"Toko X={base}|/cari?q={{q}}", "--site", "rusak"])
+        text = "\n".join(lines)
+        self.assertIn("== Toko X", text)
+        self.assertIn("Toko X: page=ok", text)
+        self.assertIn("--site 'rusak' dilewati", text)
+        self.assertNotIn("Tokopedia", text)
+
     def test_a_challenge_a_login_a_block_and_an_empty_shell_are_told_apart_and_none_is_worked_around(self):
         cases = [("captcha", (403, {}, "<html>Please verify you are human. captcha</html>")),
                  ("captcha", (200, {}, "<html>Just a moment... Cloudflare cf-chl</html>")),

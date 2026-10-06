@@ -164,3 +164,9 @@ Aturannya:
 - Jalankan perintah ini **setelah mengisi**, jangan dipasang di timer: tiap penerapan dianggap "baru dilihat sekarang" untuk baris pasar, sehingga timer akan membuat harga lama tampak segar. Seperti impor biasa, baris pasar berhenti dihitung 48 jam setelah penerapan terakhir.
 - Membuat lembar baru menimpa berkas CSV-nya, bukan lembar Google Anda. Terapkan isian dulu, baru buat lembar baru.
 
+### Sumber lain yang dipertimbangkan (Cardtell, Pokepedia, Carousell)
+
+`tools/probe_marketplaces.py --skip-marketplaces --candidates` menguji ketiganya dari VPS, hanya membaca: robots.txt, satu halaman publik, dan tautan syarat dan ketentuan yang ditemukan (dicetak supaya dibaca orang sebelum apa pun dibangun). Untuk sumber-sumber ini probe **mematuhi robots.txt**: halaman yang dilarang untuk semua bot tidak dibaca sama sekali (verdict `robots`). Jalur halaman Pokepedia (`/marketplace`) hanyalah tebakan; ganti dengan `--site "Pokepedia=https://pokepedia.id|/jalur?q={q}"`. Satu situs lain: `--site "NAMA=https://alamat|/jalur"`.
+
+Hasil `ok` berarti halamannya terbaca; itu **bukan izin** menyalin datanya. Cardtell memuat harga yang dikirim anggotanya sendiri; menarik semuanya ke papan lain adalah keputusan pemilik RadarKartu (dan sebaiknya dengan izin Cardtell), bukan sekadar urusan teknis. Tidak ada pengambil Cardtell yang dibuat sebelum robots.txt dan syaratnya dibaca dan keputusan itu diambil.
+

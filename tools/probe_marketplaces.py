@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Probe Tokopedia and Shopee: can listings be read from them at all, without logging in and without getting around a block?
+"""Probe Tokopedia, Shopee and other candidate sources: can listings be read at all, without logging in and without getting around a block?
 
 Run it where the bot runs (the VPS): the answer depends on that address. It only reads: robots.txt, a public search page and,
 for Shopee, the search call the website itself makes, a few requests per site, 2 seconds apart. Each site gets one verdict:
@@ -14,8 +14,14 @@ for Shopee, the search call the website itself makes, a few requests per site, 2
 Only an "ok" is a source we can build on. For "empty" the optional --browser reads the rendered page with a headless browser exactly as
 a visitor's browser would (Playwright needed); it stops at the first challenge or login.
 
+For the other candidate sources (--candidates: Cardtell, Pokepedia, Carousell Indonesia; or --site NAME=BASE|SEARCH_PATH) the probe also obeys robots.txt:
+a page that robots.txt disallows for every bot is not read at all (verdict "robots"), and the terms-of-use links found on the page are printed
+so that they are read before a collector is built. Reading a page is not permission to copy a site's data: that is a decision for the owner.
+
 Usage:  python3 tools/probe_marketplaces.py [--query "EGS pokemon"] [--browser]
         python3 tools/probe_marketplaces.py --tokopedia https://www.tokopedia.com --shopee https://shopee.co.id
+        python3 tools/probe_marketplaces.py --skip-marketplaces --candidates
+        python3 tools/probe_marketplaces.py --skip-marketplaces --site "Toko X=https://example.id|/cari?q={q}"
 """
 import argparse
 import json
@@ -23,8 +29,9 @@ import re
 import sys
 import time
 from urllib.error import HTTPError
-from urllib.parse import quote
+from urllib.parse import quote, urljoin
 from urllib.request import Request, urlopen
+from urllib.robotparser import RobotFileParser
 
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 CHALLENGE = re.compile(r"captcha|are you a robot|verify you are human|verifikasi|cf-chl|just a moment|geetest|slide to verify|_Incapsula_|akamai", re.I)
@@ -44,6 +51,33 @@ def get(url, timeout=25, accept="text/html,application/json;q=0.9,*/*;q=0.8"):
         return e.code, url, e.read(200_000).decode("utf-8", "replace"), f"HTTP {e.code}"
     except Exception as e:
         return 0, url, "", f"{type(e).__name__}: {e}"
+
+
+TERMS = re.compile(r"""<a\s[^>]*href=["']([^"'#]+)["'][^>]*>(.{0,80}?)</a>""", re.I | re.S)
+TERMS_WORDS = re.compile(r"syarat|ketentuan|terms|privacy|privasi|kebijakan|robots", re.I)
+
+# candidate sources besides Tokopedia and Shopee: (name, base address, search path with {q}); paths are best guesses: override with --site
+CANDIDATES = (("Cardtell", "https://cardtell.id", "/"),
+              ("Pokepedia", "https://pokepedia.id", "/marketplace"),
+              ("Carousell Indonesia", "https://www.carousell.co.id", "/search/{q}"))
+
+
+def robots_allows(robots_text, url):
+    """False only when a robots.txt that was read says every bot may not fetch this address (no file, or one that cannot be read, means allowed)."""
+    rp = RobotFileParser()
+    rp.parse(robots_text.splitlines())
+    return rp.can_fetch("*", url)
+
+
+def terms_links(page, base, limit=4):
+    """Addresses on a page that look like terms of use, privacy or robots pages, for a person to read."""
+    out = []
+    for href, label in TERMS.findall(page or ""):
+        if TERMS_WORDS.search(href) or TERMS_WORDS.search(re.sub(r"<[^>]+>", " ", label)):
+            link = urljoin(base + "/", href)
+            if link not in out:
+                out.append(link)
+    return out[:limit]
 
 
 def robots_lines(text, words=("search", "/api", "Crawl-delay", "User-agent: *")):
@@ -87,7 +121,7 @@ def judge_shopee_api(status, text):
     return "empty", "jawaban normal tanpa produk"
 
 
-def probe_site(name, base, search_path, out, sleep=time.sleep, api_path=None, query="EGS pokemon"):
+def probe_site(name, base, search_path, out, sleep=time.sleep, api_path=None, query="EGS pokemon", respect_robots=False):
     out(f"== {name}: {base}")
     status, _, text, err = get(base + "/robots.txt")
     out(f"robots.txt: status {status}" + (f" ({err})" if err else ""))
@@ -95,9 +129,15 @@ def probe_site(name, base, search_path, out, sleep=time.sleep, api_path=None, qu
         out("   " + line)
     sleep(2)
     url = base + search_path.format(q=quote(query))
+    if respect_robots and status == 200 and not robots_allows(text, url):
+        out(f"robots.txt melarang bot membaca {url}: tidak dibaca. Izin harus datang dari pemilik situs.")
+        return {"page": "robots"}
     status, final, text, err = get(url)
     verdict, why = judge_page(status, final, text, err)
     out(f"halaman pencarian {url}\n   status {status} | {len(text)} karakter | {verdict.upper()}: {why}")
+    if respect_robots:
+        links = terms_links(text, base)
+        out("syarat dan ketentuan: " + (", ".join(links) if links else "tautan tidak ditemukan di halaman ini; cari sendiri di situsnya") + "  (baca sebelum membangun pengambil)")
     verdicts = {"page": verdict}
     if api_path:
         sleep(2)
@@ -143,15 +183,30 @@ def main(argv=None):
     ap.add_argument("--tokopedia", default="https://www.tokopedia.com")
     ap.add_argument("--shopee", default="https://shopee.co.id")
     ap.add_argument("--browser", action="store_true", help="juga baca halaman dengan browser tanpa kepala (butuh Playwright)")
+    ap.add_argument("--candidates", action="store_true", help="juga uji Cardtell, Pokepedia dan Carousell Indonesia (menurut robots.txt mereka)")
+    ap.add_argument("--site", action="append", default=[], metavar="NAMA=ALAMAT|JALUR", help="situs lain, mis. \"Toko=https://contoh.id|/cari?q={q}\" (jalur bawaan: /)")
+    ap.add_argument("--skip-marketplaces", action="store_true", help="lewati Tokopedia dan Shopee")
     a = ap.parse_args(argv)
     out = print
     sleep = lambda s: time.sleep(s)
-    results = {
-        "tokopedia": probe_site("Tokopedia", a.tokopedia.rstrip("/"), "/search?q={q}&st=product", out, sleep, query=a.query),
-        "shopee": probe_site("Shopee", a.shopee.rstrip("/"), "/search?keyword={q}", out, sleep,
-                             api_path="/api/v4/search/search_items?by=relevancy&keyword={q}&limit=20&newest=0&order=desc&page_type=search&scenario=PAGE_GLOBAL_SEARCH&version=2",
-                             query=a.query)}
-    if a.browser:
+    results = {}
+    if not a.skip_marketplaces:
+        results = {
+            "tokopedia": probe_site("Tokopedia", a.tokopedia.rstrip("/"), "/search?q={q}&st=product", out, sleep, query=a.query),
+            "shopee": probe_site("Shopee", a.shopee.rstrip("/"), "/search?keyword={q}", out, sleep,
+                                 api_path="/api/v4/search/search_items?by=relevancy&keyword={q}&limit=20&newest=0&order=desc&page_type=search&scenario=PAGE_GLOBAL_SEARCH&version=2",
+                                 query=a.query)}
+    others = list(CANDIDATES) if a.candidates else []
+    for spec in a.site:
+        name, _, rest = spec.partition("=")
+        base, _, path = rest.partition("|")
+        if not name or not base.startswith("http"):
+            out(f"--site '{spec}' dilewati: bentuknya NAMA=https://alamat|/jalur")
+            continue
+        others.append((name.strip(), base.strip(), path.strip() or "/"))
+    for name, base, path in others:
+        results[name] = probe_site(name, base.rstrip("/"), path, out, sleep, query="psa pokemon" if "carousell" in base else a.query, respect_robots=True)
+    if a.browser and not a.skip_marketplaces:
         results["tokopedia"]["browser"] = probe_browser("Tokopedia", a.tokopedia.rstrip("/") + f"/search?q={quote(a.query)}&st=product", out)
         results["shopee"]["browser"] = probe_browser("Shopee", a.shopee.rstrip("/") + f"/search?keyword={quote(a.query)}", out)
     out("\n== ringkasan")
