@@ -1,0 +1,20 @@
+{
+ "schema_version": 1,
+ "generated_at": "2026-10-06T02:11:21.489392+00:00",
+ "rates": {
+  "JPY": {
+   "idr": 113.21,
+   "source": "ecb",
+   "fetched_at": "2026-10-06T02:11:21.489392+00:00",
+   "google": null,
+   "ecb": 113.21
+  },
+  "USD": {
+   "idr": 17913.0,
+   "source": "ecb",
+   "fetched_at": "2026-10-06T02:11:21.489392+00:00",
+   "google": null,
+   "ecb": 17913.0
+  }
+ }
+}
