@@ -831,11 +831,38 @@ def parse_photo_answer(text):
     return out
 
 
+DEFAULT_PHOTO_MODELS = {"openai": "gpt-4.1,gpt-4o", "anthropic": collect_raw.DEFAULT_MODELS["anthropic"]}
+READ_KEYS = ("company", "grade", "cert", "name", "number", "rarity", "language")
+
+
+def consensus(answers):
+    """One reading out of the answers of several readers (models) looking at the same photo. A field is kept only when every reader gave it and they all
+    agree; where two readers gave different values the field is dropped and the disagreement is recorded. The first real photo gave three models three
+    different card numbers and certificates, so one reading is never trusted for a number."""
+    norm = lambda v: re.sub(r"\s+", "", str(v)).upper()
+    out, disagree = {}, {}
+    slab = [a.get("is_slab") for a in answers]
+    out["is_slab"] = True if all(v is True for v in slab) else False if all(v is False for v in slab) else None
+    for key in READ_KEYS:
+        values = [a.get(key) for a in answers]
+        values = [None if (key == "language" and v == "UNCLEAR") else v for v in values]
+        present = [v for v in values if v not in (None, "")]
+        if len(present) == len(values) and len({norm(v) for v in present}) == 1:
+            out[key] = present[0]
+        else:
+            out[key] = None
+            if len({norm(v) for v in present}) > 1:
+                disagree[key] = [str(v) for v in present]
+    out["readers"], out["disagree"] = len(answers), disagree
+    return out
+
+
 def make_photo_reader(provider, model, fetch=collect_raw.fetch):
-    """photo_fn(image_url) -> dict | None, with an official SDK (pip install openai | anthropic and the key in the environment).
-    None means 'could not read; try again in a later run'. Needs an API balance of its own: it is only used with --photo-mode."""
+    """photo_fn(image_url) -> dict | None, with an official SDK (pip install openai | anthropic and the key in the environment). `model` may list several
+    models separated by commas: the photo is fetched once, every model reads it and consensus() keeps only what they agree on.
+    None means 'could not read; try again in a later run' (also when one of the models failed). Needs an API balance of its own: it is only used with --photo-mode."""
     import base64
-    ask = _ask_openai(model) if provider == "openai" else _ask_anthropic(model)
+    asks = [_ask_openai(m.strip()) if provider == "openai" else _ask_anthropic(m.strip()) for m in model.split(",") if m.strip()]
 
     def read(image_url):
         try:
@@ -845,8 +872,15 @@ def make_photo_reader(provider, model, fetch=collect_raw.fetch):
         media = collect_raw.sniff_media_type(data)
         if not media:
             return None
-        answer = ask(base64.standard_b64encode(data).decode("ascii"), media)
-        return parse_photo_answer(answer) if answer else None
+        b64 = base64.standard_b64encode(data).decode("ascii")
+        answers = []
+        for ask in asks:
+            answer = ask(b64, media)
+            parsed = parse_photo_answer(answer) if answer else None
+            if not parsed:
+                return None
+            answers.append(parsed)
+        return answers[0] if len(answers) == 1 else consensus(answers)
     return read
 
 
@@ -1046,7 +1080,8 @@ def main(argv=None):
     ap.add_argument("--dry-run", action="store_true", help="baca dan nilai saja: database disalin ke memori dan tidak ada berkas hasil ditulis (cache pencarian tetap dipakai)")
     ap.add_argument("--photo-mode", choices=("off", "openai", "anthropic"), default=os.environ.get("EGS_PHOTO_MODE", "off"),
                     help="baca foto kandidat ambigu dengan model visi (butuh saldo API sendiri; bawaan mati)")
-    ap.add_argument("--photo-model", default=os.environ.get("EGS_PHOTO_MODEL"))
+    ap.add_argument("--photo-model", default=os.environ.get("EGS_PHOTO_MODEL"),
+                    help="nama model; beberapa model dipisah koma dibaca bersama dan hanya yang disepakati semuanya yang dipakai (bawaan openai: gpt-4.1,gpt-4o)")
     ap.add_argument("--photo-budget", type=int, default=30, help="batas pembacaan foto per putaran")
     ap.add_argument("--read-photo", metavar="URL", help="uji pembaca foto pada satu foto (butuh --photo-mode dan kunci API), lalu selesai")
     ap.add_argument("--report", metavar="EXPORT", help="cetak laporan teks dari egs_watch.json, lalu selesai")
@@ -1075,14 +1110,14 @@ def main(argv=None):
         if a.photo_mode == "off":
             print("Pakai --photo-mode openai (atau anthropic) bersama --read-photo.")
             return 1
-        reader = make_photo_reader(a.photo_mode, a.photo_model or collect_raw.DEFAULT_MODELS[a.photo_mode])
+        reader = make_photo_reader(a.photo_mode, a.photo_model or DEFAULT_PHOTO_MODELS[a.photo_mode])
         answer = reader(a.read_photo)
         print(json.dumps(answer, ensure_ascii=False, indent=1) if answer else "foto tidak terbaca atau jawabannya tidak bisa dipakai")
         return 0 if answer else 1
     a.cache_dir = a.cache_dir or os.path.join(os.path.dirname(os.path.abspath(a.db)), "egs_cache")
     photo_fn = None
     if a.photo_mode != "off":
-        photo_fn = make_photo_reader(a.photo_mode, a.photo_model or collect_raw.DEFAULT_MODELS[a.photo_mode])
+        photo_fn = make_photo_reader(a.photo_mode, a.photo_model or DEFAULT_PHOTO_MODELS[a.photo_mode])
     export, code = run(a, make_post(), fetch_status, photo_fn)
     if export:
         print(format_report(export))

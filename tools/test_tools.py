@@ -2716,6 +2716,54 @@ class EgsWatch(unittest.TestCase):
         self.go(fake2, photo_fn=reader, photo_budget=2, db=os.path.join(self.tmp.name, "other.sqlite"), out=os.path.join(self.tmp.name, "other.json"))
         self.assertEqual(len(seen), 2)                                              # the budget is a hard limit
 
+    PHOTO_READS = [  # the three models of the first real photo (a Charizard EX slab) and what each of them read from it
+        {"is_slab": True, "company": "EGS", "grade": "10", "cert": "A0D960", "name": "Charizard EX", "number": "330/193", "rarity": None, "language": "EN"},
+        {"is_slab": True, "company": "EGS", "grade": "10", "cert": "A018960", "name": "CHARIZARD EX", "number": "234/193", "rarity": "SAR", "language": "ID"},
+        {"is_slab": True, "company": "EGS", "grade": "10", "cert": "A0019500", "name": "CHARIZARD EX", "number": "22/100", "rarity": "SAR", "language": "ID"}]
+
+    def test_readers_must_agree_before_anything_from_the_photo_is_used(self):
+        three = egs_watch.consensus(self.PHOTO_READS)
+        self.assertEqual((three["number"], three["cert"], three["language"], three["rarity"], three["grade"], three["company"], three["name"]),
+                         (None, None, None, None, "10", "EGS", "Charizard EX"))          # a field survives only if every reader gave it and they agree
+        self.assertEqual(sorted(three["disagree"]), ["cert", "language", "number"])
+        two = egs_watch.consensus(self.PHOTO_READS[1:])
+        self.assertEqual((two["number"], two["cert"], two["language"], two["rarity"], two["readers"]), (None, None, "ID", "SAR", 2))
+        self.assertEqual(sorted(two["disagree"]), ["cert", "number"])
+        same = egs_watch.consensus([{**self.PHOTO_READS[1], "number": "234 / 193", "cert": "a018960"}, {**self.PHOTO_READS[1], "language": "UNCLEAR"}])
+        self.assertEqual((same["number"], same["cert"].upper(), same["disagree"], same["language"]), ("234 / 193", "A018960", {}, None))   # spacing and case are not disagreement; UNCLEAR is no answer
+
+    def test_a_number_the_readers_disagree_on_keeps_the_listing_in_the_queue_with_the_reason(self):
+        fake = FakeEgsToco([egs_item("Pikachu SAR MA3 ID EGS 10", 2500000, "s1")])
+        disagree = {**self.PHOTO_READS[1], "name": None, "language": "ID"}
+        export, _ = self.go(fake, photo_fn=lambda url: egs_watch.consensus([disagree, {**disagree, "number": "22/100"}]), photo_budget=3)
+        self.assertEqual(export["listings"], [])
+        reasons = [r["code"] for r in export["queue"][0]["reasons"]]
+        self.assertIn("photo_unsure", reasons)
+        self.assertIn("number_missing", reasons)
+        fake2 = FakeEgsToco([egs_item("Pikachu SAR MA3 ID EGS 10", 2500000, "s1")])
+        agree = {**disagree, "number": "234/193", "name": "Pikachu ex"}
+        export, _ = self.go(fake2, photo_fn=lambda url: egs_watch.consensus([agree, dict(agree)]), photo_budget=3, db=os.path.join(self.tmp.name, "b.sqlite"), out=os.path.join(self.tmp.name, "b.json"))
+        self.assertEqual(export["listings"][0]["identity"]["identified_by"], "nomor di foto")                      # two readers, the same number
+
+    def test_the_photo_is_fetched_once_and_read_by_every_listed_model(self):
+        png = b"\x89PNG\r\n\x1a\n" + b"0" * 20
+        fetched, asked = [], []
+
+        def fake_ask(model):
+            def ask(b64, media):
+                asked.append((model, media))
+                return json.dumps({**self.PHOTO_READS[1], "card_name": "Pikachu", "number": "234/193" if model == "m1" else None}) if model != "m3" else None
+            return ask
+        with mock.patch.object(egs_watch, "_ask_openai", side_effect=fake_ask):
+            read = egs_watch.make_photo_reader("openai", "m1, m2", fetch=lambda url: (fetched.append(url) or (png, "image/png")))
+            got = read("https://img.example/a.png")
+            self.assertEqual((fetched, asked), (["https://img.example/a.png"], [("m1", "image/png"), ("m2", "image/png")]))
+            self.assertEqual((got["readers"], got["number"], sorted(got["disagree"])), (2, None, []))                # one reader had no number: nothing agreed, nothing contradicted
+            self.assertIsNone(egs_watch.make_photo_reader("openai", "m1,m3", fetch=lambda url: (png, "image/png"))("https://img.example/b.png"))   # a failed reader: try again later
+            single = egs_watch.make_photo_reader("openai", "m1", fetch=lambda url: (png, "image/png"))("https://img.example/c.png")
+            self.assertEqual((single["number"], "readers" in single), ("234/193", False))                             # one model: the old behaviour
+        self.assertEqual(egs_watch.DEFAULT_PHOTO_MODELS["openai"], "gpt-4.1,gpt-4o")
+
     def test_the_board_takes_the_accepted_listings_and_shows_the_review_queue(self):
         export, _ = self.go(FakeEgsToco(self.catalog_listings()))
         latest = tiny_latest()

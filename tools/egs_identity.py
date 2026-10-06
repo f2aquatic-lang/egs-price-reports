@@ -342,6 +342,9 @@ def verify(listing, catalog, photo=None, tracked=None):
     elif pnum and numbers and pnum != numbers[0]:
         reasons.append(reason("photo_conflict", f"Foto menunjukkan nomor {pnum}, teks menulis {numbers[0]}"))
     number = numbers[0] if len(numbers) == 1 else (pnum if not numbers else None)
+    unsure = (photo.get("disagree") or {}).get("number")
+    if unsure and not numbers:
+        reasons.append(reason("photo_unsure", "Pembaca foto tidak sepakat soal nomor kartu (" + " / ".join(unsure) + "): nomor dari foto tidak dipakai"))
     by = "nomor di judul" if numbers and number else (("nomor diisi manual dari foto" if photo.get("manual") else "nomor di foto") if number else None)
     set_hint = ev["set"] if ev["set"] and ev["set"].upper() in catalog.sets else None
     if ev["set"] and not set_hint:
