@@ -5,6 +5,7 @@ Real titles below were copied from published latest.json candidates; the grade t
 bot recorded (grade_hint) is the expected answer. RAW titles are made up.
 """
 import argparse
+import csv
 import collections
 import importlib.util
 import json
@@ -2753,6 +2754,84 @@ class EgsWatch(unittest.TestCase):
         self.assertTrue(any("tanpa bukti" in e for e in errors))
         broken["queue"].append(dict(broken["queue"][0]))
         self.assertTrue(any("antrean ganda" in e for e in egs_watch.validate(broken)))
+
+    # -- listings collected by hand (Shopee, Tokopedia): same judgement, never fetched
+    def write_import(self, rows, name="impor.csv", header=("url", "judul", "harga", "toko", "foto", "stok")):
+        path = os.path.join(self.tmp.name, name)
+        with open(path, "w", encoding="utf-8", newline="") as fh:
+            w = csv.writer(fh)
+            w.writerow(header)
+            w.writerows(rows)
+        return path
+
+    def test_hand_collected_rows_are_judged_like_toco_listings_and_nothing_is_fetched(self):
+        path = self.write_import([
+            ("https://shopee.co.id/Pikachu-ex-SAR-i.111.222?sp_atk=abc&xptdk=1", "Pikachu ex SAR 234/193 MA3 ID EGS 10", "Rp2.450.000", "Toko A", "https://down-id.img.example/a.jpg", "1"),
+            ("https://www.tokopedia.com/tokob/pikachu-ex-egs-10?extParam=ivf%3Dtrue", "Pikachu ex SAR 234/193 MA3 ID EGS 10", "2400000", "Toko B", "", ""),
+            ("https://www.tokopedia.com/tokoc/pikachu-egs", "Pikachu EGS 10 ID", "700000", "Toko C", "", "2"),     # no number: ambiguous
+            ("https://shopee.co.id/rusak-i.1.2", "Dreepy AR MA3 ID EGS 10", "abc", "Toko D", "", "1"),            # price is not a number
+            ("ftp://bukan-web/x", "Dreepy AR MA3 ID EGS 10", "100000", "Toko D", "", "1")])                        # not a web address
+        fake = FakeEgsToco([])
+        export, code = self.go(fake, no_search=True, import_file=path)
+        self.assertEqual((code, fake.posts), (0, []))                                  # toco was not even asked
+        self.assertEqual(egs_watch.validate(export), [])
+        by_url = {l["url"]: l for l in export["listings"]}
+        self.assertEqual(sorted(by_url), ["https://shopee.co.id/Pikachu-ex-SAR-i.111.222", "https://www.tokopedia.com/tokob/pikachu-ex-egs-10"])   # tracking parameters gone
+        self.assertEqual({l["source"] for l in export["listings"]}, {"shopee", "tokopedia"})
+        self.assertTrue(all(l["origin"] == "import" and l["counted"] and l["last_ok"] for l in export["listings"]))
+        self.assertEqual([q["title"] for q in export["queue"]], ["Pikachu EGS 10 ID"])
+        g = export["cards"][0]["grades"][0]
+        self.assertEqual((g["n"], g["sellers"], g["min"], g["max"]), (2, 2, 2400000, 2450000))
+        imp = export["run"]["imported"]
+        self.assertEqual((imp["rows"], imp["accepted"], imp["ambiguous"], imp["rejected"], len(imp["problems"])), (3, 2, 1, 0, 2))
+        self.assertEqual(export["summary"]["by_source"], {"shopee": {"accepted": 1, "counted": 1}, "tokopedia": {"accepted": 1, "counted": 1}})
+        self.assertIn("impor manual: 3 baris", egs_watch.format_report(export))
+
+    def test_hand_collected_rows_are_not_looked_up_on_toco_and_stop_counting_when_nobody_refreshes_them(self):
+        path = self.write_import([("https://shopee.co.id/Pikachu-i.1.2", "Pikachu ex SAR 234/193 MA3 ID EGS 10", "2450000", "Toko A", "", "1")])
+        self.go(FakeEgsToco([]), no_search=True, import_file=path)
+        fake = FakeEgsToco([])
+        later, code = self.go(fake, now=self.T0 + timedelta(hours=6), status=lambda url: 404)        # a normal toco run: it must not turn a Shopee row into "gone"
+        row = later["listings"][0]
+        self.assertEqual((code, row["status"], row["counted"], row["excluded"]), (0, "ok", True, None))
+        old, _ = self.go(fake, now=self.T0 + timedelta(days=3), status=lambda url: 404)
+        row = old["listings"][0]
+        self.assertEqual((row["status"], row["counted"], row["excluded"]), ("ok", False, "stale"))   # shown, honestly marked, not in any price
+
+    def test_importing_again_records_the_price_history_and_the_same_page_is_one_listing(self):
+        row = lambda price: ("https://www.tokopedia.com/tokoa/pikachu-egs?utm_source=x", "Pikachu ex SAR 234/193 MA3 ID EGS 10", price, "Toko A", "", "1")
+        self.go(FakeEgsToco([]), no_search=True, import_file=self.write_import([row("2500000"), row("2450000")]))     # twice in one file: the later line wins
+        second, _ = self.go(FakeEgsToco([]), no_search=True, now=self.T0 + timedelta(days=1), import_file=self.write_import([row("2300000")], name="dua.csv"))
+        self.assertEqual(len(second["listings"]), 1)
+        l = second["listings"][0]
+        self.assertEqual((l["asking_idr"], l["previous_day"]["asking_idr"], l["change_from_previous_day_idr"]), (2300000, 2450000, -150000))
+
+    def test_a_hand_collected_row_without_a_number_can_be_settled_by_its_photo(self):
+        path = self.write_import([("https://shopee.co.id/Pikachu-i.3.4", "Pikachu SAR MA3 ID EGS 10", "2450000", "Toko A", "https://down-id.img.example/p.jpg", "1")])
+        seen = []
+
+        def reader(url):
+            seen.append(url)
+            return {"is_slab": True, "company": "EGS", "grade": "10", "cert": None, "number": "234/193", "rarity": "SAR", "language": "ID", "name": None}
+        export, _ = self.go(FakeEgsToco([]), no_search=True, import_file=path, photo_fn=reader, photo_budget=3)
+        self.assertEqual((seen, export["listings"][0]["identity"]["identified_by"]), (["https://down-id.img.example/p.jpg"], "nomor di foto"))
+
+    def test_import_files_in_other_shapes_and_prices_in_rupiah_notation(self):
+        for text, want in (("Rp1.250.000", 1250000), ("1.250.000", 1250000), (" 1250000 ", 1250000), (1250000, 1250000), ("Rp 99.500", 99500),
+                           ("1,250,000", None), ("12,5", None), ("abc", None), ("", None), (0, None), (-5, None), (True, None)):
+            self.assertEqual(egs_watch.parse_rupiah(text), want, text)
+        d = self.tmp.name
+        with open(os.path.join(d, "a.json"), "w", encoding="utf-8") as fh:
+            json.dump({"listings": [{"link": "https://shopee.co.id/x-i.5.6#top", "Judul": "Dreepy AR MA3 ID EGS 10", "harga": 200000, "toko": "Toko Z"}]}, fh)
+        with open(os.path.join(d, "b.csv"), "w", encoding="utf-8-sig") as fh:
+            fh.write("url;judul;harga\nhttps://shopee.co.id/y-i.7.8;Dreepy AR MA3 ID EGS 10;200.000\n")
+        for name in ("a.json", "b.csv"):
+            records, problems = egs_watch.read_import(os.path.join(d, name))
+            self.assertEqual((problems, [(r["ask"], r["stock"]) for r in records]), ([], [(200000, 1)]), name)
+        self.assertEqual(egs_watch.read_import(os.path.join(d, "a.json"))[0][0]["url"], "https://shopee.co.id/x-i.5.6")
+        self.assertTrue(egs_watch.read_import(os.path.join(d, "tidak-ada.csv"))[1])
+        self.assertEqual([egs_watch.source_of(u) for u in ("https://toco.id/id/listing/x", "https://www.shopee.co.id/a", "https://shp.ee/abc", "https://www.tokopedia.com/a/b", "https://m.facebook.com/x")],
+                         ["toco", "shopee", "shopee", "tokopedia", "m.facebook.com"])
 
 
 def slug_of_url(url):

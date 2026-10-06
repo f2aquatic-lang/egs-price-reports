@@ -103,3 +103,29 @@ Kegagalan sumber: `egs_watch.py` berakhir dengan kode 2 (layanan tercatat `faile
 `tools/probe_marketplaces.py` menguji, dari VPS, apakah keduanya bisa dibaca tanpa login dan tanpa melewati pembatasan (halaman pencarian publik, dan panggilan pencarian milik Shopee sendiri; `--browser` membaca halaman seperti browser pengunjung kalau Playwright ada). Hasilnya satu putusan per situs: `ok`, `login`, `captcha`, `blocked`, `empty`, atau `error`. **Hanya `ok` yang bisa dijadikan sumber.** Tantangan verifikasi, halaman masuk, dan kode anti-bot tidak dilewati. Kalau ada jalur yang `ok`, sumbernya ditambahkan sebagai satu sumber lagi di `egs_watch.py` (tiap sumber cukup menghasilkan satu bentuk data seperti `normalize()`: judul, deskripsi, harga, stok, foto, seller), dengan aturan identitas, dedupe, dan statistik yang sama.
 
 Facebook dan WhatsApp **tidak** dibaca: tidak ada akses yang tersedia secara sah.
+
+### Listing Shopee/Tokopedia yang Anda kumpulkan sendiri (`--import`)
+
+Akun Shopee atau Tokopedia tidak mengubah apa yang boleh dibaca bot: API penjual (Shopee Open Platform, Tokopedia/TikTok Shop Partner) hanya membuka data **toko Anda sendiri**, bukan listing penjual lain, dan akun yang dipakai bot untuk menelusuri halaman orang lain melanggar syarat kedua situs serta berisiko membuat akunnya diblokir. Karena itu bot **tidak membuka, masuk ke, atau menelusuri** Shopee dan Tokopedia. Yang tersedia adalah jalur impor: Anda melihat listing di aplikasi/situs, menyalin isinya ke satu berkas, dan berkas itu melewati pemeriksaan identitas, dedupe, dan statistik yang sama dengan listing toco.
+
+Format CSV (baris pertama = nama kolom; pemisah koma, titik koma, atau tab; atau JSON berupa daftar objek dengan kunci yang sama). Kolom wajib: `url`, `judul`, `harga`. Kolom lain boleh kosong: `toko`, `foto` (alamat gambar: tekan lama pada foto lalu "salin alamat gambar"), `stok` (bawaan 1; 0 = habis), `deskripsi`, `kota`.
+
+```
+url,judul,harga,toko,foto,stok
+https://shopee.co.id/Pikachu-ex-SAR-i.111.222,Pikachu ex SAR 234/193 MA3 ID EGS 10,Rp2.450.000,Toko A,https://down-id.example/a.jpg,1
+https://www.tokopedia.com/tokob/pikachu-ex-egs-10,Pikachu ex SAR 234/193 MA3 ID EGS 10,2400000,Toko B,,1
+```
+
+```bash
+sudo -u egsprice -H python3 /opt/egs-raw/main/tools/egs_watch.py --import /opt/egs-raw/impor.csv --no-search \
+  --db /opt/egs-raw/egs_watch.sqlite --out /opt/egs-raw/egs_watch.json --latest /opt/egs-raw/main/latest.json --catalog /opt/egs-raw/main/catalog.json
+```
+
+Aturannya:
+
+- Alamat dibersihkan dari parameter pelacak (`?sp_atk=...`, `#...`); halaman yang sama dua kali menjadi satu listing, dan impor ulang dengan harga baru menambah riwayat harga.
+- Baris dengan harga bukan angka rupiah, judul kosong, atau alamat bukan http(s) **dilaporkan dan dilewati**, tidak ditebak. Harga "1,250,000" (koma) ditolak karena bisa berarti desimal.
+- Setiap baris dinilai seperti listing toco (EGS, grade, bahasa Indonesia, set, nomor, rarity); yang meragukan masuk antrean ambigu dan tidak masuk harga. Dengan `--photo-mode` dan kolom `foto`, nomor/label dibaca dari foto.
+- Bot tidak pernah mengambil ulang alamat Shopee/Tokopedia. Karena itu baris impor **berhenti dihitung 48 jam setelah terakhir diimpor** (ditandai `stale`, tetap tampil, tidak masuk harga mana pun) kecuali Anda mengimpornya lagi. Ini sama seperti listing toco yang tidak diperiksa dua hari.
+- Di `egs_watch.json` tiap listing membawa `source` (`toco`, `shopee`, `tokopedia`) dan `origin: "import"`; `summary.by_source` menghitung per sumber, dan laporan menampilkan "impor manual". Facebook dan WhatsApp diperlakukan sama: hanya lewat berkas yang Anda isi, tidak pernah diambil bot.
+

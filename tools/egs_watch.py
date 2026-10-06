@@ -27,6 +27,7 @@ Usage
 Standard library only (a vision reader for photos is optional: --photo-mode openai|anthropic).
 """
 import argparse
+import csv
 import hashlib
 import json
 import os
@@ -38,6 +39,7 @@ import time
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 from urllib.error import HTTPError
+from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -335,7 +337,103 @@ def normalize(item):
             "description": base["description"][:600], "active": bool(base["stock"] and base["stock"] > 0)}
 
 
-def upsert(db, n, v, now, photo_read=None):
+# ---- listings the owner collected by hand (Shopee, Tokopedia, anything else) ------------------------
+# The bot never opens these sites: a person looks at a listing, writes down what is on the page, and this file goes through the same
+# identity check, dedupe and statistics as a toco listing. Nothing here logs in, solves a challenge or reads another seller's pages.
+
+SOURCE_HOSTS = (("toco.id", "toco"), ("shopee.co.id", "shopee"), ("shopee.com", "shopee"), ("shp.ee", "shopee"),
+                ("tokopedia.com", "tokopedia"), ("tokopedia.link", "tokopedia"))
+IMPORT_COLUMNS = {"url": ("url", "link", "tautan", "alamat"), "title": ("title", "judul", "nama"), "price": ("price", "harga", "ask"),
+                  "seller": ("seller", "toko", "penjual", "store"), "photo": ("photo", "foto", "image", "gambar"),
+                  "stock": ("stock", "stok"), "description": ("description", "deskripsi", "keterangan"), "city": ("city", "kota", "lokasi")}
+
+
+def source_of(url):
+    """Where a listing lives, from its address: toco, shopee, tokopedia, or the host name."""
+    host = (urlsplit(url).hostname or "").lower()
+    for h, name in SOURCE_HOSTS:
+        if host == h or host.endswith("." + h):
+            return name
+    return host or "lain"
+
+
+def parse_rupiah(text):
+    """'Rp1.250.000', '1.250.000', '1250000', 1250000 -> 1250000; None for anything else (a decimal comma means the number is not a rupiah price)."""
+    if isinstance(text, (int, float)) and not isinstance(text, bool):
+        return int(text) if text > 0 else None
+    t = re.sub(r"(?i)rp\.?|idr|\s", "", str(text or ""))
+    if not re.fullmatch(r"\d{1,3}(\.\d{3})+|\d+", t):
+        return None
+    value = int(t.replace(".", ""))
+    return value if value > 0 else None
+
+
+def clean_url(url):
+    """The address without tracking parameters and fragments: the same page must not become two listings."""
+    parts = urlsplit(str(url or "").strip())
+    if parts.scheme not in ("http", "https") or not parts.hostname:
+        return None
+    return f"{parts.scheme}://{parts.netloc.lower()}{parts.path}".rstrip("/")
+
+
+def normalize_import(row):
+    """One hand-collected row (already keyed by the names in IMPORT_COLUMNS) as the flat record normalize() makes; (record, None) or (None, problem)."""
+    url = clean_url(row.get("url"))
+    if not url:
+        return None, "alamat (url) harus diawali http:// atau https://"
+    title = str(row.get("title") or "").strip()
+    if not title:
+        return None, f"{url[-50:]}: judul kosong"
+    ask = parse_rupiah(row.get("price"))
+    if not ask:
+        return None, f"{url[-50:]}: harga '{row.get('price')}' bukan angka rupiah"
+    try:
+        stock = int(str(row.get("stock") or "1").strip())
+    except ValueError:
+        return None, f"{url[-50:]}: stok '{row.get('stock')}' bukan angka"
+    seller = str(row.get("seller") or "").strip() or None
+    photo = clean_url(row.get("photo")) if row.get("photo") else None
+    source = source_of(url)
+    return {"url": url, "slug": slug_of(url), "title": title, "description": str(row.get("description") or "").strip()[:600],
+            "ask": ask, "list": None, "city": str(row.get("city") or "").strip() or "?", "stock": max(stock, 0), "image": photo,
+            "photos": [photo] if photo else [], "store_id": hashlib.sha1(f"{source}:{seller.lower()}".encode()).hexdigest()[:12] if seller else None,
+            "store_name": seller, "listed_at": None, "updated_at_src": None, "active": stock > 0}, None
+
+
+def read_import(path):
+    """(records, problems) from a CSV (comma, semicolon or tab separated, first line = column names) or a JSON list. Bad rows are reported, never guessed."""
+    try:
+        with open(path, encoding="utf-8-sig") as fh:
+            text = fh.read()
+    except OSError as e:
+        return [], [f"berkas impor tidak terbaca: {e}"]
+    if text.lstrip().startswith(("[", "{")):
+        try:
+            data = json.loads(text)
+        except ValueError as e:
+            return [], [f"JSON tidak valid: {e}"]
+        rows = data.get("listings") if isinstance(data, dict) else data
+        rows = [r for r in rows or [] if isinstance(r, dict)]
+    else:
+        first = text.splitlines()[0] if text.strip() else ""
+        delimiter = max(",;\t", key=first.count)
+        rows = list(csv.DictReader(text.splitlines(), delimiter=delimiter))
+    records, problems, seen = [], [], {}
+    for i, raw in enumerate(rows, 1):
+        names = {str(k).strip().lower(): v for k, v in raw.items() if k}
+        row = {key: next((names[a] for a in aliases if names.get(a) not in (None, "")), None) for key, aliases in IMPORT_COLUMNS.items()}
+        rec, problem = normalize_import(row)
+        if problem:
+            problems.append(f"baris {i}: {problem}")
+        else:
+            seen[rec["url"]] = rec     # the same page twice in one file: the later line wins
+    records = list(seen.values())
+    if not rows:
+        problems.append("berkas impor kosong atau kolomnya tidak dikenali (butuh: url, judul, harga)")
+    return records, problems
+
+
+def upsert(db, n, v, now, photo_read=None, origin="search"):
     """Store one listing seen in a search together with this run's verdict, and record the observation. True when it is new."""
     identity, verdict, stamp = v["identity"], v["verdict"], now.isoformat()
     status = "ok" if n["active"] else "unavailable"
@@ -355,7 +453,7 @@ def upsert(db, n, v, now, photo_read=None):
     if exists:
         db.execute("UPDATE listing SET " + ", ".join(f"{k}=?" for k in cols) + " WHERE url=?", (*cols.values(), n["url"]))
     else:
-        cols.update(url=n["url"], first_seen=stamp, origin="search")
+        cols.update(url=n["url"], first_seen=stamp, origin=origin)
         db.execute("INSERT INTO listing(" + ", ".join(cols) + ") VALUES(" + ",".join("?" * len(cols)) + ")", tuple(cols.values()))
     if n["ask"]:
         db.execute("INSERT OR REPLACE INTO observation(url, observed_at, ask, stock, status) VALUES(?,?,?,?,?)", (n["url"], stamp, n["ask"], n["stock"], status))
@@ -379,7 +477,8 @@ def judge(db, n, catalog, tracked, photo_fn, photo_budget):
     """Verdict of one listing; the photo is read only for an ambiguous one that a photo could settle, once per listing."""
     row = db.execute("SELECT photo_read FROM listing WHERE url=?", (n["url"],)).fetchone()
     cached = json.loads(row["photo_read"]) if row and row["photo_read"] else None
-    listing = {"title": n["title"], "description": n["description"], "ask": n["ask"], "stock": n["stock"], "slug": n["slug"]}
+    # the address-versus-title check is about toco, whose address keeps the first title of a re-used listing; other sites' addresses are not evidence of that
+    listing = {"title": n["title"], "description": n["description"], "ask": n["ask"], "stock": n["stock"], "slug": n["slug"] if source_of(n["url"]) == "toco" else None}
     v = ident.verify(listing, catalog, cached, tracked.get(n["url"]))
     read = cached
     if (v["verdict"] == "ambiguous" and photo_fn and not cached and photo_budget[0] > 0 and n["image"]
@@ -407,7 +506,7 @@ def recheck(db, toco, status_fn, found, catalog, tracked, photo_fn, photo_budget
     search' apart. None of these is a sale. Returns counters; stops at the first block."""
     cutoff = (now - timedelta(days=RECHECK_DAYS)).isoformat()
     rows = [r for r in db.execute(
-        "SELECT url, slug, title, status, origin FROM listing WHERE verdict IN ('accepted','ambiguous') AND status != 'gone' "
+        "SELECT url, slug, title, status, origin FROM listing WHERE verdict IN ('accepted','ambiguous') AND status != 'gone' AND origin != 'import' "
         "AND COALESCE(last_seen, first_seen) >= ? ORDER BY (origin='bot') DESC, status_at", (cutoff,)) if r["slug"] not in found]
     count = Counter()
     for r in rows[:limit]:
@@ -479,7 +578,8 @@ def analyze(db, now):
     for d in rows.values():
         if d["verdict"] == "accepted":
             if not counts_now(d, now):
-                d["excluded"] = ("unavailable" if d["status"] == "unavailable" or not d["active"] else "status:" + str(d["status"]))
+                d["excluded"] = ("unavailable" if d["status"] == "unavailable" or not d["active"] else
+                                "stale" if d["status"] == "ok" else "status:" + str(d["status"]))
             elif d["card_key"] and d["grade"]:
                 groups[(d["card_key"], d["grade"])].append(d)
     out = {}
@@ -529,7 +629,7 @@ def listing_entry(d, obs, now):
     prev = hist[1] if len(hist) > 1 else None
     photos = json.loads(d["photos"]) if d.get("photos") else []
     return {
-        "url": d["url"], "source": "toco", "seller": d["store_name"], "seller_id": (d["store_id"] or "")[:8] or None, "city": d["city"],
+        "url": d["url"], "source": source_of(d["url"]), "seller": d["store_name"], "seller_id": (d["store_id"] or "")[:8] or None, "city": d["city"],
         "title": d["title"], "photo": d["photo"], "photos": photos, "asking_idr": d["ask"], "list_idr": d["list_price"], "stock": d["stock"],
         "status": d["status"], "status_at": d["status_at"], "last_ok": d["last_ok"], "first_seen": d["first_seen"], "last_seen_in_search": d["last_seen"],
         "origin": d["origin"], "verdict": d["verdict"], "identity": d["identity"], "cert": d["cert"],
@@ -575,6 +675,9 @@ def build_export(db, now, run_info):
         "ambiguous": len(ambiguous), "rejected_this_run": run_info.get("rejected", 0), "rejected_reasons": run_info.get("rejected_reasons", {}),
         "listings_counted": sum(1 for d in accepted if d["counted"]), "cards": len(cards), "sellers_unique": len(sellers),
         "status": dict(status_counts),
+        "by_source": {src: {"accepted": sum(1 for d in accepted if source_of(d["url"]) == src),
+                            "counted": sum(1 for d in accepted if d["counted"] and source_of(d["url"]) == src)}
+                      for src in sorted({source_of(d["url"]) for d in accepted})},
         "checked_ok_this_run": run_info.get("checked_ok", 0), "check_failed_this_run": run_info.get("check_failed", 0),
         "price_changes_24h": sum(1 for c in changes if c["at"] >= day_ago), "price_changes": changes[:20],
         "freshness": {"fresh_8h": sum(1 for a in ages if a <= 8), "fresh_24h": sum(1 for a in ages if 8 < a <= 24), "older": sum(1 for a in ages if a > 24),
@@ -655,6 +758,9 @@ def format_report(d, limit=12):
               f"- dihitung ke harga: {s['listings_counted']} listing, {s['cards']} kartu, {s['sellers_unique']} seller unik",
               f"- pemeriksaan putaran ini: {s['checked_ok_this_run']} berhasil, {s['check_failed_this_run']} gagal; status: " + ", ".join(f"{k} {v}" for k, v in sorted(s["status"].items())),
               f"- perubahan harga 24 jam: {s['price_changes_24h']}",
+              *([f"- per sumber: " + ", ".join(f"{k} {v['accepted']} diterima/{v['counted']} dihitung" for k, v in s["by_source"].items())] if len(s.get("by_source") or {}) > 1 else []),
+              *([f"- impor manual: {r['imported']['rows']} baris, {r['imported']['accepted']} diterima, {r['imported']['ambiguous']} ambigu, "
+                 f"{r['imported']['rejected']} ditolak" + (f", {len(r['imported']['problems'])} baris bermasalah" if r['imported']['problems'] else "")] if r.get("imported") else []),
               f"- kesegaran: {s['freshness']['fresh_8h']} dalam 8 jam, {s['freshness']['fresh_24h']} dalam 24 jam, {s['freshness']['older']} lebih lama", ""]
     lines.append("## Harga per kartu dan grade")
     for c in d["cards"]:
@@ -785,8 +891,16 @@ def run(cfg, post, status_fn=fetch_status, photo_fn=None, now=None, sleep=time.s
     accepted_names = [r[0] for r in db.execute("SELECT DISTINCT json_extract(identity, '$.name') FROM listing WHERE verdict='accepted' AND origin != 'bot'") if r[0]]
     queries = build_queries(hits, tracked_types(latest), accepted_names, pending or ())
     toco = Toco(post, cfg.cache_dir, cfg.cache_ttl, sleep=sleep, log=log)
-    log(f"{len(queries)} kata kunci, anggaran {cfg.budget} permintaan, jeda {cfg.delay} detik")
-    items, diag, blocked = discover(toco, queries, cfg.size, cfg.delay, cfg.budget, cfg.min_share, sleep, log)
+    no_search = getattr(cfg, "no_search", False)
+    imports, import_problems = read_import(cfg.import_file) if getattr(cfg, "import_file", None) else ([], [])
+    for problem in import_problems:
+        log(f"  ! impor: {problem}")
+    if no_search:
+        items, diag, blocked = {}, [], False
+        log(f"tanpa pencarian toco; {len(imports)} baris impor")
+    else:
+        log(f"{len(queries)} kata kunci, anggaran {cfg.budget} permintaan, jeda {cfg.delay} detik")
+        items, diag, blocked = discover(toco, queries, cfg.size, cfg.delay, cfg.budget, cfg.min_share, sleep, log)
     for d in diag:
         log(f"  {d['query']!r}: {d['pages']} halaman, {d['listings']} listing dari total {d['total']} [{d['stopped']}]")
 
@@ -806,10 +920,20 @@ def run(cfg, post, status_fn=fetch_status, photo_fn=None, now=None, sleep=time.s
             accepted_new += 1
         elif v["verdict"] == "rejected":
             rejected[v["reasons"][0]["code"]] += 1
+    imported = Counter()
+    for n in imports:
+        v, read = judge(db, n, catalog, tracked, photo_fn, photo_budget)
+        new = upsert(db, n, v, now, read, origin="import")
+        imported[v["verdict"]] += 1
+        cand += 1
+        if v["verdict"] == "accepted" and new:
+            accepted_new += 1
+        elif v["verdict"] == "rejected":
+            rejected[v["reasons"][0]["code"]] += 1
     db.commit()
-    healthy = not blocked and toco.ok + toco.cached >= 1 and (toco.ok + toco.cached) >= 0.5 * (toco.ok + toco.cached + toco.failed)
+    healthy = no_search or (not blocked and toco.ok + toco.cached >= 1 and (toco.ok + toco.cached) >= 0.5 * (toco.ok + toco.cached + toco.failed))
     rc = Counter()
-    if healthy:
+    if healthy and not no_search:
         rc = recheck(db, toco, status_fn, set(items), catalog, tracked, photo_fn, photo_budget, now, cfg.recheck_limit, cfg.delay, sleep, log)
         if pending:
             meta_set(db, "pending_seed", "[]")
@@ -822,8 +946,10 @@ def run(cfg, post, status_fn=fetch_status, photo_fn=None, now=None, sleep=time.s
                 "rejected": sum(rejected.values()), "rejected_reasons": dict(rejected),
                 "checked_ok": cand - sum(rejected.values()) + rc["ok"] + rc["unavailable"],
                 "check_failed": rc["fetch_failed"] + rc["blocked"], "recheck": dict(rc), "photo_reads": cfg.photo_budget - photo_budget[0],
+                "imported": ({"rows": len(imports), "accepted": imported["accepted"], "ambiguous": imported["ambiguous"], "rejected": imported["rejected"],
+                              "problems": import_problems[:20]} if getattr(cfg, "import_file", None) else None),
                 "dry_run": bool(cfg.dry_run), "finished_at": (now if explicit_clock else datetime.now(timezone.utc)).isoformat()}
-    if not items and not healthy:
+    if not items and not imports and not healthy:
         log("Tidak ada hasil pencarian dan sumber tidak sehat. egs_watch.json TIDAK diubah.")
         return None, 2
     export = build_export(db, now, run_info)
@@ -862,6 +988,9 @@ def main(argv=None):
     ap.add_argument("--cache-dir", help="folder cache hasil pencarian (bawaan: di samping database)")
     ap.add_argument("--cache-ttl", type=int, default=CACHE_TTL, help="detik sebuah halaman pencarian dipakai ulang")
     ap.add_argument("--recheck-limit", type=int, default=80, help="listing yang diperiksa satu per satu bila tidak muncul di pencarian")
+    ap.add_argument("--import", dest="import_file", metavar="BERKAS",
+                    help="CSV atau JSON listing yang dikumpulkan sendiri (kolom: url, judul, harga, toko, foto, stok): dinilai dan dihitung seperti listing toco; tanpa membuka situsnya")
+    ap.add_argument("--no-search", action="store_true", help="lewati pencarian toco (berguna bersama --import)")
     ap.add_argument("--no-seed", action="store_true", help="jangan impor latest.json ke database")
     ap.add_argument("--dry-run", action="store_true", help="baca dan nilai saja: database disalin ke memori dan tidak ada berkas hasil ditulis (cache pencarian tetap dipakai)")
     ap.add_argument("--photo-mode", choices=("off", "openai", "anthropic"), default=os.environ.get("EGS_PHOTO_MODE", "off"),
