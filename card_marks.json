@@ -1,0 +1,146 @@
+{
+ "about": "Rarity yang tercetak pada kartu yang oleh situs resmi dicatat 'Tanpa Tanda' (reprint MA6 nomor di atas jumlah tercetak: kartu GX RRR/SR, V, VMAX, VSTAR ...; kartu deck) dan tanda 'reprint'. Kunci 'KODE|nomor' persis seperti di catalog.json. 'rarity' = kode tercetak, 'alt_art': true menambah ' AA' di papan (mis. 'SR AA'), 'reprint': teks pada lencana 'reprint ...'. tools/read_card_marks.py mengisinya (gambar resmi dibaca dua model yang harus sepakat; --mark-reprints tanpa model); entri dengan \"by\": \"manual\" tidak pernah ditimpa. Koreksi langsung di berkas ini.",
+ "cards": {
+  "MA6|167/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Pikachu",
+   "reprint": "30th"
+  },
+  "MA6|168/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Charizard",
+   "reprint": "30th"
+  },
+  "MA6|169/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Misty",
+   "reprint": "30th"
+  },
+  "MA6|170/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Jigglypuff Erika",
+   "reprint": "30th"
+  },
+  "MA6|171/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Sneasel",
+   "reprint": "30th"
+  },
+  "MA6|172/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Celebi Berkilau",
+   "reprint": "30th"
+  },
+  "MA6|173/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Lugia",
+   "reprint": "30th"
+  },
+  "MA6|174/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Delcatty",
+   "reprint": "30th"
+  },
+  "MA6|175/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Tyranitar Jahat",
+   "reprint": "30th"
+  },
+  "MA6|176/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Scizor ex",
+   "reprint": "30th"
+  },
+  "MA6|177/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Metagross",
+   "reprint": "30th"
+  },
+  "MA6|178/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Palkia",
+   "reprint": "30th"
+  },
+  "MA6|179/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Uxie",
+   "reprint": "30th"
+  },
+  "MA6|180/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Crobat G",
+   "reprint": "30th"
+  },
+  "MA6|181/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Gengar",
+   "reprint": "30th"
+  },
+  "MA6|184/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "N",
+   "reprint": "30th"
+  },
+  "MA6|185/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Rayquaza EX",
+   "reprint": "30th"
+  },
+  "MA6|186/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Genesect EX",
+   "reprint": "30th"
+  },
+  "MA6|187/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "M Gardevoir EX",
+   "reprint": "30th"
+  },
+  "MA6|188/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Greninja BREAK",
+   "reprint": "30th"
+  },
+  "MA6|189/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Solgaleo GX",
+   "reprint": "30th"
+  },
+  "MA6|190/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Buzzwole GX",
+   "reprint": "30th"
+  },
+  "MA6|191/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Pikachu & Zekrom GX",
+   "reprint": "30th"
+  },
+  "MA6|192/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Zacian V",
+   "reprint": "30th"
+  },
+  "MA6|193/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Raikou",
+   "reprint": "30th"
+  },
+  "MA6|194/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Mew VMAX",
+   "reprint": "30th"
+  },
+  "MA6|195/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Arceus VSTAR",
+   "reprint": "30th"
+  },
+  "MA6|196/130": {
+   "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)",
+   "name": "Magikarp",
+   "reprint": "30th"
+  }
+ },
+ "schema_version": 1
+}
