@@ -62,7 +62,9 @@ main() {
     [ -f jp_prices.json ] && catalog_arg="$catalog_arg --jp jp_prices.json"
     if "$PYTHON" tools/build_site.py latest.json --raw raw.json $catalog_arg --standalone --out "$EGS_SITE_DIR/.index.html.new" \
         && chmod 644 "$EGS_SITE_DIR/.index.html.new" && mv -f "$EGS_SITE_DIR/.index.html.new" "$EGS_SITE_DIR/index.html"; then
-      printf 'User-agent: *\nDisallow: /\n' > "$EGS_SITE_DIR/robots.txt"
+      # robots.txt is static and setup_site.sh creates it (as root): write it only when it is missing, and never fail the run over it
+      [ -e "$EGS_SITE_DIR/robots.txt" ] || printf 'User-agent: *\nDisallow: /\n' > "$EGS_SITE_DIR/robots.txt" \
+        || echo "PERINGATAN: robots.txt tidak bisa ditulis di $EGS_SITE_DIR" >&2
       echo "situs diperbarui: $EGS_SITE_DIR/index.html"
     else
       echo "PERINGATAN: situs gagal dibangun; penerbitan raw.json tidak terpengaruh" >&2
