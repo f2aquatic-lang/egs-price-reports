@@ -171,15 +171,21 @@ Tiap kartu menampilkan batang RAW (rentang, kotak untuk tengah 50%, tanda median
 - Akurasi pembaca bahasa dari foto pada data nyata. Diuji lewat `--sample-check` sebelum dipakai (lihat vps-setup.md).
 - Nomor seri. Untuk RAW tidak ada, jadi satu kartu yang dijual dua kali bisa terhitung dua.
 
-## Rarity yang tercetak tetapi tidak dicatat situs resmi (`tools/card_marks.json`)
+## Rarity yang tercetak tetapi tidak dicatat situs resmi, dan tanda reprint (`card_marks.json`)
 
-Situs resmi memasukkan sebagian kartu ke "Tanpa Tanda" padahal kartunya sendiri mencetak rarity di bagian bawah. Contoh nyata: 28 kartu reprint di MA6 (30th Celebration, nomor 167 sampai 196 dari /130: kartu GX bertanda RRR atau SR, V, VMAX, VSTAR, Magikarp 196/130 dan seterusnya), dan semua kartu deck seperti AC3D. Untuk itu ada `tools/card_marks.json` (kunci `KODE|nomor`, isi `rarity` dan `alt_art`) yang dipakai papan: rarity resmi selalu menang, mark hanya mengisi yang kosong, dan `alt_art: true` menambahkan " AA" (`SR AA` = SR dengan ilustrasi alternate art, dihitung sebagai kartu yang berbeda dari SR biasa karena gambarnya lain).
+Situs resmi memasukkan sebagian kartu ke "Tanpa Tanda". Contoh nyata: 28 kartu di MA6 (30th Celebration, nomor 167 sampai 196 dari /130) yang semuanya **reprint** kartu lama dengan border emas dan logo 30th Anniversary: Pikachu, Charizard, Misty (reprint vintage, yang kemungkinan tidak mencetak rarity bergaya modern), Solgaleo GX, Buzzwole GX, Pikachu & Zekrom GX, Zacian V, Mew VMAX, Arceus VSTAR, Magikarp 196/130 dan seterusnya (GX/V/VSTAR mencetak RRR atau SR di bagian bawah, menurut pemiliknya); serta semua kartu deck seperti AC3D.
 
-Isinya dibuat dengan `tools/read_card_marks.py`: gambar resmi tiap kandidat dibaca **dua model** (bawaan `gpt-4.1,gpt-4o`) dan hanya yang disepakati keduanya dicatat. Kalau rarity tidak sama, atau salah satu model gagal, kartu itu tidak dicatat. Bendera alternate art dicatat hanya kalau kedua model sepakat juga di situ. Entri dengan `"by": "manual"` tidak pernah ditimpa, jadi koreksi langsung di berkas dan beri tanda itu. Harga dasar tidak berubah: kartu bernomor di atas jumlah tercetak tidak pernah mendapat harga dasar.
+`card_marks.json` (kunci `KODE|nomor`, isi `rarity`, `alt_art`, `reprint`) dipakai papan: **rarity resmi selalu menang**, mark hanya mengisi yang kosong; `alt_art: true` menambahkan " AA" (`SR AA`, kartu yang berbeda dari SR biasa karena gambarnya lain); `reprint: "30th"` menambahkan lencana **"reprint 30th"** di baris kartu dan membuat kata "reprint" bisa dicari. Berkas ini disimpan di `/opt/egs-raw/card_marks.json` (di luar checkout, yang direset penerbit tiap putaran) dan disalin penerbit ke samping `catalog.json`, lalu diberikan ke pembuat halaman lewat `--marks`. Entri dengan `"by": "manual"` tidak pernah ditimpa; koreksi langsung di berkas itu (`"reprint": false` mematikan lencana satu kartu).
+
+Dua cara mengisinya, keduanya lewat `tools/read_card_marks.py` dengan `--marks /opt/egs-raw/card_marks.json`:
+
+- **Tanda reprint, tanpa model dan tanpa biaya:** `--sets MA6 --mark-reprints` memberi lencana pada kartu tanpa rarity yang nomornya di atas jumlah tercetak (blok 167+ di MA6).
+- **Rarity tercetak, dibaca dari gambar resmi oleh dua model** (bawaan `gpt-4.1,gpt-4o`): hanya yang disepakati keduanya yang dicatat. Kalau rarity berbeda, atau satu model gagal, kartunya tidak dicatat; log menampilkan bacaan tiap model. Bendera alternate art dicatat hanya kalau keduanya sepakat juga di situ. `--only 189/130,195/130` membaca kartu tertentu, `--limit N` membatasi jumlahnya.
 
 ```bash
-python3 tools/read_card_marks.py --catalog /opt/egs-raw/catalog.json --sets MA6 --dry-run     # daftar kandidat, tanpa memanggil apa pun
-python3 tools/read_card_marks.py --catalog /opt/egs-raw/catalog.json --sets MA6 --limit 3     # percobaan tiga gambar
-python3 tools/read_card_marks.py --catalog /opt/egs-raw/catalog.json --sets MA6,AC3D          # semua kandidat set itu
+M=/opt/egs-raw/card_marks.json
+python3 tools/read_card_marks.py --catalog /opt/egs-raw/catalog.json --marks $M --sets MA6 --mark-reprints                    # lencana reprint
+python3 tools/read_card_marks.py --catalog /opt/egs-raw/catalog.json --marks $M --sets MA6 --only 189/130,195/130,196/130  # rarity tercetak (dua model)
+python3 tools/read_card_marks.py --catalog /opt/egs-raw/catalog.json --marks $M --sets MA6,AC3D                              # semua kandidat
 ```
-
+Harga dasar tidak berubah: kartu bernomor di atas jumlah tercetak tidak pernah mendapat harga dasar, dan set yang tidak satu pun kartunya bertanda (deck, promo) juga tidak.

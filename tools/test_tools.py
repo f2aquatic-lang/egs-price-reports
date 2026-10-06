@@ -2105,6 +2105,33 @@ class BrowserRender(unittest.TestCase):
         self.assertIn("Seri MEGA", by_number["groups"])
         self.assertEqual([r.split(" ")[0] for r in ma3_number], ["114/193", "115/193", "117/193", "118/193"])
 
+    def test_board_shows_the_reprint_badge_and_finds_reprints_by_searching_the_word(self):
+        from playwright.sync_api import sync_playwright
+        raw, catalog = board_with_official_catalog()
+        marks = {"MA3|117/193": {"rarity": "RRR", "reprint": "30th"}}
+        html = build_site.render(build_site.build(tiny_latest(), raw, catalog, marks=marks), True)
+        path = os.path.join(tempfile.mkdtemp(), "board.html")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(html)
+        errors = []
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path=chrome_path(), headless=True, args=["--no-sandbox"] if os.geteuid() == 0 else [])
+            page = browser.new_page()
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            page.route("https://**/*", lambda route: route.abort())
+            page.goto("file://" + path)
+            page.wait_for_timeout(300)
+            ev = page.evaluate
+            rows = lambda: ev("() => [...document.querySelectorAll('#rawonly-body tbody tr')].map(tr => tr.innerText.replace(/\\s+/g, ' ').trim())")
+            shown = rows()
+            page.fill("#rawonly-tools input", "reprint")
+            found = rows()
+            browser.close()
+        self.assertEqual(errors, [])
+        self.assertTrue(any("117/193 Rare Thing SAR" in r and "reprint 30th" in r for r in shown))                 # the official rarity wins over a mark
+        self.assertEqual(len(found), 1)
+        self.assertIn("117/193", found[0])
+
     def test_board_shows_base_prices_missing_prices_official_images_and_can_hide_unpriced(self):
         from playwright.sync_api import sync_playwright
         raw, catalog = board_with_official_catalog()
@@ -2586,6 +2613,34 @@ class CardMarks(unittest.TestCase):
         read_card_marks.run(self.args(only="001/172"), self.reader({}), log=self.logs.append)    # a deck card named by number, with no set given
         self.assertEqual(self.seen, ["https://o/6.png"])
         self.assertEqual(read_card_marks.norm_number("001/130"), "1/130")
+
+    def test_the_block_above_the_printed_total_is_flagged_as_reprints_without_a_model_and_nothing_else_is_touched(self):
+        flagged = read_card_marks.mark_reprints(marks_catalog(), marks := {"cards": {"MA6|189/130": {"rarity": "RRR", "by": "manual"}, "MA6|195/130": {"reprint": False}}}, "MA6", "30th")
+        self.assertEqual(flagged, 2)                                                          # 189 (named by the owner) gains the flag and so does 199; 195 already says it is not one
+        self.assertEqual(marks["cards"]["MA6|199/130"]["reprint"], "30th")                    # a flag needs no picture
+        self.assertEqual(marks["cards"]["MA6|189/130"], {"rarity": "RRR", "by": "manual", "reprint": "30th"})
+        self.assertIs(marks["cards"]["MA6|195/130"]["reprint"], False)
+        self.assertNotIn("MA6|002/130", marks["cards"])                                       # inside the set's own numbering
+        self.assertNotIn("MA6|015/130", marks["cards"])
+        self.assertFalse(any(k.startswith(("AC3D", "MA3")) for k in marks["cards"]))          # decks and other sets are not part of it
+        self.assertEqual(read_card_marks.main(["--catalog", self.catalog, "--marks", self.marks, "--mark-reprints"]), 1)            # needs --sets
+        self.assertEqual(read_card_marks.main(["--catalog", self.catalog, "--marks", self.marks, "--sets", "MA6", "--mark-reprints", "--reprint-label", "30th"]), 0)
+        with open(self.marks, encoding="utf-8") as fh:
+            saved = json.load(fh)
+        self.assertEqual(sorted(saved["cards"]), ["MA6|189/130", "MA6|195/130", "MA6|199/130"])
+        self.assertTrue(saved["about"].startswith("Rarity yang tercetak"))                    # the explanation is written with the file
+        self.assertTrue(all(c["reprint"] == "30th" for c in saved["cards"].values()))
+
+    def test_the_board_labels_reprints_and_shows_the_printed_rarity_from_the_marks_given_to_the_build(self):
+        raw, catalog = board_with_official_catalog()
+        catalog["cards"] += [{"set": "MA3", "number": "150/193", "num": 150, "den": 193, "name": "Reprint Card", "rarity": None, "image": "https://official.example/150.png", "id": 150}]
+        marks = {"MA3|150/193": {"rarity": "SR", "alt_art": True, "reprint": "30th"}}
+        data = build_site.build(tiny_latest(), raw, catalog, marks=marks)
+        row = next(c for c in data["raw_cards"] if c["number"] == "150/193")
+        self.assertEqual((row["rarity"], row["reprint"], row["basis"]), ("SR AA", "30th", None))                    # no base price: it is above the unmarked numbering rule
+        plain = next(c for c in data["raw_cards"] if c["number"] == "114/193")
+        self.assertIsNone(plain["reprint"])
+        self.assertIsNone(next(c for c in build_site.build(tiny_latest(), raw, catalog, marks={})["raw_cards"] if c["number"] == "150/193")["reprint"])
 
     def test_the_main_command_wants_two_models(self):
         self.assertEqual(read_card_marks.main(["--catalog", self.catalog, "--marks", self.marks, "--model", "gpt-4.1"]), 1)

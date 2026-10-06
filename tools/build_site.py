@@ -88,7 +88,7 @@ def match_type(text, types):
     return (best[1], best[2]) if best else None
 
 
-def build(d, raw=None, catalog=None, jp=None, rates=None, watch=None):
+def build(d, raw=None, catalog=None, jp=None, rates=None, watch=None, marks=None):
     d = merge_egs_watch(d, watch)
     gen = datetime.fromisoformat(d["generated_at"])
     types, index = [], {}
@@ -145,7 +145,7 @@ def build(d, raw=None, catalog=None, jp=None, rates=None, watch=None):
         "rates": rates_block(rates), "egs_watch": watch_block(watch),
     }
     if raw:
-        attach_raw(data, raw, gen, catalog, jp)
+        attach_raw(data, raw, gen, catalog, jp, marks)
     return data
 
 
@@ -264,11 +264,13 @@ def official_index(cards, sets=None, orders=None, extras=None, decks=False, mark
         groups.setdefault(card_key(c["set"], c["number"]), []).append(c)
     out = {}
     for (code, number, _), entries in groups.items():
-        rarity = next((e["rarity"] for e in entries if e.get("rarity")), None) or mark_label(marks.get(f"{entries[0]['set']}|{entries[0]['number']}"))
+        mark = marks.get(f"{entries[0]['set']}|{entries[0]['number']}") or {}
+        rarity = next((e["rarity"] for e in entries if e.get("rarity")), None) or mark_label(mark)
+        reprint = mark.get("reprint") or None
         order = orders.get(code.upper(), VARIANTS)
         for i, e in enumerate(entries):
             variant = order[i] if i < len(order) else f"v{i + 1}"
-            out[card_key(e["set"], e["number"], variant)] = {**e, "rarity": rarity, "variant": variant}
+            out[card_key(e["set"], e["number"], variant)] = {**e, "rarity": rarity, "variant": variant, "reprint": reprint}
         for variant in BALL_VARIANTS:
             key = card_key(entries[0]["set"], entries[0]["number"], variant)
             if variant in extras.get((code.upper(), number), ()) and key not in out:
@@ -291,11 +293,12 @@ def trend_of(history):
 
 
 SETS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sets.json")
-MARKS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "card_marks.json")
+MARKS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "card_marks.json")   # the repository root, like catalog.json
 
 
 def load_marks(path=MARKS_PATH):
-    """tools/card_marks.json: the rarity printed on cards that the official site lists without one (see tools/read_card_marks.py)."""
+    """card_marks.json: the rarity printed on cards that the official site lists without one, and the reprint flag (see tools/read_card_marks.py). The VPS keeps it
+    in /opt/egs-raw (outside the checkout, which the publisher resets) and publishes a copy next to catalog.json."""
     try:
         with open(path, encoding="utf-8") as fh:
             data = json.load(fh)
@@ -354,7 +357,7 @@ def egs_lowest(t):
     return [{"grade": g, "ask": low, "n": n} for g, (n, low) in sorted(best.items(), key=lambda kv: -float(kv[0]))]
 
 
-def attach_raw(data, raw, gen, catalog=None, jp=None):
+def attach_raw(data, raw, gen, catalog=None, jp=None, marks=None):
     """Join raw.json cards to the tracked types on (set_code, card_number)."""
     by = {card_key(c["set_code"], c["card_number"], c.get("variant", "")): c for c in raw["cards"]}
     used = set()
@@ -377,7 +380,7 @@ def attach_raw(data, raw, gen, catalog=None, jp=None):
         key=lambda c: (-c["n"], c["set"], c["number"]))
     data["raw_meta"] = {"generated": wib_label(raw["generated_at"]), "cards": len(raw["cards"]),
                         "listings": raw["coverage"]["listings_counted"]}
-    attach_sets(data, raw, catalog, jp)
+    attach_sets(data, raw, catalog, jp, marks)
 
 
 def jp_price(row, mapping, jpx, jp):
@@ -390,7 +393,7 @@ def jp_price(row, mapping, jpx, jp):
             "url": jp["card_url"].format(**c) if jp.get("card_url") else None}
 
 
-def attach_sets(data, raw, catalog=None, jp=None):
+def attach_sets(data, raw, catalog=None, jp=None, marks=None):
     """Every card as a row, grouped by set code: priced from listings, base-priced, or (with the official catalog) unpriced."""
     meta = load_sets()
     known = {m["code"].upper(): m for m in meta["sets"]}
@@ -400,7 +403,7 @@ def attach_sets(data, raw, catalog=None, jp=None):
     official = {}
     official_sets = {}
     if catalog:
-        official = official_index(catalog["cards"], catalog["sets"], extras=jp_versions(jp, mapping), decks=True)
+        official = official_index(catalog["cards"], catalog["sets"], extras=jp_versions(jp, mapping), decks=True, marks=marks)
         official_sets = {x["code"].upper(): x for x in catalog["sets"] if x.get("fetched")}
     rows, per_set, seen = [], {}, set()
 
@@ -424,12 +427,12 @@ def attach_sets(data, raw, catalog=None, jp=None):
              "url": c["listings"][0]["url"] if c["listings"] else None, "photo": photo,
              "image": official[key].get("image") if key in official else None,  # an unofficial version shows the seller's photo
              "basis": "default" if base else "listing", "tracked": t is not None, "egs": egs_lowest(t) if t else [],
-             "outliers": len(c.get("outliers") or [])})
+             "outliers": len(c.get("outliers") or []), "reprint": (o or {}).get("reprint")})
     for key, o in official.items():  # official cards nobody lists and that have no base price
         if key not in seen and o["set"].upper() in official_sets and o.get("num") is not None:
             add({"name": o["name"], "set": o["set"].upper(), "number": o["number"], "num": o["num"], "den": o["den"], "variant": o["variant"],
                  "rarity": o.get("rarity"), "n": 0, "min": None, "p25": None, "median": None, "p75": None, "max": None,
-                 "trend": None, "url": None, "photo": None, "image": o.get("image"), "basis": None, "tracked": False, "egs": [], "outliers": 0})
+                 "trend": None, "url": None, "photo": None, "image": o.get("image"), "basis": None, "tracked": False, "egs": [], "outliers": 0, "reprint": o.get("reprint")})
     sets = []
     for code, cards in per_set.items():
         o = official_sets.get(code, {})
@@ -489,6 +492,7 @@ def main():
     ap.add_argument("--jp", help="jp_prices.json from tools/fetch_jp_prices.py: Japanese shop prices beside the Indonesian ones")
     ap.add_argument("--egs", help="egs_watch.json from tools/egs_watch.py: more slab listings, with the review queue of the doubtful ones")
     ap.add_argument("--rates", help="rates.json from tools/fetch_rates.py: today's yen and dollar rates in rupiah")
+    ap.add_argument("--marks", help="card_marks.json from tools/read_card_marks.py: the rarity printed on cards the official site lists without one, and the reprint flag")
     ap.add_argument("--out", default="-", help="output file (default: stdout)")
     ap.add_argument("--standalone", action="store_true", help="wrap in a full HTML document")
     a = ap.parse_args()
@@ -514,7 +518,8 @@ def main():
     if a.egs:
         with open(a.egs, encoding="utf-8") as fh:
             watch = json.load(fh)
-    html = render(build(latest, raw, catalog, jp, rates, watch), a.standalone)
+    marks = load_marks(a.marks)["cards"] if a.marks else None
+    html = render(build(latest, raw, catalog, jp, rates, watch, marks), a.standalone)
     if a.out == "-":
         sys.stdout.write(html)
     else:

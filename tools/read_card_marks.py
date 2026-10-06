@@ -4,7 +4,8 @@
 The official site (asia.pokemon-card.com/id) files some cards under "Tanpa Tanda" although the card itself prints a rarity: the reprints of
 the 30th Celebration set (MA6 numbers above the printed total: GX cards with RRR or SR, V, VMAX, VSTAR ...) and the cards of the starter decks.
 This tool looks at the official picture of such a card with two vision models and writes what BOTH read into tools/card_marks.json,
-which the board uses to show the rarity (and "AA" for an alternate-art illustration, e.g. "SR AA"). A field the models do not agree on is not
+which the board uses to show the rarity (and "AA" for an alternate-art illustration, e.g. "SR AA"). On the VPS keep that file outside the checkout
+(/opt/egs-raw/card_marks.json: pass --marks): the publisher resets the checkout and copies the file next to catalog.json. A field the models do not agree on is not
 written. An entry marked "by": "manual" is yours and is never overwritten; edit the file by hand to correct or add one.
 
 Usage (needs the openai or anthropic package and the key in the environment, see docs/vps-setup.md):
@@ -12,6 +13,7 @@ Usage (needs the openai or anthropic package and the key in the environment, see
   python3 tools/read_card_marks.py --catalog /opt/egs-raw/catalog.json --sets MA6 --limit 3             # a trial: three pictures
   python3 tools/read_card_marks.py --catalog /opt/egs-raw/catalog.json --sets MA6 --only 189/130,195/130,196/130   # exactly these cards
   python3 tools/read_card_marks.py --catalog /opt/egs-raw/catalog.json --sets MA6,AC3D                  # every candidate of those sets
+  python3 tools/read_card_marks.py --catalog /opt/egs-raw/catalog.json --sets MA6 --mark-reprints       # flag the reprint block, no model, no cost
 Candidates: cards without a rarity whose number is above the printed total (secret and special cards), and every card of a set in which no card
 has a rarity (decks). Cards already in the file are skipped unless --again.
 """
@@ -36,6 +38,12 @@ MARK_PROMPT = (
     "false when it is the regular artwork inside the usual frame; null when you cannot tell).")
 
 
+ABOUT = ("Rarity yang tercetak pada kartu yang oleh situs resmi dicatat 'Tanpa Tanda' (reprint MA6 nomor di atas jumlah tercetak: kartu GX RRR/SR, V, VMAX, VSTAR ...; kartu deck) "
+         "dan tanda 'reprint'. Kunci 'KODE|nomor' persis seperti di catalog.json. 'rarity' = kode tercetak, 'alt_art': true menambah ' AA' di papan (mis. 'SR AA'), "
+         "'reprint': teks pada lencana 'reprint ...'. tools/read_card_marks.py mengisinya (gambar resmi dibaca dua model yang harus sepakat; --mark-reprints tanpa model); "
+         "entri dengan \"by\": \"manual\" tidak pernah ditimpa. Koreksi langsung di berkas ini.")
+
+
 def key_of(card):
     return f"{card['set']}|{card['number']}"
 
@@ -54,6 +62,24 @@ def candidates(catalog, sets=None):
         if above or c["set"] not in marked:
             out.append(c)
     return out
+
+
+def above_total(catalog, sets):
+    """Official cards of the named sets without a rarity whose number is above the printed total: the special block (MA6's 167..196 of /130)."""
+    wanted = {x.strip().upper() for x in sets.split(",")}
+    return [c for c in catalog["cards"] if c["set"].upper() in wanted and not c.get("rarity") and c.get("num") and c.get("den") and c["num"] > c["den"]]
+
+
+def mark_reprints(catalog, marks, sets, label):
+    """Flag the cards above the printed total of the named sets as reprints (no model is called). A card keeps whatever else its entry says; an entry that
+    already says what the card is (a "reprint" key, even false) is left alone. Returns how many cards were flagged."""
+    flagged = 0
+    for c in above_total(catalog, sets):
+        entry = marks["cards"].setdefault(key_of(c), {"name": c["name"], "by": "aturan: nomor di atas jumlah tercetak (dikonfirmasi pemilik)"})
+        if "reprint" not in entry:
+            entry["reprint"] = label
+            flagged += 1
+    return flagged
 
 
 def parse_mark(text):
@@ -144,6 +170,7 @@ def run(args, reader=None, now=None, log=print):
 
 
 def save(marks, path):
+    marks["about"] = marks.get("about") or ABOUT
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     with open(path + ".tmp", "w", encoding="utf-8") as fh:
         json.dump(marks, fh, ensure_ascii=False, indent=1, sort_keys=True)
@@ -157,12 +184,25 @@ def main(argv=None):
     ap.add_argument("--marks", default=MARKS_PATH)
     ap.add_argument("--sets", help="kode set dipisah koma (bawaan: semua kandidat)")
     ap.add_argument("--only", help="hanya nomor kartu ini (dipisah koma, mis. 189/130,195/130), kartu mana pun tanpa rarity resmi; --sets membatasi setnya")
+    ap.add_argument("--mark-reprints", action="store_true", help="beri tanda reprint pada kartu bernomor di atas jumlah tercetak di --sets (tanpa model, tanpa biaya)")
+    ap.add_argument("--reprint-label", default="30th", help="isi tanda reprint (bawaan: 30th)")
     ap.add_argument("--limit", type=int, help="paling banyak sekian gambar putaran ini")
     ap.add_argument("--again", action="store_true", help="baca ulang kartu yang sudah ada di berkas (entri manual tetap dilindungi)")
     ap.add_argument("--dry-run", action="store_true", help="hanya tampilkan kandidatnya")
     ap.add_argument("--provider", choices=("openai", "anthropic"), default="openai")
     ap.add_argument("--model", default=os.environ.get("EGS_PHOTO_MODEL"), help="model dipisah koma; semuanya harus sepakat (bawaan openai: gpt-4.1,gpt-4o)")
     args = ap.parse_args(argv)
+    if args.mark_reprints:
+        if not args.sets:
+            print("--mark-reprints butuh --sets (mis. --sets MA6)")
+            return 1
+        with open(args.catalog, encoding="utf-8") as fh:
+            catalog = json.load(fh)
+        marks = load_marks(args.marks)
+        flagged = mark_reprints(catalog, marks, args.sets, args.reprint_label)
+        save(marks, args.marks)
+        print(f"{flagged} kartu diberi tanda reprint {args.reprint_label} di {args.sets}")
+        return 0
     models = args.model or egs_watch.DEFAULT_PHOTO_MODELS[args.provider]
     if not args.dry_run and len([m for m in models.split(",") if m.strip()]) < 2:
         print("Pakai dua model atau lebih (dipisah koma, mis. gpt-4.1,gpt-4o): satu bacaan tidak cukup untuk mencatat rarity.")

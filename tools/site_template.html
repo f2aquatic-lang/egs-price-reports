@@ -541,7 +541,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
       var rows = D.raw_cards.filter(function(c){
         if (ro.q) {
           var m = bySet[c.set] || {};
-          return (c.name + ' ' + c.set + ' ' + c.number + ' ' + c.rarity + ' ' + (m.name_id || '') + ' ' + (VARIANT_LABEL[c.variant] || '')).toLowerCase().indexOf(ro.q) >= 0;
+          return (c.name + ' ' + c.set + ' ' + c.number + ' ' + c.rarity + ' ' + (m.name_id || '') + ' ' + (VARIANT_LABEL[c.variant] || '') + (c.reprint ? ' reprint ' + c.reprint : '')).toLowerCase().indexOf(ro.q) >= 0;
         }
         return ro.set === '*' || c.set === ro.set;
       }).filter(function(c){ return !ro.priced || c.basis; });
@@ -564,6 +564,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
             h('td', {'class': 'num', text: c.number}),
             h('td', null, c.name + (c.rarity ? ' ' + c.rarity : ''),
               c.variant ? h('span', {'class': 'badge variant', text: VARIANT_LABEL[c.variant] || c.variant, title: c.variant === 'holo' ? 'Versi foil dari nomor ini; penjual hanya menulis Holo, jadi pola bola atau simbolnya belum jelas. Harganya sendiri, bukan harga kartu biasa' : 'Versi foil yang berbeda dari kartu biasa dengan nomor yang sama; harganya sendiri'}) : null,
+              c.reprint ? h('span', {'class': 'badge variant', text: 'reprint ' + c.reprint, title: 'Cetak ulang kartu lama (border emas, logo ' + c.reprint + '): kartu tersendiri dengan harga sendiri, bukan harga kartu aslinya'}) : null,
               c.tracked ? h('span', {'class': 'badge', text: 'dipantau'}) : null),
             h('td', {'class': 'num'}, c.basis === 'listing' ? String(c.n) : '—',
               c.outliers ? h('span', {'class': 'badge', text: c.outliers + ' kemahalan', title: 'Listing yang harganya lebih dari 6 kali harga Yuyutei (dan di atas Rp50.000) tidak dihitung ke harga di sini'}) : null),
