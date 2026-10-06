@@ -33,6 +33,7 @@ import egs_worksheet  # noqa: E402
 import fetch_catalog  # noqa: E402
 import fetch_jp_prices  # noqa: E402
 import fetch_rates  # noqa: E402
+import fetch_tcgdex  # noqa: E402
 import probe_marketplaces  # noqa: E402
 import probe_pokemon_card  # noqa: E402
 import probe_toco  # noqa: E402
@@ -3294,6 +3295,112 @@ class EgsWatch(unittest.TestCase):
 
 def slug_of_url(url):
     return url.rstrip("/").rsplit("/", 1)[-1]
+
+
+def tcgdex_pages():
+    """TCGdex as the fetcher sees it: one Japanese set with two cards (the first with Cardmarket prices of the English card) and an empty English set."""
+    ja_card = lambda n, extra: {"id": f"M2-{n}", "localId": n, "name": f"Karte {n}", "illustrator": "danciao", "rarity": "Special illustration rare", "dexId": [6], "hp": 360,
+                                "set": {"id": "M2"}, "attacks": [{"name": "x"}], **extra}
+    return {"ja/sets/M2": {"id": "M2", "name": "Inferno X", "cardCount": {"total": 116, "official": 80},
+                           "cards": [{"id": "M2-110", "localId": "110", "name": "a", "image": "i"}, {"id": "M2-111", "localId": "111", "name": "b", "image": "i"}]},
+            "ja/cards/M2-110": ja_card("110", {"thirdParty": {"cardmarket": 850618, "tcgplayer": 655886},
+                                               "pricing": {"cardmarket": {"updated": "2026-10-06T10:33:18Z", "unit": "EUR", "avg": 686.37, "low": 270, "trend": 484.26, "avg1": 712.5,
+                                                                          "avg7": 477.31, "avg30": 673.95, "avg-holo": None}, "tcgplayer": None}}),
+            "ja/cards/M2-111": ja_card("111", {"thirdParty": None, "pricing": {"cardmarket": None, "tcgplayer": None}}),
+            "en/sets/me02": {"id": "me02", "name": "Phantasmal Flames", "cardCount": {"total": 2, "official": 2}, "cards": []}}
+
+
+class FetchTcgdex(unittest.TestCase):
+    T0 = datetime(2026, 10, 6, 3, 0, tzinfo=timezone.utc)
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.pages, self.calls, self.logs = tcgdex_pages(), [], []
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def get(self, url):
+        path = url.replace(fetch_tcgdex.BASE + "/", "")
+        self.calls.append(path)
+        page = self.pages.get(path)
+        if isinstance(page, int):
+            return page, None
+        return (200, page) if page is not None else (404, None)
+
+    def go(self, now=None, **over):
+        d = self.tmp.name
+        args = argparse.Namespace(**{**dict(db=os.path.join(d, "t.sqlite"), out=os.path.join(d, "t.json"), langs="en,ja", sets="ja:M2,en:me02", delay=0, max_requests=None, price_days=7), **over})
+        return fetch_tcgdex.run(args, self.get, now or self.T0, sleep=lambda s: None, log=self.logs.append)
+
+    def test_a_run_writes_cards_with_their_identity_keys_and_prices_and_nothing_else(self):
+        data = self.go()
+        self.assertEqual(self.calls, ["ja/sets/M2", "ja/cards/M2-110", "ja/cards/M2-111", "en/sets/me02"])
+        self.assertEqual({lang: [(s["id"], s["total"], s["official"]) for s in v] for lang, v in data["sets"].items()}, {"ja": [("M2", 116, 80)], "en": [("me02", 2, 2)]})
+        first, second = data["cards"]
+        self.assertEqual((first["id"], first["illustrator"], first["dex"], first["rarity"], first["cardmarket_id"], first["tcgplayer_id"]),
+                         ("M2-110", "danciao", [6], "Special illustration rare", 850618, 655886))
+        self.assertEqual(first["cardmarket"], {"unit": "EUR", "updated": "2026-10-06T10:33:18Z", "low": 270, "avg": 686.37, "trend": 484.26, "avg1": 712.5, "avg7": 477.31, "avg30": 673.95})
+        self.assertNotIn("attacks", first)
+        self.assertNotIn("cardmarket", second)                                        # a card without a price has no price: nothing is invented
+        with open(os.path.join(self.tmp.name, "t.json"), encoding="utf-8") as fh:
+            self.assertEqual(json.load(fh)["cards"][0]["id"], "M2-110")
+
+    def test_a_budget_stops_the_run_and_the_next_run_goes_on_without_asking_twice(self):
+        data = self.go(max_requests=2)
+        self.assertEqual((self.calls, [c["id"] for c in data["cards"]]), (["ja/sets/M2", "ja/cards/M2-110"], ["M2-110"]))
+        self.assertTrue(any("anggaran 2 permintaan habis" in l for l in self.logs))
+        self.calls.clear()
+        data = self.go(now=self.T0 + timedelta(hours=1))
+        self.assertEqual(self.calls, ["ja/sets/M2", "ja/cards/M2-111", "en/sets/me02"])                 # the first card is not fetched again
+        self.assertEqual([c["id"] for c in data["cards"]], ["M2-110", "M2-111"])
+
+    def test_prices_are_fetched_again_only_after_the_price_age(self):
+        self.go()
+        self.calls.clear()
+        self.go(now=self.T0 + timedelta(days=3))
+        self.assertEqual([c for c in self.calls if "/cards/" in c], [])
+        self.go(now=self.T0 + timedelta(days=8))
+        self.assertEqual([c for c in self.calls if "/cards/" in c], ["ja/cards/M2-110", "ja/cards/M2-111"])
+
+    def test_a_missing_card_is_not_asked_for_again_a_failed_one_is_and_a_refusal_stops_the_run_keeping_what_was_learned(self):
+        self.pages["ja/cards/M2-111"] = 404
+        data = self.go()
+        self.assertEqual([c["id"] for c in data["cards"]], ["M2-110"])
+        self.calls.clear()
+        self.go(now=self.T0 + timedelta(hours=1))
+        self.assertNotIn("ja/cards/M2-111", self.calls)
+        self.pages["ja/cards/M2-111"] = 500
+        self.tmp2 = tempfile.TemporaryDirectory()
+        d = self.tmp2.name
+        self.go(db=os.path.join(d, "a.sqlite"), out=os.path.join(d, "a.json"))
+        self.assertEqual(self.calls.count("ja/cards/M2-111"), 3)                          # three tries, then it is recorded as failed
+        self.calls.clear()
+        self.pages["ja/cards/M2-111"] = tcgdex_pages()["ja/cards/M2-111"]
+        data = self.go(db=os.path.join(d, "a.sqlite"), out=os.path.join(d, "a.json"), now=self.T0 + timedelta(hours=2))
+        self.assertIn("ja/cards/M2-111", self.calls)                                      # retried on the next run
+        self.assertEqual([c["id"] for c in data["cards"]], ["M2-110", "M2-111"])
+        self.pages["ja/cards/M2-110"] = 403
+        d3 = tempfile.mkdtemp()
+        data = self.go(db=os.path.join(d3, "b.sqlite"), out=os.path.join(d3, "b.json"))
+        self.assertTrue(any("BERHENTI" in l and "ditolak" in l for l in self.logs))
+        self.assertEqual(data["cards"], [])                                               # nothing worked around; the file is still written
+        self.tmp2.cleanup()
+
+    def test_only_one_run_at_a_time_and_the_default_sets_are_listed(self):
+        import fcntl
+        held = open(os.path.join(self.tmp.name, "t.sqlite.lock"), "a")
+        fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:
+            self.assertIsNone(self.go())
+            self.assertEqual(self.calls, [])
+        finally:
+            held.close()
+        self.assertIsNotNone(self.go())
+        self.assertEqual(fetch_tcgdex.parse_sets("ja:M2, en:me02,ja:M3", ["en"]), {"ja": ["M2", "M3"], "en": ["me02"]})
+        self.assertIn("M2a", fetch_tcgdex.parse_sets(None, ["ja"])["ja"])
+        self.assertIn("me02", fetch_tcgdex.parse_sets(None, ["en"])["en"])
+        self.assertEqual(fetch_tcgdex.main(["--list"]), 0)
 
 
 class MarketplaceProbe(unittest.TestCase):

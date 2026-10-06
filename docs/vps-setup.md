@@ -238,3 +238,19 @@ Keluarannya menulis per mata uang: kurs yang dipakai, sumbernya (`google` atau `
 ## Alat pemeriksa
 
 `tools/probe_toco*.py` adalah skrip diagnostik yang dipakai untuk mempelajari toco. Tidak diperlukan untuk menjalankan pengumpul, tetapi berguna kalau susunan toco berubah dan pengumpul berhenti menemukan listing.
+
+## Data TCGdex (jembatan Jepang-Indonesia dan acuan harga Inggris)
+
+`tools/fetch_tcgdex.py` mengambil data kartu Inggris dan Jepang dari TCGdex (API terbuka gratis untuk pengembang, hanya dibaca): ilustrator, nomor Pokedex, rarity, nomor kartu, dan harga pasar Cardmarket (euro) dan TCGplayer kartu Inggris. Data Indonesia TCGdex tidak dipakai: set MEGA dan SV10S/SV11S belum ada, dan kartunya tanpa rarity, nomor Pokedex, atau harga. Satu permintaan per 0,5 detik, ada anggaran per putaran, tersimpan di SQLite sehingga putaran yang terhenti melanjutkan dan sebuah kartu tidak diambil dua kali; harga sebuah kartu diambil ulang setelah 7 hari. Hasilnya `/opt/egs-raw/tcgdex.json`, yang disalin penerbit ke samping `catalog.json`.
+
+```bash
+# percobaan kecil (sekitar semenit): satu set Jepang dan satu set Inggris
+sudo -u egsprice -H python3 /opt/egs-raw/main/tools/fetch_tcgdex.py --db /opt/egs-raw/tcgdex.sqlite --out /opt/egs-raw/tcgdex.json --sets ja:M2,en:me02 --max-requests 40
+
+# semua set bawaan (lihat dengan --list), sebagai layanan latar belakang yang bisa dilanjutkan
+sudo systemd-run --unit=egs-tcgdex -p User=egsprice -p WorkingDirectory=/opt/egs-raw/main -p Nice=10 -p Environment=PYTHONUNBUFFERED=1 \
+  /usr/bin/python3 /opt/egs-raw/main/tools/fetch_tcgdex.py --db /opt/egs-raw/tcgdex.sqlite --out /opt/egs-raw/tcgdex.json
+sudo journalctl -u egs-tcgdex -f
+```
+Kalau sumbernya menjawab 401/403/451 pengambilan berhenti dan tidak dilewati; tiga kartu berturut-turut gagal juga menghentikannya, dan putaran berikutnya melanjutkan.
+
