@@ -184,3 +184,15 @@ Karena penghalangnya adalah pertahanan anti-bot dan robots.txt, bukan satu IP ya
 
 Verdict `notfound` (404/410) berarti alamat yang ditebak tidak ada di situs itu, **bukan** pemblokiran: kirim alamat halaman yang benar dari browser (misalnya halaman satu kartu, dan halaman daftar yang memuatnya) dan uji lagi dengan `--site`. Untuk situs yang diprobe di bawah robots.txt, semua aturan dalam berkasnya dicetak (bukan hanya yang menyebut pencarian). SNKRDUNK pertama kali diprobe dengan `/en/trading-cards` dan dijawab 404; robots.txt-nya terbaca (200).
 
+### Syarat penggunaan Cardtell (dibaca 2026-10-06) dan keputusannya
+
+Teks lengkap syarat Cardtell (PT Cardtell Teknologi Nusantara) dibaca. Tidak ada kalimat yang menyebut kata scraping, tetapi:
+
+- **Pasal 13.2:** nama, logo, tampilan antarmuka, algoritma agregasi harga, dan konten milik Cardtell "tidak boleh digunakan tanpa izin tertulis dari Cardtell". Izin tertulis adalah jalur yang mereka sendiri buka.
+- **Pasal 8:** akses data mereka dijatah menurut langganan (Free: 10 pemindaian per hari dan hingga 3 data harga jual terakhir; Pro Rp29.900 per bulan: tak terbatas dan hingga 10 data). Pembaca otomatis akan melewati jatah itu, yaitu model bisnis mereka.
+- **Pasal 12.2 dan 3.1:** data transaksi tampil publik tanpa identitas, dan Harga Pasar adalah agregasi hasil olahan mereka.
+- **Pasal 14 (butir terakhir) dan 18:** data situs tidak boleh dipakai untuk tujuan yang merugikan pihak lain, dan data pribadi anggota (nama, tautan Facebook) tunduk pada Kebijakan Privasi mereka.
+- Pasal 1 dan pembukaan: syarat ini mengikat siapa pun yang **mengakses** situs.
+
+Keputusan: pembaca otomatis Cardtell **tidak dibangun**. Jalur yang tersisa adalah izin tertulis atau kerja sama data (API, umpan data, atau izin menampilkan Harga Pasar mereka dengan atribusi dan tautan). Robots.txt mereka hanya melarang `/api/`, tetapi robots.txt bukan izin atas isi.
+
