@@ -1470,6 +1470,30 @@ class FetchJpPrices(unittest.TestCase):
             self.assertEqual(fetch_jp_prices.parse_set_page(page, "m02a"), want)
         self.assertEqual(fetch_jp_prices.parse_set_page(spaced, "m02a")[0]["stock"], 0)       # sold-out is read from the card's own tag
 
+    def test_foil_pattern_comes_from_the_bracket_in_the_name_and_a_circle_means_in_stock(self):
+        self.assertEqual(fetch_jp_prices.split_name("ヒビキのカイロス"), ("ヒビキのカイロス", "", ""))
+        self.assertEqual(fetch_jp_prices.split_name("ヤンヤンマ(エネルギーマーク柄/ミラー仕様)"), ("ヤンヤンマ", "エネルギーマーク柄/ミラー仕様", "element"))
+        self.assertEqual(fetch_jp_prices.split_name("ヤンヤンマ（ボール柄/ミラー仕様）"), ("ヤンヤンマ", "ボール柄/ミラー仕様", "poke_ball"))
+        self.assertEqual(fetch_jp_prices.split_name("ピカチュウ(マスターボールミラー)")[2], "master_ball")
+        self.assertEqual(fetch_jp_prices.split_name("シロナのロズレイド(R仕様)"), ("シロナのロズレイド", "R仕様", ""))
+        page = self.pages["/sell/poc/s/m02a"].replace("ピンシア", "ピンシア(ボール柄/ミラー仕様)").replace("在庫 : 20 点", "在庫 : ◯")
+        cards = {c["number"]: c for c in fetch_jp_prices.parse_set_page(page, "m02a")}
+        self.assertEqual([(c["name"], c["variant"], c["in_stock"], c["stock"]) for c in (cards["001/193"],)], [("ピンシア", "poke_ball", True, None)])
+        self.assertEqual((cards["250/193"]["in_stock"], cards["250/193"]["stock"]), (False, 0))     # sold out
+        self.assertEqual((cards["249/193"]["in_stock"], cards["249/193"]["stock"]), (True, 3))
+
+    def test_the_saved_file_is_compact_one_card_per_line_without_derivable_fields(self):
+        self.go(sets="m02a")
+        with open(self.args.out, encoding="utf-8") as fh:
+            raw = fh.read()
+        lines = raw.splitlines()
+        self.assertEqual(len(lines), 6)                                                # header line, 4 cards, closing
+        data = json.loads(raw)
+        self.assertEqual(len(data["cards"]), 4)
+        self.assertNotIn("url", data["cards"][0])
+        self.assertNotIn("image", data["cards"][0])
+        self.assertEqual(data["card_url"].format(**data["cards"][1]), "https://yuyu-tei.jp/sell/poc/card/m02a/10487")
+
     def test_a_saved_page_can_be_checked_without_any_request(self):
         path = os.path.join(self.tmp.name, "yuyutei_m02a.html")
         with open(path, "w", encoding="utf-8") as fh:

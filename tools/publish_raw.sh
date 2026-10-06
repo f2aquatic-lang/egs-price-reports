@@ -33,7 +33,7 @@ main() {
   # This checkout only publishes raw.json. A failed earlier run can leave an unpushed commit or a half-done rebase:
   # start from origin/main again, but refuse to throw away anything other than raw.json.
   git fetch -q origin main
-  foreign="$( { git diff --name-only origin/main...HEAD; git status --porcelain --untracked-files=no | cut -c4-; } | grep -vx -e raw.json -e catalog.json || true)"
+  foreign="$( { git diff --name-only origin/main...HEAD; git status --porcelain --untracked-files=no | cut -c4-; } | grep -vx -e raw.json -e catalog.json -e jp_prices.json || true)"
   if [ -n "$foreign" ]; then
     echo "Berhenti: ada perubahan lokal selain raw.json di folder ini:" >&2
     echo "$foreign" >&2
@@ -45,6 +45,11 @@ main() {
   CATALOG="${EGS_CATALOG:-/opt/egs-raw/catalog.json}"
   if [ -f "$CATALOG" ] && ! cmp -s "$CATALOG" catalog.json; then
     cp "$CATALOG" catalog.json
+  fi
+  # the Japanese reference prices (tools/fetch_jp_prices.py) are fetched separately too and published the same way
+  JP_PRICES="${EGS_JP_PRICES:-/opt/egs-raw/jp_prices.json}"
+  if [ -f "$JP_PRICES" ] && ! cmp -s "$JP_PRICES" jp_prices.json; then
+    cp "$JP_PRICES" jp_prices.json
   fi
   "$PYTHON" tools/collect_raw.py "$@"
 
@@ -63,13 +68,14 @@ main() {
     fi
   }
 
-  if [ -z "$(git status --porcelain -- raw.json catalog.json)" ]; then
+  if [ -z "$(git status --porcelain -- raw.json catalog.json jp_prices.json)" ]; then
     echo "raw.json tidak berubah"
     build_site
     exit 0
   fi
   git add raw.json
   [ -f catalog.json ] && git add catalog.json
+  [ -f jp_prices.json ] && git add jp_prices.json
   git commit -q -m "Update RAW asking report"
   # the bot pushes latest.json to the same branch: on a lost race, take its commit and push again
   for attempt in 1 2 3; do

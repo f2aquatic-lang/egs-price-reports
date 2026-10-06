@@ -70,8 +70,17 @@ def why_empty(page):
     return f"{len(page)} karakter, card-list3 {has_list}, {blocks} blok card-product, kode di tautan kartu: {dict(codes.most_common(5))}"
 
 
+def split_name(name):
+    """(name, tag, variant): the tag is the bracket at the end of a name, e.g. 'ボール柄/ミラー仕様'; the variant is the foil pattern in
+    the vocabulary of the Indonesian board: 'poke_ball' (ball pattern mirror), 'master_ball', 'element' (energy mark pattern mirror), or ''."""
+    m = re.fullmatch(r"(.*?)\s*[(（]([^()（）]*)[)）]\s*", name or "")
+    base, tag = (m.group(1), m.group(2)) if m else (name, "")
+    variant = ("master_ball" if "マスターボール" in tag else "element" if "エネルギーマーク" in tag else "poke_ball" if "ボール柄" in tag else "")
+    return base, tag, variant
+
+
 def parse_set_page(page, code):
-    """Cards of one set page: [{number, rarity, name, yen, stock, url, image, id}]. Other sets shown on the page are ignored."""
+    """Cards of one set page: [{number, rarity, name, tag, variant, yen, in_stock, stock, url, image, id}]. Other sets shown on the page are ignored."""
     start = page.find('id="card-list3"')
     body = page[start:] if start >= 0 else page
     marks = [(m.start(), "rarity", m.group(1).strip()) for m in re.finditer(
@@ -95,9 +104,12 @@ def parse_set_page(page, code):
         image = re.search(r'<img[^>]*src="(https://card\.yuyu-tei\.jp/[^"]+)"', block)
         if not (number and yen):
             continue
+        sold_out = bool(stock and stock.group(1)) or "sold-out" in CARD_START.match(block).group(0)
+        base_name, tag, variant = split_name(text_of(name.group(1))) if name else (None, "", "")
         cards.append({"set": code, "number": text_of(number.group(1)), "rarity": rarity,
-                      "name": text_of(name.group(1)) if name else None, "yen": int(yen.group(1).replace(",", "")),
-                      "stock": 0 if (stock and stock.group(1)) or "sold-out" in CARD_START.match(block).group(0) else int(stock.group(2)) if stock and stock.group(2) else None,
+                      "name": base_name, "tag": tag, "variant": variant, "yen": int(yen.group(1).replace(",", "")),
+                      "in_stock": not sold_out,  # a stock of "◯" is in stock without a count
+                      "stock": 0 if sold_out else int(stock.group(2)) if stock and stock.group(2) else None,
                       "url": f"{BASE}/sell/poc/card/{code}/{link.group(2)}", "image": image.group(1) if image else None,
                       "id": int(link.group(2))})
     return cards
@@ -107,10 +119,21 @@ def parse_saved(path, code, log=print):
     """Read a page saved earlier (yuyutei_<code>.html) and show what the parser makes of it; no request is made."""
     with open(path, encoding="utf-8") as fh:
         cards = parse_set_page(fh.read(), code)
-    log(f"{code}: {len(cards)} kartu, {sum(1 for c in cards if c['stock'])} ada stok; per rarity: {dict(Counter(c['rarity'] for c in cards))}")
+    log(f"{code}: {len(cards)} kartu, {sum(1 for c in cards if c['in_stock'])} ada stok; per rarity: {dict(Counter(c['rarity'] for c in cards))}")
     for c in cards[:4]:
         log(f"  {c['number']:>8} {str(c['rarity']):4} {c['yen']:>7,} yen stok {c['stock']} {c['name']}")
     return cards
+
+
+def write_json(path, data):
+    """Compact file, one card per line (the file is committed every run: small and easy to diff). The page address and the
+    image of a card follow from its set and id, so they are not stored."""
+    head = {k: v for k, v in data.items() if k != "cards"}
+    head["card_url"], head["image_url"] = BASE + "/sell/poc/card/{set}/{id}", "https://card.yuyu-tei.jp/poc/100_140/{set}/{id}.jpg"
+    lines = [json.dumps({k: v for k, v in c.items() if k not in ("url", "image")}, ensure_ascii=False, separators=(",", ":")) for c in data["cards"]]
+    with open(path + ".tmp", "w", encoding="utf-8") as fh:
+        fh.write(json.dumps(head, ensure_ascii=False, separators=(",", ":"))[:-1] + ',"cards":[\n' + ",\n".join(lines) + "\n]}\n")
+    os.replace(path + ".tmp", path)
 
 
 def run(args, get=http_get, now=None, sleep=time.sleep, log=print):
@@ -150,9 +173,7 @@ def run(args, get=http_get, now=None, sleep=time.sleep, log=print):
     data = {"schema_version": 1, "source": "yuyu-tei.jp/sell/poc", "currency": "JPY", "condition": "傷無し",
             "generated_at": now.isoformat(), "sets": sets, "cards": cards}
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
-    with open(args.out + ".tmp", "w", encoding="utf-8") as fh:
-        json.dump(data, fh, ensure_ascii=False, indent=1)
-    os.replace(args.out + ".tmp", args.out)
+    write_json(args.out, data)
     log(f"ditulis: {args.out} ({len(sets)} set, {len(cards)} kartu, {used + 1} permintaan)")
     return data
 

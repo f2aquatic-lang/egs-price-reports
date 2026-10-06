@@ -192,6 +192,21 @@ EOF
 sudo systemctl daemon-reload && sudo systemctl enable --now egs-catalog.timer
 ```
 
+## Harga Jepang (Yuyutei)
+
+Harga acuan Jepang diambil dari yuyu-tei.jp (harga jual toko, kondisi tanpa goresan) dengan `tools/fetch_jp_prices.py` (hanya pustaka standar Python, satu halaman per set, jeda 2 detik; robots.txt situs itu tidak melarang halaman ini). Satu nomor kartu bisa muncul tiga kali di Jepang: biasa, `(ボール柄/ミラー仕様)` (pola Poké Ball) dan `(エネルギーマーク柄/ミラー仕様)` (pola simbol energi, "Elemen" di sisi Indonesia); skrip menulisnya sebagai `variant` `""`, `poke_ball`, `element`.
+
+```
+# daftar set di situs, lalu dua set sebagai percobaan
+python3 /opt/egs-raw/main/tools/fetch_jp_prices.py --list-sets | head -30
+python3 /opt/egs-raw/main/tools/fetch_jp_prices.py --sets m02a,m01l --out /tmp/jp_test.json
+
+# semua set Mega dan Scarlet & Violet (sekitar 45 set, kira-kira 3 menit)
+sudo -u egsprice -H python3 /opt/egs-raw/main/tools/fetch_jp_prices.py --out /opt/egs-raw/jp_prices.json
+```
+
+Halaman yang dibaca tidak menghasilkan kartu? Skrip menyimpannya sebagai `yuyutei_<kode>.html` di folder keluaran dan menulis ringkasan isinya; `--parse-file berkas.html --sets <kode>` memeriksa halaman yang tersimpan tanpa permintaan baru. Sesudah itu `publish_raw.sh` menyalin `/opt/egs-raw/jp_prices.json` ke repo (seperti `catalog.json`).
+
 ## Biaya
 
 - Claude: model bawaan `claude-opus-5-5` (US$4 per juta token masukan, US$20 per juta token keluaran). Yang lebih murah, `claude-haiku-4-5` (US$1 dan US$5), dipilih dengan menambah satu baris `EGS_LANG_MODEL=claude-haiku-4-5` di `/opt/egs-raw/env`. Itu keputusan Anda. Kalau memakai yang murah, ulangi Langkah 4 dulu karena akurasinya belum diuji.
