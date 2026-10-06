@@ -3,20 +3,20 @@
  "kind": "EGS_WATCH",
  "price_type": "OBSERVED_ASKING_ONLY",
  "source": "toco_public_search",
- "generated_at": "2026-10-06T16:50:01.880463+00:00",
+ "generated_at": "2026-10-06T22:50:01.702501+00:00",
  "run": {
-  "started_at": "2026-10-06T16:50:01.880463+00:00",
+  "started_at": "2026-10-06T22:50:01.702501+00:00",
   "queries": 143,
-  "requests": 273,
-  "ok_requests": 273,
+  "requests": 274,
+  "ok_requests": 274,
   "failed_requests": 0,
   "cached_requests": 0,
   "retries": 0,
   "blocked": null,
   "source_ok": true,
-  "results_seen": 3706,
-  "ignored_not_egs": 3543,
-  "candidates": 163,
+  "results_seen": 3814,
+  "ignored_not_egs": 3650,
+  "candidates": 164,
   "accepted_new": 0,
   "rejected": 86,
   "rejected_reasons": {
@@ -25,24 +25,24 @@
    "not_pokemon": 33,
    "product": 6
   },
-  "checked_ok": 78,
+  "checked_ok": 79,
   "check_failed": 0,
   "recheck": {
    "ok": 1,
    "skipped": 0
   },
   "photo_reads": 0,
-  "promoted": 0,
+  "promoted": 1,
   "imported": null,
   "worksheet": null,
   "dry_run": false,
-  "finished_at": "2026-10-06T16:54:05.196274+00:00"
+  "finished_at": "2026-10-06T22:54:12.326275+00:00"
  },
  "summary": {
-  "candidates_found": 163,
-  "accepted_total": 32,
+  "candidates_found": 164,
+  "accepted_total": 33,
   "accepted_existing": 6,
-  "accepted_auto": 26,
+  "accepted_auto": 27,
   "accepted_new_this_run": 0,
   "ambiguous": 46,
   "rejected_this_run": 86,
@@ -52,28 +52,28 @@
    "not_pokemon": 33,
    "product": 6
   },
-  "listings_counted": 32,
-  "cards": 28,
+  "listings_counted": 33,
+  "cards": 29,
   "sellers_unique": 15,
   "status": {
-   "ok": 78
+   "ok": 79
   },
   "by_source": {
    "toco": {
-    "accepted": 32,
-    "counted": 32
+    "accepted": 33,
+    "counted": 33
    }
   },
-  "checked_ok_this_run": 78,
+  "checked_ok_this_run": 79,
   "check_failed_this_run": 0,
   "price_changes_24h": 0,
   "price_changes": [],
   "freshness": {
-   "fresh_8h": 32,
+   "fresh_8h": 33,
    "fresh_24h": 0,
    "older": 0,
-   "newest_ok": "2026-10-06T16:50:01.880463+00:00",
-   "oldest_ok": "2026-10-06T16:50:01.880463+00:00"
+   "newest_ok": "2026-10-06T22:50:01.702501+00:00",
+   "oldest_ok": "2026-10-06T22:50:01.702501+00:00"
   }
  },
  "cards": [
@@ -478,6 +478,30 @@
    ]
   },
   {
+   "key": "S8A|2/28|-|",
+   "name": "Mew",
+   "set_code": "S8A",
+   "card_number": "002/028",
+   "rarity": null,
+   "variant": "",
+   "grades": [
+    {
+     "grade": "9",
+     "n": 1,
+     "sellers": 1,
+     "min": 968000,
+     "median": 968000,
+     "mean": 968000,
+     "max": 968000,
+     "limited": true,
+     "urls": [
+      "https://toco.id/id/listing/pokemon-mew-reverse-holo-25th-egs-9-1778378971421-7319"
+     ],
+     "label": "data terbatas"
+    }
+   ]
+  },
+  {
    "key": "AC3A|54/205|RR|",
    "name": "Mewtwo & Mew GX",
    "set_code": "AC3A",
@@ -796,10 +820,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -819,13 +843,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 200000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 200000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 200000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -849,10 +883,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -872,13 +906,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 200000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 200000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 200000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -905,10 +949,10 @@
    "list_idr": 1300000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -929,13 +973,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 1196000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 1196000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 1196000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -959,10 +1013,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -982,13 +1036,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 200000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 200000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 200000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -1013,10 +1077,10 @@
    "list_idr": 2300000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1036,13 +1100,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 2070000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 2070000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 2070000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -1066,10 +1140,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1089,13 +1163,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 500000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 500000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 500000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -1119,10 +1203,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1142,13 +1226,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 150000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 150000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 150000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -1172,10 +1266,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1195,13 +1289,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 175000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 175000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 175000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -1225,10 +1329,10 @@
    "list_idr": 500000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1248,13 +1352,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 400000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 400000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 400000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -1278,10 +1392,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-09-28T16:30:10.681264+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -1302,17 +1416,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
     "asking_idr": 875000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-05T16:30:10.841900+00:00",
+    "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 875000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 875000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -1384,10 +1504,10 @@
    "list_idr": 2000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1408,13 +1528,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 1340000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 1340000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 1340000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -1438,10 +1568,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1461,13 +1591,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 675000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 675000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 675000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -1491,10 +1631,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1514,13 +1654,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 850000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 850000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 850000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -1544,10 +1694,10 @@
    "list_idr": 750000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-09-28T16:30:15.397359+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -1568,17 +1718,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
     "asking_idr": 600000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-05T16:30:15.355458+00:00",
+    "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 600000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 600000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -1653,10 +1809,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1677,13 +1833,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 550000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 550000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 550000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -1707,10 +1873,10 @@
    "list_idr": 3000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1731,13 +1897,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 2700000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 2700000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 2700000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -1761,10 +1937,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1785,13 +1961,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 780000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 780000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 780000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -1815,10 +2001,10 @@
    "list_idr": 1000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1838,13 +2024,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 650000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 650000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 650000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -1868,10 +2064,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-09-27T16:30:02.943431+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -1891,17 +2087,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
     "asking_idr": 650000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-05T16:30:03.963123+00:00",
+    "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 650000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 650000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -1965,6 +2167,70 @@
    ]
   },
   {
+   "url": "https://toco.id/id/listing/pokemon-mew-reverse-holo-25th-egs-9-1778378971421-7319",
+   "source": "toco",
+   "seller": "Gothic Colection",
+   "seller_id": "e74956b4",
+   "city": "Kota Jakarta Utara",
+   "title": "Pokemon Mew reverse holo 25th EGS 9",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/dd61cda3-4baa-4b30-8ae6-04c9eefa2e0d-e74956b4-1520-405d-a7e7-fec76d41eec5-58ed6619-8662-468c-9e18-6d87b0c8012d.webp",
+   "photos": [
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/dd61cda3-4baa-4b30-8ae6-04c9eefa2e0d-e74956b4-1520-405d-a7e7-fec76d41eec5-58ed6619-8662-468c-9e18-6d87b0c8012d.webp"
+   ],
+   "asking_idr": 968000,
+   "list_idr": 1100000,
+   "stock": 1,
+   "status": "ok",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
+   "first_seen": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
+   "origin": "search",
+   "verdict": "accepted",
+   "identity": {
+    "company": "EGS",
+    "grade": "9",
+    "cert": "A011784",
+    "language": "ID",
+    "language_by": "foto",
+    "name": "Mew",
+    "set_code": "S8A",
+    "card_number": "002/028",
+    "rarity": null,
+    "variant": "",
+    "identified_by": "nomor di foto",
+    "set_by": "set dari angka total"
+   },
+   "cert": "A011784",
+   "counted": true,
+   "excluded": null,
+   "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 968000,
+    "in_stock": true
+   },
+   "previous_day": {
+    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "asking_idr": 968000,
+    "in_stock": true
+   },
+   "change_from_previous_day_idr": 0,
+   "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 968000,
+     "in_stock": true
+    },
+    {
+     "date_wib": "2026-10-06",
+     "observed_at": "2026-10-06T16:50:01.880463+00:00",
+     "asking_idr": 968000,
+     "in_stock": true
+    }
+   ]
+  },
+  {
    "url": "https://toco.id/id/listing/pokemon-mewtwo-mew-gx-tagteam-ind-egs-95-1778378533009-36e0",
    "source": "toco",
    "seller": "Gothic Colection",
@@ -1979,10 +2245,10 @@
    "list_idr": 1200000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2003,13 +2269,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 1080000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 1080000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 1080000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -2033,10 +2309,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2056,13 +2332,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 500000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 500000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 500000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -2086,10 +2372,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2109,13 +2395,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 600000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 600000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 600000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -2139,10 +2435,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-09-27T16:30:05.172022+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -2162,17 +2458,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
     "asking_idr": 875000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-05T16:30:06.276715+00:00",
+    "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 875000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 875000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -2250,10 +2552,10 @@
    "list_idr": 3000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-09-28T16:30:08.362111+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -2273,17 +2575,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
     "asking_idr": 2760000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-05T16:30:08.529160+00:00",
+    "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 2760000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 2760000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -2355,10 +2663,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2378,13 +2686,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 1000000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 1000000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 1000000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -2408,10 +2726,10 @@
    "list_idr": 1000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2432,13 +2750,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 650000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 650000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 650000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -2462,10 +2790,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2486,13 +2814,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 800000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 800000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 800000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -2516,10 +2854,10 @@
    "list_idr": 1500000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2540,13 +2878,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 1050000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 1050000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 1050000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -2570,10 +2918,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2593,13 +2941,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 175000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 175000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 175000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -2623,10 +2981,10 @@
    "list_idr": 850000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2647,13 +3005,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 765000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 765000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 765000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -2677,10 +3045,10 @@
    "list_idr": 750000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-09-28T16:30:13.065047+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -2701,17 +3069,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
     "asking_idr": 550000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-05T16:30:13.106185+00:00",
+    "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 550000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 550000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -2784,10 +3158,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T16:50:01.880463+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "status_at": "2026-10-06T22:50:01.702501+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T16:50:01.880463+00:00",
+   "last_seen_in_search": "2026-10-06T22:50:01.702501+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2808,13 +3182,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
+    "observed_at": "2026-10-06T22:50:01.702501+00:00",
+    "asking_idr": 850000,
+    "in_stock": true
+   },
+   "previous_day": {
     "observed_at": "2026-10-06T16:50:01.880463+00:00",
     "asking_idr": 850000,
     "in_stock": true
    },
-   "previous_day": null,
-   "change_from_previous_day_idr": null,
+   "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-07",
+     "observed_at": "2026-10-06T22:50:01.702501+00:00",
+     "asking_idr": 850000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-06",
      "observed_at": "2026-10-06T16:50:01.880463+00:00",
@@ -2835,7 +3219,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -2855,25 +3239,25 @@
      "image": "https://asia.pokemon-card.com/id/card-img/id00002404.png"
     },
     {
+     "set_code": "AS3A",
+     "card_number": "044/183",
+     "name": "Charizard",
+     "rarity": "R",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001686.png"
+    },
+    {
+     "set_code": "AS3D",
+     "card_number": "019/146",
+     "name": "Charizard",
+     "rarity": null,
+     "image": "https://asia.pokemon-card.com/id/card-img/id00003570.png"
+    },
+    {
      "set_code": "MA6",
      "card_number": "168/130",
      "name": "Charizard",
      "rarity": null,
      "image": "https://asia.pokemon-card.com/id/card-img/id00019810.png"
-    },
-    {
-     "set_code": "SV2A",
-     "card_number": "006/165",
-     "name": "Charizard ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00008417.png"
-    },
-    {
-     "set_code": "SV2A",
-     "card_number": "185/165",
-     "name": "Charizard ex",
-     "rarity": "SR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00008764.png"
     }
    ],
    "identity": {
@@ -2893,7 +3277,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -2913,25 +3297,25 @@
      "image": "https://asia.pokemon-card.com/id/card-img/id00002404.png"
     },
     {
+     "set_code": "AS3A",
+     "card_number": "044/183",
+     "name": "Charizard",
+     "rarity": "R",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001686.png"
+    },
+    {
+     "set_code": "AS3D",
+     "card_number": "019/146",
+     "name": "Charizard",
+     "rarity": null,
+     "image": "https://asia.pokemon-card.com/id/card-img/id00003570.png"
+    },
+    {
      "set_code": "MA6",
      "card_number": "168/130",
      "name": "Charizard",
      "rarity": null,
      "image": "https://asia.pokemon-card.com/id/card-img/id00019810.png"
-    },
-    {
-     "set_code": "SV2A",
-     "card_number": "006/165",
-     "name": "Charizard ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00008417.png"
-    },
-    {
-     "set_code": "SV2A",
-     "card_number": "185/165",
-     "name": "Charizard ex",
-     "rarity": "SR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00008764.png"
     }
    ],
    "identity": {
@@ -2951,11 +3335,11 @@
    "city": "Kota Jakarta Utara",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
-     "code": "set_unknown",
-     "text": "set tidak ditulis dan angka total /28 cocok dengan tidak ada set di katalog"
+     "code": "card_not_in_catalog",
+     "text": "S8A 26/028 tidak ada di katalog resmi"
     }
    ],
    "suggestions": [],
@@ -2978,7 +3362,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T08:02:32.232555+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -3005,18 +3389,18 @@
      "image": "https://asia.pokemon-card.com/id/card-img/id00002431.png"
     },
     {
-     "set_code": "MA3",
-     "card_number": "044/193",
-     "name": "Pikachu ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017282.png"
+     "set_code": "AS1A",
+     "card_number": "100/150",
+     "name": "Pikachu",
+     "rarity": "C",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001442.png"
     },
     {
-     "set_code": "MA3",
-     "card_number": "234/193",
-     "name": "Pikachu ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017557.png"
+     "set_code": "AS1A",
+     "card_number": "101/150",
+     "name": "Pikachu",
+     "rarity": "C",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001443.png"
     }
    ],
    "identity": {
@@ -3036,11 +3420,15 @@
    "city": "Kota Pekanbaru",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "title_changed",
      "text": "Judul sekarang berbeda dari alamat listing (kemungkinan listing dipakai ulang untuk kartu lain): perlu cek foto"
+    },
+    {
+     "code": "set_unknown",
+     "text": "set tidak ditulis dan angka total /164 cocok dengan 2 set"
     }
    ],
    "suggestions": [],
@@ -3050,12 +3438,7 @@
     "cert": "A022885",
     "language": "ID",
     "language_by": "teks",
-    "name": "Mega Darkrai ex",
-    "set_code": "MA5",
-    "card_number": "229/164",
-    "rarity": "SAR",
-    "identified_by": "nomor di foto",
-    "set_by": "set dari angka total"
+    "identified_by": "nomor di foto"
    }
   },
   {
@@ -3068,7 +3451,7 @@
    "city": "Kota Jakarta Selatan",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "set_unknown",
@@ -3094,7 +3477,7 @@
    "city": "Kabupaten Bogor",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "title_changed",
@@ -3124,11 +3507,11 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
-     "code": "set_unknown",
-     "text": "set S8B tidak ada di katalog resmi yang dimuat"
+     "code": "card_not_in_catalog",
+     "text": "S8B 252/184 tidak ada di katalog resmi"
     }
    ],
    "suggestions": [],
@@ -3151,11 +3534,11 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
-     "code": "set_unknown",
-     "text": "set S11 tidak ada di katalog resmi yang dimuat"
+     "code": "card_not_in_catalog",
+     "text": "S11 106/100 tidak ada di katalog resmi"
     }
    ],
    "suggestions": [],
@@ -3178,7 +3561,7 @@
    "city": "Kota Jakarta Pusat",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "language_unproven",
@@ -3221,7 +3604,7 @@
    "city": "Kabupaten Deli Serdang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "language_conflict",
@@ -3256,18 +3639,18 @@
      "image": "https://asia.pokemon-card.com/id/card-img/id00002431.png"
     },
     {
-     "set_code": "MA3",
-     "card_number": "044/193",
-     "name": "Pikachu ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017282.png"
+     "set_code": "AS1A",
+     "card_number": "100/150",
+     "name": "Pikachu",
+     "rarity": "C",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001442.png"
     },
     {
-     "set_code": "MA3",
-     "card_number": "234/193",
-     "name": "Pikachu ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017557.png"
+     "set_code": "AS1A",
+     "card_number": "101/150",
+     "name": "Pikachu",
+     "rarity": "C",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001443.png"
     }
    ],
    "identity": {
@@ -3286,7 +3669,7 @@
    "city": "Kota Jakarta Utara",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -3336,33 +3719,6 @@
    }
   },
   {
-   "url": "https://toco.id/id/listing/pokemon-mew-reverse-holo-25th-egs-9-1778378971421-7319",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/dd61cda3-4baa-4b30-8ae6-04c9eefa2e0d-e74956b4-1520-405d-a7e7-fec76d41eec5-58ed6619-8662-468c-9e18-6d87b0c8012d.webp",
-   "title": "Pokemon Mew reverse holo 25th EGS 9",
-   "asking_idr": 968000,
-   "stock": 1,
-   "seller": "Gothic Colection",
-   "city": "Kota Jakarta Utara",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
-   "reasons": [
-    {
-     "code": "set_unknown",
-     "text": "set tidak ditulis dan angka total /28 cocok dengan tidak ada set di katalog"
-    }
-   ],
-   "suggestions": [],
-   "identity": {
-    "company": "EGS",
-    "grade": "9",
-    "cert": "A011784",
-    "language": "ID",
-    "language_by": "foto",
-    "identified_by": "nomor di foto"
-   }
-  },
-  {
    "url": "https://toco.id/id/listing/mega-charizard-x-ex-kobaran-biru-egs-10-clear-slab-not-tag-grading-slab-original-1782460884578-9151",
    "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/474efdd5-777c-4ac4-9ab4-3e13c75d14b7-01d5d8cf-b18b-4f60-8ff8-91db4a5dfd03-e34d73b6-4b09-492c-ae2a-29660991eb36.webp",
    "title": "Mega charizard X ex kobaran biru egs 10 Clear slab not tag Grading Slab Original",
@@ -3372,7 +3728,7 @@
    "city": "Kabupaten Deli Serdang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -3430,7 +3786,7 @@
    "city": "Kota Jakarta Utara",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -3450,25 +3806,25 @@
      "image": "https://asia.pokemon-card.com/id/card-img/id00002064.png"
     },
     {
+     "set_code": "AS4A",
+     "card_number": "071/178",
+     "name": "Mewtwo",
+     "rarity": "R",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00002708.png"
+    },
+    {
+     "set_code": "AS4D",
+     "card_number": "064/182",
+     "name": "Mewtwo",
+     "rarity": "R",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00004256.jpg"
+    },
+    {
      "set_code": "MA3",
      "card_number": "063/193",
      "name": "Mewtwo <Tim Roket> ex",
      "rarity": "RR",
      "image": "https://asia.pokemon-card.com/id/card-img/id00017301.png"
-    },
-    {
-     "set_code": "MA3",
-     "card_number": "237/193",
-     "name": "Mewtwo <Tim Roket> ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017560.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "063/130",
-     "name": "Mewtwo",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019709.png"
     }
    ],
    "identity": {
@@ -3489,7 +3845,7 @@
    "city": "Kota Jakarta Barat",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "grade_missing",
@@ -3517,25 +3873,25 @@
      "image": "https://asia.pokemon-card.com/id/card-img/id00002402.png"
     },
     {
-     "set_code": "MA2",
-     "card_number": "011/103",
+     "set_code": "AS1A",
+     "card_number": "035/150",
      "name": "Charmander",
      "rarity": "C",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00016825.png"
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001377.png"
     },
     {
-     "set_code": "MA4",
-     "card_number": "023/123",
+     "set_code": "AS1A",
+     "card_number": "036/150",
      "name": "Charmander",
      "rarity": "C",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00018294.png"
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001378.png"
     },
     {
-     "set_code": "SV2A",
-     "card_number": "004/165",
+     "set_code": "AS1D",
+     "card_number": "014/140",
      "name": "Charmander",
      "rarity": "C",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00008415.png"
+     "image": "https://asia.pokemon-card.com/id/card-img/id00003372.png"
     }
    ],
    "identity": {
@@ -3552,7 +3908,7 @@
    "city": "Kota Bekasi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "set_unknown",
@@ -3579,7 +3935,7 @@
    "city": "Kabupaten Karawang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -3606,18 +3962,18 @@
      "image": "https://asia.pokemon-card.com/id/card-img/id00002431.png"
     },
     {
-     "set_code": "MA3",
-     "card_number": "044/193",
-     "name": "Pikachu ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017282.png"
+     "set_code": "AS1A",
+     "card_number": "100/150",
+     "name": "Pikachu",
+     "rarity": "C",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001442.png"
     },
     {
-     "set_code": "MA3",
-     "card_number": "234/193",
-     "name": "Pikachu ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017557.png"
+     "set_code": "AS1A",
+     "card_number": "101/150",
+     "name": "Pikachu",
+     "rarity": "C",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001443.png"
     }
    ],
    "identity": {
@@ -3638,7 +3994,7 @@
    "city": "Kota Tangerang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "number_missing",
@@ -3661,18 +4017,18 @@
      "image": "https://asia.pokemon-card.com/id/card-img/id00002431.png"
     },
     {
-     "set_code": "MA3",
-     "card_number": "044/193",
-     "name": "Pikachu ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017282.png"
+     "set_code": "AS1A",
+     "card_number": "100/150",
+     "name": "Pikachu",
+     "rarity": "C",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001442.png"
     },
     {
-     "set_code": "MA3",
-     "card_number": "234/193",
-     "name": "Pikachu ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017557.png"
+     "set_code": "AS1A",
+     "card_number": "101/150",
+     "name": "Pikachu",
+     "rarity": "C",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001443.png"
     }
    ],
    "identity": {
@@ -3693,7 +4049,7 @@
    "city": "Kota Padang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "name_mismatch",
@@ -3723,7 +4079,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -3734,7 +4090,15 @@
      "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
     }
    ],
-   "suggestions": [],
+   "suggestions": [
+    {
+     "set_code": "S8B",
+     "card_number": "101/184",
+     "name": "Umbreon VMAX",
+     "rarity": "RRR",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00004770.png"
+    }
+   ],
    "identity": {
     "company": "EGS",
     "grade": "9.5",
@@ -3752,7 +4116,7 @@
    "city": "Kota Tangerang Selatan",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "set_unknown",
@@ -3779,7 +4143,7 @@
    "city": "Kota Jakarta Timur",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "title_changed",
@@ -3795,6 +4159,13 @@
     }
    ],
    "suggestions": [
+    {
+     "set_code": "AS1B",
+     "card_number": "011/150",
+     "name": "Gengar",
+     "rarity": "R",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001504.png"
+    },
     {
      "set_code": "MA2",
      "card_number": "058/103",
@@ -3815,13 +4186,6 @@
      "name": "Mega Gengar ex",
      "rarity": "SAR",
      "image": "https://asia.pokemon-card.com/id/card-img/id00017563.png"
-    },
-    {
-     "set_code": "MA4",
-     "card_number": "076/123",
-     "name": "Gengar",
-     "rarity": "U",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00018347.png"
     }
    ],
    "identity": {
@@ -3841,7 +4205,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -3852,7 +4216,15 @@
      "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
     }
    ],
-   "suggestions": [],
+   "suggestions": [
+    {
+     "set_code": "S8",
+     "card_number": "069/100",
+     "name": "Genesect V",
+     "rarity": "RR",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00004641.png"
+    }
+   ],
    "identity": {
     "company": "EGS",
     "grade": "9.5",
@@ -3870,11 +4242,11 @@
    "city": "Kota Jakarta Timur",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "set_unknown",
-     "text": "set tidak ditulis dan angka total /71 cocok dengan 2 set"
+     "text": "set tidak ditulis dan angka total /71 cocok dengan 4 set"
     }
    ],
    "suggestions": [],
@@ -3896,7 +4268,7 @@
    "city": "Kabupaten Pemalang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "number_missing",
@@ -3921,7 +4293,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -3932,7 +4304,15 @@
      "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
     }
    ],
-   "suggestions": [],
+   "suggestions": [
+    {
+     "set_code": "S9",
+     "card_number": "083/100",
+     "name": "Arceus V",
+     "rarity": "RR",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00005340.png"
+    }
+   ],
    "identity": {
     "company": "EGS",
     "grade": "9.5",
@@ -3950,11 +4330,11 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
-     "code": "set_unknown",
-     "text": "set S10A tidak ada di katalog resmi yang dimuat"
+     "code": "card_not_in_catalog",
+     "text": "S10A 73/071 tidak ada di katalog resmi"
     }
    ],
    "suggestions": [],
@@ -3976,7 +4356,7 @@
    "city": "Kota Jakarta Timur",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "name_mismatch",
@@ -4006,11 +4386,11 @@
    "city": "Kota Bandar Lampung",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "set_unknown",
-     "text": "set tidak ditulis dan angka total /71 cocok dengan 2 set"
+     "text": "set tidak ditulis dan angka total /71 cocok dengan 4 set"
     }
    ],
    "suggestions": [],
@@ -4032,7 +4412,7 @@
    "city": "Kota Jakarta Utara",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "name_mismatch",
@@ -4065,7 +4445,7 @@
    "city": "Kabupaten Cianjur",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "number_missing",
@@ -4088,18 +4468,18 @@
      "image": "https://asia.pokemon-card.com/id/card-img/id00002431.png"
     },
     {
-     "set_code": "MA3",
-     "card_number": "044/193",
-     "name": "Pikachu ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017282.png"
+     "set_code": "AS1A",
+     "card_number": "100/150",
+     "name": "Pikachu",
+     "rarity": "C",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001442.png"
     },
     {
-     "set_code": "MA3",
-     "card_number": "234/193",
-     "name": "Pikachu ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017557.png"
+     "set_code": "AS1A",
+     "card_number": "101/150",
+     "name": "Pikachu",
+     "rarity": "C",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001443.png"
     }
    ],
    "identity": {
@@ -4119,7 +4499,7 @@
    "city": "Kota Bandar Lampung",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "language_conflict",
@@ -4150,15 +4530,15 @@
    "city": "Kabupaten Ponorogo",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "bundle",
      "text": "Judul tampak berisi lebih dari satu kartu (paket, pilihan, atau jumlah)"
     },
     {
-     "code": "set_unknown",
-     "text": "set tidak ditulis dan angka total /69 cocok dengan tidak ada set di katalog"
+     "code": "name_mismatch",
+     "text": "Nama di katalog (Leafeon VMAX) tidak cocok dengan judul"
     }
    ],
    "suggestions": [],
@@ -4167,7 +4547,10 @@
     "grade": "9",
     "language": "ID",
     "language_by": "foto",
-    "identified_by": "nomor di foto"
+    "set_code": "S6A",
+    "card_number": "003/069",
+    "identified_by": "nomor di foto",
+    "set_by": "set dari angka total"
    }
   },
   {
@@ -4180,7 +4563,7 @@
    "city": "Kota Tangerang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "number_missing",
@@ -4203,18 +4586,18 @@
      "image": "https://asia.pokemon-card.com/id/card-img/id00002431.png"
     },
     {
-     "set_code": "MA3",
-     "card_number": "044/193",
-     "name": "Pikachu ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017282.png"
+     "set_code": "AS1A",
+     "card_number": "100/150",
+     "name": "Pikachu",
+     "rarity": "C",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001442.png"
     },
     {
-     "set_code": "MA3",
-     "card_number": "234/193",
-     "name": "Pikachu ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017557.png"
+     "set_code": "AS1A",
+     "card_number": "101/150",
+     "name": "Pikachu",
+     "rarity": "C",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001443.png"
     }
    ],
    "identity": {
@@ -4234,7 +4617,7 @@
    "city": "Kota Jakarta Barat",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "bundle",
@@ -4242,7 +4625,7 @@
     },
     {
      "code": "set_unknown",
-     "text": "set tidak ditulis dan angka total /71 cocok dengan 2 set"
+     "text": "set tidak ditulis dan angka total /71 cocok dengan 4 set"
     }
    ],
    "suggestions": [],
@@ -4265,11 +4648,11 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
-     "code": "set_unknown",
-     "text": "set S12A tidak ada di katalog resmi yang dimuat"
+     "code": "card_not_in_catalog",
+     "text": "S12A 235/172 tidak ada di katalog resmi"
     }
    ],
    "suggestions": [],
@@ -4292,11 +4675,11 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T08:02:32.232555+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
-     "code": "set_unknown",
-     "text": "set S5R tidak ada di katalog resmi yang dimuat"
+     "code": "card_not_in_catalog",
+     "text": "S5R 77/070 tidak ada di katalog resmi"
     }
    ],
    "suggestions": [],
@@ -4319,7 +4702,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "language_conflict",
@@ -4349,7 +4732,7 @@
    "city": "Kota Tangerang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "name_mismatch",
@@ -4379,7 +4762,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "number_missing",
@@ -4402,18 +4785,18 @@
      "image": "https://asia.pokemon-card.com/id/card-img/id00002431.png"
     },
     {
-     "set_code": "MA3",
-     "card_number": "044/193",
-     "name": "Pikachu ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017282.png"
+     "set_code": "AS1A",
+     "card_number": "100/150",
+     "name": "Pikachu",
+     "rarity": "C",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001442.png"
     },
     {
-     "set_code": "MA3",
-     "card_number": "234/193",
-     "name": "Pikachu ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017557.png"
+     "set_code": "AS1A",
+     "card_number": "101/150",
+     "name": "Pikachu",
+     "rarity": "C",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001443.png"
     }
    ],
    "identity": {
@@ -4433,7 +4816,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "name_mismatch",
@@ -4466,7 +4849,7 @@
    "city": "Kota Bandar Lampung",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -4493,18 +4876,18 @@
      "image": "https://asia.pokemon-card.com/id/card-img/id00002452.png"
     },
     {
-     "set_code": "MA1",
-     "card_number": "080/126",
+     "set_code": "AS2B",
+     "card_number": "102/171",
      "name": "Marshadow",
-     "rarity": "U",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00016567.png"
+     "rarity": "R",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00003128.png"
     },
     {
-     "set_code": "MA1",
-     "card_number": "142/126",
+     "set_code": "AS2B",
+     "card_number": "103/171",
      "name": "Marshadow",
-     "rarity": "AR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00016653.png"
+     "rarity": "R",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00003129.png"
     }
    ],
    "identity": {
@@ -4524,7 +4907,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "title_changed",
@@ -4554,7 +4937,7 @@
    "city": "Kabupaten Magetan",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "language_conflict",
@@ -4612,7 +4995,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T16:50:01.880463+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -4639,18 +5022,18 @@
      "image": "https://asia.pokemon-card.com/id/card-img/id00002431.png"
     },
     {
-     "set_code": "MA3",
-     "card_number": "044/193",
-     "name": "Pikachu ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017282.png"
+     "set_code": "AS1A",
+     "card_number": "100/150",
+     "name": "Pikachu",
+     "rarity": "C",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001442.png"
     },
     {
-     "set_code": "MA3",
-     "card_number": "234/193",
-     "name": "Pikachu ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017557.png"
+     "set_code": "AS1A",
+     "card_number": "101/150",
+     "name": "Pikachu",
+     "rarity": "C",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001443.png"
     }
    ],
    "identity": {
@@ -4659,6 +5042,40 @@
     "cert": "A024739",
     "language": "ID",
     "language_by": "teks"
+   }
+  },
+  {
+   "url": "https://toco.id/id/listing/bumper-guard-with-backplate-for-psa-cgc-egs-graded-guard-alternate-super-good-quality-1788160943833-d587",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/beeadcac-9980-4cba-afb9-102aa29e2481-00a4dbc1-60e9-4770-bd3f-2302942b186b-f738ee67-8bad-4345-80be-f1716e3b28ee.webp",
+   "title": "Bumper Guard with Backplate for PSA CGC EGS | Graded Guard Alternate | Super Good Quality",
+   "asking_idr": 102000,
+   "stock": 100,
+   "seller": "OVERDOSE",
+   "city": "Kota Malang",
+   "status": "ok",
+   "first_seen": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T22:50:01.702501+00:00",
+   "reasons": [
+    {
+     "code": "company_conflict",
+     "text": "Menyebut EGS dan juga CGC, PSA: perusahaan grading tidak jelas"
+    },
+    {
+     "code": "grade_missing",
+     "text": "Grade EGS tidak terbaca dari judul atau deskripsi"
+    },
+    {
+     "code": "language_unproven",
+     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
+    },
+    {
+     "code": "number_missing",
+     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+    }
+   ],
+   "suggestions": [],
+   "identity": {
+    "company": "EGS"
    }
   }
  ],
