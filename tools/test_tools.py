@@ -3247,10 +3247,10 @@ class MarketplaceProbe(unittest.TestCase):
 
     def test_a_page_with_listings_is_ok_and_robots_rules_are_shown(self):
         page = "<html>" + "".join(f"<div>Pokemon EGS 10 Rp{n},000</div>" for n in (450, 500, 650)).replace(",000", ".000") + "</html>"
-        base = self.serve({"/robots.txt": (200, {}, "User-agent: *\nDisallow: /search?\nCrawl-delay: 5\n"), "/search": (200, {}, page)})
+        base = self.serve({"/robots.txt": (200, {}, "User-agent: *\nDisallow: /admin\nCrawl-delay: 5\n"), "/search": (200, {}, page)})
         v, text = self.run_probe(base)
         self.assertEqual(v, {"page": "ok"})
-        self.assertIn("Disallow: /search?", text)
+        self.assertIn("Crawl-delay: 5", text)
         self.assertIn("OK: 3 harga terbaca", text)
 
     def test_a_candidate_site_is_not_read_when_robots_txt_forbids_it_and_its_terms_are_pointed_to(self):
@@ -3272,8 +3272,27 @@ class MarketplaceProbe(unittest.TestCase):
         self.assertIn("melarang bot", "\n".join(lines))
         self.assertNotIn("halaman pencarian", "\n".join(lines))                  # the page itself was never requested
         lines = []
-        v = probe_marketplaces.probe_site("Situs", closed, "/search?q={q}", lines.append, sleep=lambda s: None)   # the old two sites keep their behaviour
-        self.assertEqual(v, {"page": "ok"})
+        v = probe_marketplaces.probe_site("Situs", closed, "/search?q={q}", lines.append, sleep=lambda s: None, api_path="/api?q={q}")   # every site obeys it, Tokopedia and Shopee too
+        self.assertEqual(v, {"page": "robots"})
+
+    def test_robots_patterns_with_stars_and_dollars_are_understood_the_way_the_sites_write_them(self):
+        tokopedia = "User-agent: *\nDisallow: /*src=search*\nDisallow: /amp/api/*\nDisallow: /search?*\nDisallow: /image-search/\n"   # as the real file reads
+        allows = lambda text, path: probe_marketplaces.robots_allows(text, "https://x.example" + path)
+        self.assertFalse(allows(tokopedia, "/search?q=EGS%20pokemon&st=product"))            # the search page of the first VPS probe: forbidden
+        self.assertFalse(allows(tokopedia, "/p/pokemon?src=search"))
+        self.assertTrue(allows(tokopedia, "/some-shop"))
+        self.assertTrue(allows(tokopedia, "/search"))                                         # only the form with a query string is named
+        shopee = "User-agent: *\nCrawl-delay:0.1\nDisallow: /search*searchPrefill\nDisallow: /search?shop=\nDisallow: /search/?\n"
+        self.assertTrue(allows(shopee, "/search?keyword=EGS%20pokemon"))
+        self.assertFalse(allows(shopee, "/search?x=1&searchPrefill=2"))
+        mixed = "User-agent: *\nDisallow: /shop/\nAllow: /shop/public/\nDisallow: /*.json$\n"
+        self.assertTrue(allows(mixed, "/shop/public/a"))                                       # the longer Allow beats the shorter Disallow
+        self.assertFalse(allows(mixed, "/shop/private"))
+        self.assertFalse(allows(mixed, "/data.json"))
+        self.assertTrue(allows(mixed, "/data.json.html"))                                      # $ anchors the end
+        self.assertTrue(allows("User-agent: *\nDisallow:\n", "/anything"))                   # an empty Disallow allows everything
+        self.assertTrue(allows("User-agent: googlebot\nDisallow: /\n", "/anything"))         # a group for another bot is not ours
+        self.assertTrue(allows("", "/anything"))
 
     def test_site_option_and_candidate_list(self):
         self.assertEqual([c[0] for c in probe_marketplaces.CANDIDATES], ["Cardtell", "Pokepedia", "Carousell Indonesia"])

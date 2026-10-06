@@ -170,3 +170,15 @@ Aturannya:
 
 Hasil `ok` berarti halamannya terbaca; itu **bukan izin** menyalin datanya. Cardtell memuat harga yang dikirim anggotanya sendiri; menarik semuanya ke papan lain adalah keputusan pemilik RadarKartu (dan sebaiknya dengan izin Cardtell), bukan sekadar urusan teknis. Tidak ada pengambil Cardtell yang dibuat sebelum robots.txt dan syaratnya dibaca dan keputusan itu diambil.
 
+### Hasil uji akses dari VPS (Tencent, `ubuntu@VM-0-7-ubuntu`, 2026-10-06) dan apa artinya
+
+Tiga penyebab yang berbeda sering tertukar. Yang mana yang berlaku, menentukan penanganannya:
+
+| tempat | yang terlihat | penyebab |
+|---|---|---|
+| **Lingkungan Claude (bukan VPS)** | `curl: (56) CONNECT tunnel failed, response 403` ke asia.pokemon-card.com dan cloudfront; `EGRESS_BLOCKED ... blocked by the network egress proxy` untuk cardtell.id, shopee.co.id, affiliate.shopee.co.id | daftar domain yang boleh dihubungi dari lingkungan itu. Tidak berarti apa-apa tentang situsnya maupun VPS |
+| **VPS, Tokopedia** | `robots.txt` status 200 (boleh dibaca); halaman pencarian: `status 0, TimeoutError: The read operation timed out`; browser tanpa kepala: `Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR` | pencarian itu sendiri dilarang robots.txt (`Disallow: /search?*`); jalur dinamisnya juga memutus sambungan sebelum jawaban HTTP. Bukan kode 403, jadi bukan bukti IP VPS ditolak seluruhnya (robots.txt dijawab normal) |
+| **VPS, Shopee** | halaman pencarian status 200 tetapi 0 harga (daftar dimuat JavaScript); panggilan pencarian milik situs: `status 403`, kode `90309999`; browser tanpa kepala: 250 karakter | pertahanan anti-bot milik Shopee pada panggilan datanya, dan halaman kosong tanpa sesi browser yang penuh |
+
+Karena penghalangnya adalah pertahanan anti-bot dan robots.txt, bukan satu IP yang diblokir, **membeli proxy atau IP rumahan bukan jawabannya**: itu berarti menyamar untuk melewati pembatasan, dan itu tidak dilakukan di proyek ini. Jalur yang tersisa untuk Shopee dan Tokopedia adalah yang diizinkan situsnya: API resmi (Shopee Affiliate Open API, bila akunnya disetujui dan syaratnya mengizinkan), data toko sendiri, atau input manual. Probe kini juga mematuhi robots.txt di kedua situs (termasuk tanda `*` dan `$`): alamat yang dilarang tidak diminta sama sekali.
+
