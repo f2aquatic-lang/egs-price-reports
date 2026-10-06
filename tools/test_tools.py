@@ -3392,6 +3392,14 @@ class MarketplaceProbe(unittest.TestCase):
         for status, verdict in ((404, "notfound"), (410, "notfound"), (403, "blocked"), (429, "blocked")):
             self.assertEqual(probe_marketplaces.judge_page(status, "https://x.example/", "", "")[0], verdict)
 
+    def test_prices_in_dollars_and_yen_count_as_prices_not_only_rupiah(self):
+        for text in ("<b>US $759~</b> <i>US $380~</i> <u>$1,200</u>", "<p>480 yen</p>", "<p>¥3,980 ¥12,800 ¥500</p>", "<p>3,980円 12,800円 500円</p>"):
+            prices = probe_marketplaces.PRICE.findall(text)
+            self.assertGreaterEqual(len(prices), 1, text)
+        page = "<html>" + "".join(f"<div>US ${n}~</div>" for n in (759, 380, 1200)) + "</html>"
+        self.assertEqual(probe_marketplaces.judge_page(200, "https://x.example/p", page, "")[0], "ok")
+        self.assertEqual(probe_marketplaces.judge_page(200, "https://x.example/p", "<html>nothing here</html>", "")[0], "empty")
+
     def test_site_option_and_candidate_list(self):
         self.assertEqual([c[0] for c in probe_marketplaces.CANDIDATES], ["Cardtell", "Pokepedia", "Carousell Indonesia"])
         base = self.serve({"/robots.txt": (404, {}, ""), "/cari": (200, {}, "".join(f"<div>Rp{n}.000</div>" for n in (450, 500, 650)))})

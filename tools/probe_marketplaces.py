@@ -36,7 +36,7 @@ from urllib.request import Request, urlopen
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 CHALLENGE = re.compile(r"captcha|are you a robot|verify you are human|verifikasi|cf-chl|just a moment|geetest|slide to verify|_Incapsula_|akamai", re.I)
 LOGIN = re.compile(r"/buyer/login|/login\b|masuk atau daftar|silakan masuk|log in to continue", re.I)
-PRICE = re.compile(r"Rp\s?[\d.]{4,}")
+PRICE = re.compile(r"(?:Rp|US\s?\$|\$|\u00a5|JPY)\s?[\d.,]{3,}|[\d.,]{3,}\s?(?:\u5186|yen)", re.I)   # a price in rupiah, dollars, yen: SNKRDUNK shows "US $759~", Yuyutei "480 yen"
 # Shopee's own search call returns one of these error codes when it does not accept the caller (anti-fraud headers missing)
 SHOPEE_BLOCK_CODES = {90309999: "anti-bot Shopee (90309999)", 90301999: "anti-bot Shopee (90301999)"}
 
@@ -135,7 +135,7 @@ def judge_page(status, final_url, text, error):
     prices = PRICE.findall(text)
     if len(prices) >= 3:
         return "ok", f"{len(prices)} harga terbaca dari halaman"
-    return "empty", f"{len(text)} karakter, {len(prices)} harga: daftar produk dimuat belakangan oleh JavaScript"
+    return "empty", f"{len(text)} karakter, {len(prices)} harga di isi halaman: dimuat belakangan oleh JavaScript, atau tertanam dalam bentuk lain (lihat isinya dengan tools/probe_pokemon_card.py --url ... --find)"
 
 
 def judge_shopee_api(status, text):
