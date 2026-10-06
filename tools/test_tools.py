@@ -38,6 +38,7 @@ import probe_pokemon_card  # noqa: E402
 import probe_toco  # noqa: E402
 import probe_toco_fields  # noqa: E402
 import probe_toco_next  # noqa: E402
+import read_card_marks  # noqa: E402
 import validate_raw  # noqa: E402
 import watch_queries  # noqa: E402
 from classify import classify_title  # noqa: E402
@@ -2479,6 +2480,102 @@ def make_egs_export(tmpdir):
     return export
 
 
+def marks_catalog():
+    def card(set_, n, den, name, rarity, cid, image=True):
+        return {"set": set_, "number": f"{n:03d}/{den}", "num": n, "den": den, "name": name, "rarity": rarity, "image": f"https://o/{cid}.png" if image else None, "id": cid}
+    return {"schema_version": 1, "sets": [{"code": "MA6", "product": "Booster Pack", "fetched": 6}, {"code": "AC3D", "product": "Starter Deck GX", "fetched": 2},
+                                          {"code": "MA3", "product": "High Class Booster Pack", "fetched": 3}],
+            "cards": [card("MA6", 2, 130, "Alolan Exeggutor", None, 1), card("MA6", 15, 130, "Fuecoco ex", "RR", 2),          # inside the set's own numbering: not a candidate
+                      card("MA6", 189, 130, "Solgaleo GX", None, 3), card("MA6", 195, 130, "Arceus VSTAR", None, 4),            # special reprints above the printed total
+                      card("MA6", 199, 130, "No Picture", None, 5, image=False),                                                  # nothing to look at
+                      card("AC3D", 1, 172, "Celebi & Venusaur GX", None, 6), card("AC3D", 2, 172, "Pidgey", None, 7),           # a deck: no card has a rarity
+                      card("MA3", 1, 193, "Pinsir", None, 8), card("MA3", 2, 193, "Rare", "SAR", 9)]}                            # a High Class set: unmarked is normal
+
+
+class CardMarks(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.catalog = os.path.join(self.tmp.name, "catalog.json")
+        with open(self.catalog, "w", encoding="utf-8") as fh:
+            json.dump(marks_catalog(), fh)
+        self.marks = os.path.join(self.tmp.name, "marks.json")
+        self.logs, self.seen = [], []
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def args(self, **over):
+        base = dict(catalog=self.catalog, marks=self.marks, sets=None, limit=None, again=False, dry_run=False)
+        base.update(over)
+        return argparse.Namespace(**base)
+
+    def reader(self, answers):
+        def read(url):
+            self.seen.append(url)
+            return answers.get(url)
+        return read
+
+    def test_candidates_are_unmarked_special_cards_and_unmarked_decks_only(self):
+        got = [(c["set"], c["number"]) for c in read_card_marks.candidates(marks_catalog())]
+        self.assertEqual(got, [("MA6", "189/130"), ("MA6", "195/130"), ("AC3D", "001/172"), ("AC3D", "002/172")])
+        self.assertEqual([c["number"] for c in read_card_marks.candidates(marks_catalog(), "ma6")], ["189/130", "195/130"])
+
+    def test_the_answers_of_a_model_are_read_strictly_and_two_readers_must_agree(self):
+        self.assertEqual(read_card_marks.parse_mark('{"rarity": "rrr", "alternate_art": false}'), {"rarity": "RRR", "alt_art": False})
+        self.assertEqual(read_card_marks.parse_mark('x {"rarity": null, "alternate_art": null} y'), {"rarity": None, "alt_art": None})
+        self.assertEqual(read_card_marks.parse_mark('{"rarity": "Super Duper"}')["rarity"], "?")        # not a rarity code
+        self.assertIsNone(read_card_marks.parse_mark("no json here"))
+        sr = {"rarity": "SR", "alt_art": True}
+        self.assertEqual(read_card_marks.agree([sr, dict(sr)]), {"rarity": "SR", "alt_art": True})
+        self.assertEqual(read_card_marks.agree([sr, {"rarity": "SR", "alt_art": False}]), {"rarity": "SR"})   # the rarity agrees, the alternate-art flag does not: not claimed
+        self.assertEqual(read_card_marks.agree([sr, {"rarity": "RRR", "alt_art": True}]), {})
+        self.assertEqual(read_card_marks.agree([sr, {"rarity": None, "alt_art": None}]), {})
+        self.assertEqual(read_card_marks.agree([{"rarity": "?", "alt_art": None}, {"rarity": "?", "alt_art": None}]), {})
+
+    def test_what_both_readers_agree_on_is_written_and_nothing_else(self):
+        answers = {"https://o/3.png": {"rarity": "RRR", "alt_art": False}, "https://o/4.png": {"rarity": "SR", "alt_art": True}}
+        count = read_card_marks.run(self.args(sets="MA6"), self.reader(answers), log=self.logs.append)
+        self.assertEqual(count, {"read": 2, "written": 2, "skipped": 0})
+        with open(self.marks, encoding="utf-8") as fh:
+            cards = json.load(fh)["cards"]
+        self.assertEqual((cards["MA6|189/130"]["rarity"], cards["MA6|195/130"]["rarity"], cards["MA6|195/130"]["alt_art"]), ("RRR", "SR", True))
+        self.assertEqual(read_card_marks.label(cards["MA6|195/130"]), "SR AA")
+        self.assertEqual(read_card_marks.label(cards["MA6|189/130"]), "RRR")
+        self.assertIn("dua model sepakat", cards["MA6|189/130"]["by"])
+        self.seen.clear()                                                                      # a second run skips what is already known, and calls nothing
+        self.assertEqual(read_card_marks.run(self.args(sets="MA6"), self.reader(answers), log=self.logs.append)["read"], 0)
+        self.assertEqual(self.seen, [])
+
+    def test_disagreement_failure_and_dry_run_write_nothing_and_manual_entries_are_never_overwritten(self):
+        answers = {"https://o/3.png": {}, "https://o/4.png": None}                              # the readers disagreed on one picture; the other could not be read at all
+        count = read_card_marks.run(self.args(sets="MA6"), self.reader(answers), log=self.logs.append)
+        self.assertEqual(count, {"read": 2, "written": 0, "skipped": 2})
+        self.assertFalse(os.path.exists(self.marks))
+        self.assertEqual(read_card_marks.run(self.args(dry_run=True), self.reader({}), log=self.logs.append)["read"], 0)
+        self.assertEqual(self.seen, ["https://o/3.png", "https://o/4.png"])                    # the dry run called no reader
+        with open(self.marks, "w", encoding="utf-8") as fh:
+            json.dump({"schema_version": 1, "cards": {"MA6|189/130": {"rarity": "SR", "alt_art": True, "by": "manual"}}}, fh)
+        answers = {"https://o/3.png": {"rarity": "RR", "alt_art": False}, "https://o/4.png": {"rarity": "SR", "alt_art": False}}
+        read_card_marks.run(self.args(sets="MA6", again=True), self.reader(answers), log=self.logs.append)
+        with open(self.marks, encoding="utf-8") as fh:
+            cards = json.load(fh)["cards"]
+        self.assertEqual((cards["MA6|189/130"]["rarity"], cards["MA6|189/130"]["by"]), ("SR", "manual"))   # even with --again
+        self.assertEqual(cards["MA6|195/130"]["rarity"], "SR")
+
+    def test_the_main_command_wants_two_models(self):
+        self.assertEqual(read_card_marks.main(["--catalog", self.catalog, "--marks", self.marks, "--model", "gpt-4.1"]), 1)
+
+    def test_the_board_shows_the_printed_rarity_instead_of_nothing(self):
+        cards = marks_catalog()["cards"]
+        marks = {"MA6|189/130": {"rarity": "RRR"}, "MA6|195/130": {"rarity": "SR", "alt_art": True}, "MA6|002/130": {"rarity": "C"}}
+        index = build_site.official_index(cards, marks_catalog()["sets"], marks=marks)
+        self.assertEqual(index[("ma6", "189/130", "")]["rarity"], "RRR")
+        self.assertEqual(index[("ma6", "195/130", "")]["rarity"], "SR AA")
+        self.assertEqual(index[("ma6", "15/130", "")]["rarity"], "RR")                      # the official rarity always wins over a mark
+        self.assertEqual(index[("ma6", "2/130", "")]["rarity"], "C")
+        self.assertIsNone(build_site.official_index(cards, marks_catalog()["sets"], marks={})[("ma6", "189/130", "")]["rarity"])
+
+
 class EgsWatch(unittest.TestCase):
     T0 = datetime(2026, 10, 6, 2, 0, tzinfo=timezone.utc)
 
@@ -2866,7 +2963,7 @@ class EgsWatch(unittest.TestCase):
         png = b"\x89PNG\r\n\x1a\n" + b"0" * 20
         fetched, asked = [], []
 
-        def fake_ask(model):
+        def fake_ask(model, prompt=None):
             def ask(b64, media):
                 asked.append((model, media))
                 return json.dumps({**self.PHOTO_READS[1], "card_name": "Pikachu", "number": "234/193" if model == "m1" else None}) if model != "m3" else None

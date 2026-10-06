@@ -872,12 +872,13 @@ def consensus(answers):
     return out
 
 
-def make_photo_reader(provider, model, fetch=collect_raw.fetch):
+def make_photo_reader(provider, model, fetch=collect_raw.fetch, prompt=None, parse=None, combine=None):
     """photo_fn(image_url) -> dict | None, with an official SDK (pip install openai | anthropic and the key in the environment). `model` may list several
     models separated by commas: the photo is fetched once, every model reads it and consensus() keeps only what they agree on.
     None means 'could not read; try again in a later run' (also when one of the models failed). Needs an API balance of its own: it is only used with --photo-mode."""
     import base64
-    asks = [_ask_openai(m.strip()) if provider == "openai" else _ask_anthropic(m.strip()) for m in model.split(",") if m.strip()]
+    prompt, parse, combine = prompt or PHOTO_PROMPT, parse or parse_photo_answer, combine or consensus   # other readers (the printed rarity of a card) bring their own
+    asks = [_ask_openai(m.strip(), prompt) if provider == "openai" else _ask_anthropic(m.strip(), prompt) for m in model.split(",") if m.strip()]
 
     def read(image_url):
         try:
@@ -891,22 +892,22 @@ def make_photo_reader(provider, model, fetch=collect_raw.fetch):
         answers = []
         for ask in asks:
             answer = ask(b64, media)
-            parsed = parse_photo_answer(answer) if answer else None
+            parsed = parse(answer) if answer else None
             if not parsed:
                 return None
             answers.append(parsed)
-        return answers[0] if len(answers) == 1 else consensus(answers)
+        return answers[0] if len(answers) == 1 else combine(answers)
     return read
 
 
-def _ask_openai(model):
+def _ask_openai(model, prompt=None):
     import openai
     client = openai.OpenAI(max_retries=2)
 
     def ask(b64, media):
         try:
             r = client.chat.completions.create(model=model, max_completion_tokens=2000, messages=[{"role": "user", "content": [
-                {"type": "text", "text": PHOTO_PROMPT}, {"type": "image_url", "image_url": {"url": f"data:{media};base64,{b64}"}}]}])
+                {"type": "text", "text": prompt or PHOTO_PROMPT}, {"type": "image_url", "image_url": {"url": f"data:{media};base64,{b64}"}}]}])
         except (openai.AuthenticationError, openai.PermissionDeniedError, openai.NotFoundError, openai.BadRequestError) as e:
             raise SystemExit(f"OpenAI menolak permintaan ({type(e).__name__}): periksa kunci, model dan saldo API")
         except openai.RateLimitError as e:
@@ -919,14 +920,14 @@ def _ask_openai(model):
     return ask
 
 
-def _ask_anthropic(model):
+def _ask_anthropic(model, prompt=None):
     import anthropic
     client = anthropic.Anthropic()
 
     def ask(b64, media):
         try:
             r = client.messages.create(model=model, max_tokens=1024, messages=[{"role": "user", "content": [
-                {"type": "image", "source": {"type": "base64", "media_type": media, "data": b64}}, {"type": "text", "text": PHOTO_PROMPT}]}])
+                {"type": "image", "source": {"type": "base64", "media_type": media, "data": b64}}, {"type": "text", "text": prompt or PHOTO_PROMPT}]}])
         except (anthropic.AuthenticationError, anthropic.PermissionDeniedError, anthropic.NotFoundError) as e:
             raise SystemExit(f"Claude menolak permintaan ({type(e).__name__}): periksa kunci dan model")
         except (anthropic.APIStatusError, anthropic.APIConnectionError):

@@ -1,0 +1,5 @@
+{
+ "schema_version": 1,
+ "about": "Rarity yang tercetak pada kartu yang oleh situs resmi dicatat 'Tanpa Tanda' (reprint MA6 nomor di atas jumlah tercetak: kartu GX RRR/SR, V, VMAX, VSTAR ...; kartu deck). Kunci 'KODE|nomor' persis seperti di catalog.json. 'rarity' = kode tercetak, 'alt_art': true menambah ' AA' di papan (mis. 'SR AA' = SR dengan ilustrasi alternate art). tools/read_card_marks.py mengisinya dari gambar resmi (dua model harus sepakat); entri dengan \"by\": \"manual\" tidak pernah ditimpa. Koreksi langsung di berkas ini.",
+ "cards": {}
+}

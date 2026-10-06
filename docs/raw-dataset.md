@@ -170,3 +170,16 @@ Tiap kartu menampilkan batang RAW (rentang, kotak untuk tengah 50%, tanda median
 - Pengaruh kondisi (NM, LP, dan sebagainya) terhadap harga. `condition` dicatat kalau tertulis di judul, tetapi statistik belum memisahkannya.
 - Akurasi pembaca bahasa dari foto pada data nyata. Diuji lewat `--sample-check` sebelum dipakai (lihat vps-setup.md).
 - Nomor seri. Untuk RAW tidak ada, jadi satu kartu yang dijual dua kali bisa terhitung dua.
+
+## Rarity yang tercetak tetapi tidak dicatat situs resmi (`tools/card_marks.json`)
+
+Situs resmi memasukkan sebagian kartu ke "Tanpa Tanda" padahal kartunya sendiri mencetak rarity di bagian bawah. Contoh nyata: 28 kartu reprint di MA6 (30th Celebration, nomor 167 sampai 196 dari /130: kartu GX bertanda RRR atau SR, V, VMAX, VSTAR, Magikarp 196/130 dan seterusnya), dan semua kartu deck seperti AC3D. Untuk itu ada `tools/card_marks.json` (kunci `KODE|nomor`, isi `rarity` dan `alt_art`) yang dipakai papan: rarity resmi selalu menang, mark hanya mengisi yang kosong, dan `alt_art: true` menambahkan " AA" (`SR AA` = SR dengan ilustrasi alternate art, dihitung sebagai kartu yang berbeda dari SR biasa karena gambarnya lain).
+
+Isinya dibuat dengan `tools/read_card_marks.py`: gambar resmi tiap kandidat dibaca **dua model** (bawaan `gpt-4.1,gpt-4o`) dan hanya yang disepakati keduanya dicatat. Kalau rarity tidak sama, atau salah satu model gagal, kartu itu tidak dicatat. Bendera alternate art dicatat hanya kalau kedua model sepakat juga di situ. Entri dengan `"by": "manual"` tidak pernah ditimpa, jadi koreksi langsung di berkas dan beri tanda itu. Harga dasar tidak berubah: kartu bernomor di atas jumlah tercetak tidak pernah mendapat harga dasar.
+
+```bash
+python3 tools/read_card_marks.py --catalog /opt/egs-raw/catalog.json --sets MA6 --dry-run     # daftar kandidat, tanpa memanggil apa pun
+python3 tools/read_card_marks.py --catalog /opt/egs-raw/catalog.json --sets MA6 --limit 3     # percobaan tiga gambar
+python3 tools/read_card_marks.py --catalog /opt/egs-raw/catalog.json --sets MA6,AC3D          # semua kandidat set itu
+```
+

@@ -244,7 +244,7 @@ def jp_versions(jp, mapping=None):
     return out
 
 
-def official_index(cards, sets=None, orders=None, extras=None, decks=False):
+def official_index(cards, sets=None, orders=None, extras=None, decks=False, marks=None):
     """{card_key: card} of the official catalog, one entry per card AND foil version.
 
     A number can appear two or three times on the site (regular, Poke Ball holo, Master Ball holo): they are
@@ -255,6 +255,7 @@ def official_index(cards, sets=None, orders=None, extras=None, decks=False):
     from `extras` (jp_versions: what Yuyu-tei lists for that number); they have no official image and stay unpriced until a seller lists them.
     Deck sets are left out unless decks=True (the board lists them as unpriced rows; the collector gives no base price to a deck card)."""
     skip, groups = (set() if decks else deck_sets(sets)), {}
+    marks = load_marks()["cards"] if marks is None else marks
     orders = variant_orders() if orders is None else orders
     extras = extras or {}
     for c in cards:
@@ -263,7 +264,7 @@ def official_index(cards, sets=None, orders=None, extras=None, decks=False):
         groups.setdefault(card_key(c["set"], c["number"]), []).append(c)
     out = {}
     for (code, number, _), entries in groups.items():
-        rarity = next((e["rarity"] for e in entries if e.get("rarity")), None)
+        rarity = next((e["rarity"] for e in entries if e.get("rarity")), None) or mark_label(marks.get(f"{entries[0]['set']}|{entries[0]['number']}"))
         order = orders.get(code.upper(), VARIANTS)
         for i, e in enumerate(entries):
             variant = order[i] if i < len(order) else f"v{i + 1}"
@@ -290,6 +291,25 @@ def trend_of(history):
 
 
 SETS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sets.json")
+MARKS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "card_marks.json")
+
+
+def load_marks(path=MARKS_PATH):
+    """tools/card_marks.json: the rarity printed on cards that the official site lists without one (see tools/read_card_marks.py)."""
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, ValueError):
+        return {"schema_version": 1, "about": "", "cards": {}}
+    data.setdefault("cards", {})
+    return data
+
+
+def mark_label(entry):
+    """What the board shows for a mark: the printed rarity, with ' AA' for an alternate-art picture ('SR AA')."""
+    if not entry or not entry.get("rarity"):
+        return None
+    return entry["rarity"] + (" AA" if entry.get("alt_art") else "")
 
 
 def load_sets(path=SETS_PATH):
