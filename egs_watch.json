@@ -3,65 +3,75 @@
  "kind": "EGS_WATCH",
  "price_type": "OBSERVED_ASKING_ONLY",
  "source": "toco_public_search",
- "generated_at": "2026-10-06T06:44:56.138235+00:00",
+ "generated_at": "2026-10-06T08:02:32.232555+00:00",
  "run": {
-  "started_at": "2026-10-06T06:44:56.138235+00:00",
-  "queries": 155,
-  "requests": 217,
-  "ok_requests": 217,
+  "started_at": "2026-10-06T08:02:32.232555+00:00",
+  "queries": 136,
+  "requests": 256,
+  "ok_requests": 256,
   "failed_requests": 0,
-  "cached_requests": 60,
+  "cached_requests": 0,
   "retries": 0,
   "blocked": null,
   "source_ok": true,
-  "results_seen": 3915,
-  "ignored_not_egs": 3754,
-  "candidates": 161,
-  "accepted_new": 15,
-  "rejected": 67,
+  "results_seen": 3502,
+  "ignored_not_egs": 3339,
+  "candidates": 163,
+  "accepted_new": 0,
+  "rejected": 85,
   "rejected_reasons": {
-   "foreign_language": 32,
-   "not_pokemon": 29,
+   "no_pokemon_signal": 9,
+   "foreign_language": 37,
+   "not_pokemon": 33,
    "product": 6
   },
-  "checked_ok": 94,
+  "checked_ok": 78,
   "check_failed": 0,
   "recheck": {
    "skipped": 0
   },
-  "photo_reads": 0,
+  "photo_reads": 64,
+  "imported": null,
+  "worksheet": null,
   "dry_run": false,
-  "finished_at": "2026-10-06T06:48:53.159680+00:00"
+  "finished_at": "2026-10-06T08:11:10.938591+00:00"
  },
  "summary": {
-  "candidates_found": 161,
-  "accepted_total": 21,
+  "candidates_found": 163,
+  "accepted_total": 32,
   "accepted_existing": 6,
-  "accepted_auto": 15,
-  "accepted_new_this_run": 15,
-  "ambiguous": 73,
-  "rejected_this_run": 67,
+  "accepted_auto": 26,
+  "accepted_new_this_run": 0,
+  "ambiguous": 46,
+  "rejected_this_run": 85,
   "rejected_reasons": {
-   "foreign_language": 32,
-   "not_pokemon": 29,
+   "no_pokemon_signal": 9,
+   "foreign_language": 37,
+   "not_pokemon": 33,
    "product": 6
   },
-  "listings_counted": 21,
-  "cards": 18,
-  "sellers_unique": 7,
+  "listings_counted": 32,
+  "cards": 28,
+  "sellers_unique": 15,
   "status": {
-   "ok": 94
+   "ok": 78
   },
-  "checked_ok_this_run": 94,
+  "by_source": {
+   "toco": {
+    "accepted": 32,
+    "counted": 32
+   }
+  },
+  "checked_ok_this_run": 78,
   "check_failed_this_run": 0,
   "price_changes_24h": 0,
   "price_changes": [],
   "freshness": {
-   "fresh_8h": 21,
+   "fresh_8h": 32,
    "fresh_24h": 0,
    "older": 0,
-   "newest_ok": "2026-10-06T06:44:56.138235+00:00",
-   "oldest_ok": "2026-10-06T06:44:56.138235+00:00"
+   "newest_ok": "2026-10-06T08:02:32.232555+00:00",
+   "oldest_ok": "2026-10-06T08:02:32.232555+00:00"
   }
  },
  "cards": [
@@ -114,6 +124,30 @@
    ]
   },
   {
+   "key": "SV8A|202/187|SAR|",
+   "name": "Flareon ex",
+   "set_code": "SV8A",
+   "card_number": "202/187",
+   "rarity": "SAR",
+   "variant": "",
+   "grades": [
+    {
+     "grade": "10",
+     "n": 1,
+     "sellers": 1,
+     "min": 1196000,
+     "median": 1196000,
+     "mean": 1196000,
+     "max": 1196000,
+     "limited": true,
+     "urls": [
+      "https://toco.id/id/listing/flareon-ex-sar-egs-10-extended-art-1784300768867-71cd"
+     ],
+     "label": "data terbatas"
+    }
+   ]
+  },
+  {
    "key": "AC3A|128/205|RR|",
    "name": "Garchomp & Giratina GX",
    "set_code": "AC3A",
@@ -132,6 +166,30 @@
      "limited": true,
      "urls": [
       "https://toco.id/id/listing/garchomp-giratina-gx-rr-ac3a-id-egs-95-1790736901488-6187"
+     ],
+     "label": "data terbatas"
+    }
+   ]
+  },
+  {
+   "key": "SV4A|348/190|SAR|",
+   "name": "Gardevoir ex",
+   "set_code": "SV4A",
+   "card_number": "348/190",
+   "rarity": "SAR",
+   "variant": "",
+   "grades": [
+    {
+     "grade": "9",
+     "n": 1,
+     "sellers": 1,
+     "min": 2070000,
+     "median": 2070000,
+     "mean": 2070000,
+     "max": 2070000,
+     "limited": true,
+     "urls": [
+      "https://toco.id/id/listing/gardevoir-ex-sar-egs-9-sv4a-1782733310013-2782"
      ],
      "label": "data terbatas"
     }
@@ -195,15 +253,16 @@
    "grades": [
     {
      "grade": "10",
-     "n": 1,
-     "sellers": 1,
+     "n": 2,
+     "sellers": 2,
      "min": 175000,
-     "median": 175000,
-     "mean": 175000,
-     "max": 175000,
+     "median": 287500,
+     "mean": 287500,
+     "max": 400000,
      "limited": true,
      "urls": [
-      "https://toco.id/id/listing/egs-10-lapras-misty-145-sv10s-pokemon-kehadiran-juara-id-1790389322656-4dd7"
+      "https://toco.id/id/listing/egs-10-lapras-misty-145-sv10s-pokemon-kehadiran-juara-id-1790389322656-4dd7",
+      "https://toco.id/id/listing/kartu-pokemon-lapras-misty-ar-sv10s-slab-egs-10-1783959175736-4328"
      ],
      "label": "data terbatas"
     }
@@ -297,6 +356,78 @@
    ]
   },
   {
+   "key": "MA3|230/193|MA|",
+   "name": "Mega Gengar ex",
+   "set_code": "MA3",
+   "card_number": "230/193",
+   "rarity": "MA",
+   "variant": "",
+   "grades": [
+    {
+     "grade": "10",
+     "n": 1,
+     "sellers": 1,
+     "min": 550000,
+     "median": 550000,
+     "mean": 550000,
+     "max": 550000,
+     "limited": true,
+     "urls": [
+      "https://toco.id/id/listing/mega-gengar-ex-grade-10-1790924015162-7be0"
+     ],
+     "label": "data terbatas"
+    }
+   ]
+  },
+  {
+   "key": "MA3|240/193|SAR|",
+   "name": "Mega Gengar ex",
+   "set_code": "MA3",
+   "card_number": "240/193",
+   "rarity": "SAR",
+   "variant": "",
+   "grades": [
+    {
+     "grade": "9.5",
+     "n": 1,
+     "sellers": 1,
+     "min": 2700000,
+     "median": 2700000,
+     "mean": 2700000,
+     "max": 2700000,
+     "limited": true,
+     "urls": [
+      "https://toco.id/id/listing/mega-gengar-ex-versi-indo-1780977442968-0056"
+     ],
+     "label": "data terbatas"
+    }
+   ]
+  },
+  {
+   "key": "MA1|177/126|SAR|",
+   "name": "Mega Latias ex",
+   "set_code": "MA1",
+   "card_number": "177/126",
+   "rarity": "SAR",
+   "variant": "",
+   "grades": [
+    {
+     "grade": "9.5",
+     "n": 1,
+     "sellers": 1,
+     "min": 780000,
+     "median": 780000,
+     "mean": 780000,
+     "max": 780000,
+     "limited": true,
+     "urls": [
+      "https://toco.id/id/listing/pokemon-mega-latias-ex-sar-egs-95-1779679060743-754d"
+     ],
+     "label": "data terbatas"
+    }
+   ]
+  },
+  {
    "key": "MA3|228/193|MA|",
    "name": "Mega Lucario ex",
    "set_code": "MA3",
@@ -345,6 +476,30 @@
    ]
   },
   {
+   "key": "AC3A|54/205|RR|",
+   "name": "Mewtwo & Mew GX",
+   "set_code": "AC3A",
+   "card_number": "054/205",
+   "rarity": "RR",
+   "variant": "",
+   "grades": [
+    {
+     "grade": "9.5",
+     "n": 1,
+     "sellers": 1,
+     "min": 1080000,
+     "median": 1080000,
+     "mean": 1080000,
+     "max": 1080000,
+     "limited": true,
+     "urls": [
+      "https://toco.id/id/listing/pokemon-mewtwo-mew-gx-tagteam-ind-egs-95-1778378533009-36e0"
+     ],
+     "label": "data terbatas"
+    }
+   ]
+  },
+  {
    "key": "MA5|234/164|SAR|",
    "name": "Pertarungan Penentuan Gladion",
    "set_code": "MA5",
@@ -363,6 +518,30 @@
      "limited": true,
      "urls": [
       "https://toco.id/id/listing/pertarungan-penentuan-gladion-sar-ma5-id-egs-10-1790737403361-b38d"
+     ],
+     "label": "data terbatas"
+    }
+   ]
+  },
+  {
+   "key": "SV2A|173/165|AR|",
+   "name": "Pikachu",
+   "set_code": "SV2A",
+   "card_number": "173/165",
+   "rarity": "AR",
+   "variant": "",
+   "grades": [
+    {
+     "grade": "9.5",
+     "n": 1,
+     "sellers": 1,
+     "min": 600000,
+     "median": 600000,
+     "mean": 600000,
+     "max": 600000,
+     "limited": true,
+     "urls": [
+      "https://toco.id/id/listing/pikachu-151-ar-sv2a-egs-95-1790735165776-a987"
      ],
      "label": "data terbatas"
     }
@@ -455,6 +634,30 @@
    ]
   },
   {
+   "key": "SV8A|218/187|SAR|",
+   "name": "Roaring Moon ex",
+   "set_code": "SV8A",
+   "card_number": "218/187",
+   "rarity": "SAR",
+   "variant": "",
+   "grades": [
+    {
+     "grade": "9.5",
+     "n": 1,
+     "sellers": 1,
+     "min": 800000,
+     "median": 800000,
+     "mean": 800000,
+     "max": 800000,
+     "limited": true,
+     "urls": [
+      "https://toco.id/id/listing/kartu-pokemon-roaring-moon-ex-1783223047087-c925"
+     ],
+     "label": "data terbatas"
+    }
+   ]
+  },
+  {
    "key": "MA3|247/193|SAR|",
    "name": "Semangat Tarung Iris",
    "set_code": "MA3",
@@ -503,6 +706,30 @@
    ]
   },
   {
+   "key": "SV8A|30/187|-|master_ball",
+   "name": "Vaporeon",
+   "set_code": "SV8A",
+   "card_number": "030/187",
+   "rarity": null,
+   "variant": "master_ball",
+   "grades": [
+    {
+     "grade": "9.5",
+     "n": 1,
+     "sellers": 1,
+     "min": 765000,
+     "median": 765000,
+     "mean": 765000,
+     "max": 765000,
+     "limited": true,
+     "urls": [
+      "https://toco.id/id/listing/pokemon-vaporeon-masterball-holo-egs-95-1778401133684-1f85"
+     ],
+     "label": "data terbatas"
+    }
+   ]
+  },
+  {
    "key": "MA3|210/193|AR|",
    "name": "Zekrom <N>",
    "set_code": "MA3",
@@ -525,6 +752,30 @@
      "label": "data terbatas"
     }
    ]
+  },
+  {
+   "key": "MA3|242/193|SAR|",
+   "name": "Zoroark <N> ex",
+   "set_code": "MA3",
+   "card_number": "242/193",
+   "rarity": "SAR",
+   "variant": "",
+   "grades": [
+    {
+     "grade": "9.5",
+     "n": 1,
+     "sellers": 1,
+     "min": 850000,
+     "median": 850000,
+     "mean": 850000,
+     "max": 850000,
+     "limited": true,
+     "urls": [
+      "https://toco.id/id/listing/wegs-slab-95-gem-mint-sar-zoroark-n-ex-1788054027204-00af"
+     ],
+     "label": "data terbatas"
+    }
+   ]
   }
  ],
  "listings": [
@@ -543,10 +794,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -566,7 +817,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 200000,
     "in_stock": true
    },
@@ -575,7 +826,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 200000,
      "in_stock": true
     }
@@ -596,10 +847,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -619,7 +870,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 200000,
     "in_stock": true
    },
@@ -628,8 +879,65 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 200000,
+     "in_stock": true
+    }
+   ]
+  },
+  {
+   "url": "https://toco.id/id/listing/flareon-ex-sar-egs-10-extended-art-1784300768867-71cd",
+   "source": "toco",
+   "seller": "Dizle Official",
+   "seller_id": "f798ff3c",
+   "city": "Kota Jakarta Timur",
+   "title": "Flareon EX SAR 🇮🇩 (EGS 10 + Extended Art)",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/c1bbff02-3a0f-4872-9252-cd55c6ce36b6-f798ff3c-3eef-40ec-a901-c5f5fcbdeef9-9b25d459-c64d-40cd-aea9-9841f007fa7c.webp",
+   "photos": [
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/c1bbff02-3a0f-4872-9252-cd55c6ce36b6-f798ff3c-3eef-40ec-a901-c5f5fcbdeef9-9b25d459-c64d-40cd-aea9-9841f007fa7c.webp",
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/45a46e7d-d259-4fbb-a551-6e2ddb11fd21-f798ff3c-3eef-40ec-a901-c5f5fcbdeef9-d65266aa-aa76-4934-808b-168cd1008645.webp",
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/d0b90ad1-7254-47d4-9610-b32c3e4fd89c-f798ff3c-3eef-40ec-a901-c5f5fcbdeef9-064d2ea3-6c1f-4810-9947-5486bcc2a3b7.webp",
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/f665337a-d05f-498c-92be-6a26d61da30d-f798ff3c-3eef-40ec-a901-c5f5fcbdeef9-27a482ae-44f7-448b-ad81-53536fe65898.webp"
+   ],
+   "asking_idr": 1196000,
+   "list_idr": 1300000,
+   "stock": 1,
+   "status": "ok",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
+   "first_seen": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
+   "origin": "search",
+   "verdict": "accepted",
+   "identity": {
+    "company": "EGS",
+    "grade": "10",
+    "cert": "A002650",
+    "language": "ID",
+    "language_by": "foto",
+    "name": "Flareon ex",
+    "set_code": "SV8A",
+    "card_number": "202/187",
+    "rarity": "SAR",
+    "variant": "",
+    "identified_by": "nomor di foto",
+    "set_by": "set dari angka total"
+   },
+   "cert": "A002650",
+   "counted": true,
+   "excluded": null,
+   "latest": {
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
+    "asking_idr": 1196000,
+    "in_stock": true
+   },
+   "previous_day": null,
+   "change_from_previous_day_idr": null,
+   "daily_latest": [
+    {
+     "date_wib": "2026-10-06",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
+     "asking_idr": 1196000,
      "in_stock": true
     }
    ]
@@ -649,10 +957,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -672,7 +980,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 200000,
     "in_stock": true
    },
@@ -681,8 +989,62 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 200000,
+     "in_stock": true
+    }
+   ]
+  },
+  {
+   "url": "https://toco.id/id/listing/gardevoir-ex-sar-egs-9-sv4a-1782733310013-2782",
+   "source": "toco",
+   "seller": "TCG PLAY SHOP",
+   "seller_id": "020fcee9",
+   "city": "Kota Semarang",
+   "title": "Gardevoir ex sar EGS 9 sv4a",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/00843834-2ba6-4993-b18c-791591f06710-020fcee9-ce73-4ffe-b343-bc25038ccaea-7af6c2ea-c25c-4ff4-8cda-fb00c5ba2f7c.webp",
+   "photos": [
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/00843834-2ba6-4993-b18c-791591f06710-020fcee9-ce73-4ffe-b343-bc25038ccaea-7af6c2ea-c25c-4ff4-8cda-fb00c5ba2f7c.webp",
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/a4222f27-31c9-4a68-9382-2fa87e57467b-020fcee9-ce73-4ffe-b343-bc25038ccaea-9f152c85-a8f4-48d5-88ae-2953477e9e0a.webp"
+   ],
+   "asking_idr": 2070000,
+   "list_idr": 2300000,
+   "stock": 1,
+   "status": "ok",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
+   "first_seen": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
+   "origin": "search",
+   "verdict": "accepted",
+   "identity": {
+    "company": "EGS",
+    "grade": "9",
+    "cert": null,
+    "language": "ID",
+    "language_by": "foto",
+    "name": "Gardevoir ex",
+    "set_code": "SV4A",
+    "card_number": "348/190",
+    "rarity": "SAR",
+    "variant": "",
+    "identified_by": "nomor di foto"
+   },
+   "cert": null,
+   "counted": true,
+   "excluded": null,
+   "latest": {
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
+    "asking_idr": 2070000,
+    "in_stock": true
+   },
+   "previous_day": null,
+   "change_from_previous_day_idr": null,
+   "daily_latest": [
+    {
+     "date_wib": "2026-10-06",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
+     "asking_idr": 2070000,
      "in_stock": true
     }
    ]
@@ -702,10 +1064,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -725,7 +1087,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 500000,
     "in_stock": true
    },
@@ -734,7 +1096,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 500000,
      "in_stock": true
     }
@@ -755,10 +1117,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -778,7 +1140,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 150000,
     "in_stock": true
    },
@@ -787,7 +1149,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 150000,
      "in_stock": true
     }
@@ -808,10 +1170,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -831,7 +1193,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 175000,
     "in_stock": true
    },
@@ -840,8 +1202,61 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 175000,
+     "in_stock": true
+    }
+   ]
+  },
+  {
+   "url": "https://toco.id/id/listing/kartu-pokemon-lapras-misty-ar-sv10s-slab-egs-10-1783959175736-4328",
+   "source": "toco",
+   "seller": "ZToysID",
+   "seller_id": "76ec33d5",
+   "city": "Kota Jakarta Selatan",
+   "title": "Kartu Pokemon Lapras Misty AR sv10s Slab EGS 10",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/a2c24239-6b49-4da9-a3b0-95afffdc5e9c-76ec33d5-bb71-4c2d-a66e-5df775dc9506-7df045c1-0c5a-446b-840a-c6afeecdf43e.webp",
+   "photos": [
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/a2c24239-6b49-4da9-a3b0-95afffdc5e9c-76ec33d5-bb71-4c2d-a66e-5df775dc9506-7df045c1-0c5a-446b-840a-c6afeecdf43e.webp"
+   ],
+   "asking_idr": 400000,
+   "list_idr": 500000,
+   "stock": 1,
+   "status": "ok",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
+   "first_seen": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
+   "origin": "search",
+   "verdict": "accepted",
+   "identity": {
+    "company": "EGS",
+    "grade": "10",
+    "cert": "A002082",
+    "language": "ID",
+    "language_by": "foto",
+    "name": "Lapras <Misty>",
+    "set_code": "SV10S",
+    "card_number": "145/138",
+    "rarity": "AR",
+    "variant": "",
+    "identified_by": "nomor di foto"
+   },
+   "cert": "A002082",
+   "counted": true,
+   "excluded": null,
+   "latest": {
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
+    "asking_idr": 400000,
+    "in_stock": true
+   },
+   "previous_day": null,
+   "change_from_previous_day_idr": null,
+   "daily_latest": [
+    {
+     "date_wib": "2026-10-06",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
+     "asking_idr": 400000,
      "in_stock": true
     }
    ]
@@ -861,10 +1276,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-09-28T16:30:10.681264+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -885,7 +1300,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 875000,
     "in_stock": true
    },
@@ -898,7 +1313,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 875000,
      "in_stock": true
     },
@@ -967,10 +1382,10 @@
    "list_idr": 2000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -991,7 +1406,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 1340000,
     "in_stock": true
    },
@@ -1000,7 +1415,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 1340000,
      "in_stock": true
     }
@@ -1021,10 +1436,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1044,7 +1459,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 675000,
     "in_stock": true
    },
@@ -1053,7 +1468,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 675000,
      "in_stock": true
     }
@@ -1074,10 +1489,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1097,7 +1512,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 850000,
     "in_stock": true
    },
@@ -1106,7 +1521,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 850000,
      "in_stock": true
     }
@@ -1127,10 +1542,10 @@
    "list_idr": 750000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-09-28T16:30:15.397359+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -1151,7 +1566,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 600000,
     "in_stock": true
    },
@@ -1164,7 +1579,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 600000,
      "in_stock": true
     },
@@ -1219,6 +1634,171 @@
    ]
   },
   {
+   "url": "https://toco.id/id/listing/mega-gengar-ex-grade-10-1790924015162-7be0",
+   "source": "toco",
+   "seller": "PokeRico",
+   "seller_id": "ef9526c2",
+   "city": "Kota Mojokerto",
+   "title": "Mega Gengar EX Grade 10",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/066bb415-52e1-47b3-9a96-c0fa18b62ad2-ef9526c2-806d-4f6f-a788-18bd9024f71f-defcb34e-eeda-49f0-af31-70888cbc9744.webp",
+   "photos": [
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/066bb415-52e1-47b3-9a96-c0fa18b62ad2-ef9526c2-806d-4f6f-a788-18bd9024f71f-defcb34e-eeda-49f0-af31-70888cbc9744.webp",
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/cf146109-07c5-408a-b321-a9fcc2d9b15d-ef9526c2-806d-4f6f-a788-18bd9024f71f-01383dcf-8284-44a3-a52b-20763f9e7afa.webp",
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/41e6393c-fd97-4b90-b611-dd822eee0869-ef9526c2-806d-4f6f-a788-18bd9024f71f-1897caa3-147a-4881-8a3a-5531030b5897.webp",
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/52e2af8d-b3e5-44cc-a68f-1833daf342b9-ef9526c2-806d-4f6f-a788-18bd9024f71f-dedbecf5-65ea-4d22-b5ae-7b218bc2b7e8.webp"
+   ],
+   "asking_idr": 550000,
+   "list_idr": null,
+   "stock": 1,
+   "status": "ok",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
+   "first_seen": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
+   "origin": "search",
+   "verdict": "accepted",
+   "identity": {
+    "company": "EGS",
+    "grade": "10",
+    "cert": null,
+    "language": "ID",
+    "language_by": "foto",
+    "name": "Mega Gengar ex",
+    "set_code": "MA3",
+    "card_number": "230/193",
+    "rarity": "MA",
+    "variant": "",
+    "identified_by": "nomor di foto",
+    "set_by": "set dari angka total"
+   },
+   "cert": null,
+   "counted": true,
+   "excluded": null,
+   "latest": {
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
+    "asking_idr": 550000,
+    "in_stock": true
+   },
+   "previous_day": null,
+   "change_from_previous_day_idr": null,
+   "daily_latest": [
+    {
+     "date_wib": "2026-10-06",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
+     "asking_idr": 550000,
+     "in_stock": true
+    }
+   ]
+  },
+  {
+   "url": "https://toco.id/id/listing/mega-gengar-ex-versi-indo-1780977442968-0056",
+   "source": "toco",
+   "seller": "liam gallery",
+   "seller_id": "769af89d",
+   "city": "Kota Banda Aceh",
+   "title": "mega gengar ex versi indo",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/c674e7aa-c8dd-4cf6-9817-6baff087953d-769af89d-1aae-4020-8496-83ee65b1073a-9343b633-66aa-4144-bd23-07004c41e64f.webp",
+   "photos": [
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/c674e7aa-c8dd-4cf6-9817-6baff087953d-769af89d-1aae-4020-8496-83ee65b1073a-9343b633-66aa-4144-bd23-07004c41e64f.webp"
+   ],
+   "asking_idr": 2700000,
+   "list_idr": 3000000,
+   "stock": 1,
+   "status": "ok",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
+   "first_seen": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
+   "origin": "search",
+   "verdict": "accepted",
+   "identity": {
+    "company": "EGS",
+    "grade": "9.5",
+    "cert": "A013341",
+    "language": "ID",
+    "language_by": "teks",
+    "name": "Mega Gengar ex",
+    "set_code": "MA3",
+    "card_number": "240/193",
+    "rarity": "SAR",
+    "variant": "",
+    "identified_by": "nomor di foto",
+    "set_by": "set dari angka total"
+   },
+   "cert": "A013341",
+   "counted": true,
+   "excluded": null,
+   "latest": {
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
+    "asking_idr": 2700000,
+    "in_stock": true
+   },
+   "previous_day": null,
+   "change_from_previous_day_idr": null,
+   "daily_latest": [
+    {
+     "date_wib": "2026-10-06",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
+     "asking_idr": 2700000,
+     "in_stock": true
+    }
+   ]
+  },
+  {
+   "url": "https://toco.id/id/listing/pokemon-mega-latias-ex-sar-egs-95-1779679060743-754d",
+   "source": "toco",
+   "seller": "AA Hobbies",
+   "seller_id": "e74956b4",
+   "city": "Kota Jakarta Utara",
+   "title": "Pokemon Mega Latias EX SAR EGS 9.5",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/b0499a0f-bd16-4727-9afc-5bfc8d71bca0-e74956b4-1520-405d-a7e7-fec76d41eec5-6e81d077-9c28-441e-abac-497acc72ec01.webp",
+   "photos": [
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/b0499a0f-bd16-4727-9afc-5bfc8d71bca0-e74956b4-1520-405d-a7e7-fec76d41eec5-6e81d077-9c28-441e-abac-497acc72ec01.webp"
+   ],
+   "asking_idr": 780000,
+   "list_idr": null,
+   "stock": 1,
+   "status": "ok",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
+   "first_seen": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
+   "origin": "search",
+   "verdict": "accepted",
+   "identity": {
+    "company": "EGS",
+    "grade": "9.5",
+    "cert": "A012546",
+    "language": "ID",
+    "language_by": "foto",
+    "name": "Mega Latias ex",
+    "set_code": "MA1",
+    "card_number": "177/126",
+    "rarity": "SAR",
+    "variant": "",
+    "identified_by": "nomor di foto",
+    "set_by": "set dari angka total"
+   },
+   "cert": "A012546",
+   "counted": true,
+   "excluded": null,
+   "latest": {
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
+    "asking_idr": 780000,
+    "in_stock": true
+   },
+   "previous_day": null,
+   "change_from_previous_day_idr": null,
+   "daily_latest": [
+    {
+     "date_wib": "2026-10-06",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
+     "asking_idr": 780000,
+     "in_stock": true
+    }
+   ]
+  },
+  {
    "url": "https://toco.id/id/listing/tcg-pokemon-indonesia-ma3-228193-mega-lucario-ex-slab-egs-gem-mint-10-1780712405369-c2b4",
    "source": "toco",
    "seller": "KRC ZONE",
@@ -1233,10 +1813,10 @@
    "list_idr": 1000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1256,7 +1836,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 650000,
     "in_stock": true
    },
@@ -1265,7 +1845,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 650000,
      "in_stock": true
     }
@@ -1286,10 +1866,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-09-27T16:30:02.943431+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -1309,7 +1889,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 650000,
     "in_stock": true
    },
@@ -1322,7 +1902,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 650000,
      "in_stock": true
     },
@@ -1383,6 +1963,60 @@
    ]
   },
   {
+   "url": "https://toco.id/id/listing/pokemon-mewtwo-mew-gx-tagteam-ind-egs-95-1778378533009-36e0",
+   "source": "toco",
+   "seller": "Gothic Colection",
+   "seller_id": "e74956b4",
+   "city": "Kota Jakarta Utara",
+   "title": "Pokemon Mewtwo & Mew GX tagteam ind EGS 9.5",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/7bbef81e-33f6-4a70-8ee8-114df71330b0-e74956b4-1520-405d-a7e7-fec76d41eec5-db8092b7-7f91-48e8-9e18-198480c21bdf.webp",
+   "photos": [
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/7bbef81e-33f6-4a70-8ee8-114df71330b0-e74956b4-1520-405d-a7e7-fec76d41eec5-db8092b7-7f91-48e8-9e18-198480c21bdf.webp"
+   ],
+   "asking_idr": 1080000,
+   "list_idr": 1200000,
+   "stock": 1,
+   "status": "ok",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
+   "first_seen": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
+   "origin": "search",
+   "verdict": "accepted",
+   "identity": {
+    "company": "EGS",
+    "grade": "9.5",
+    "cert": "A011786",
+    "language": "ID",
+    "language_by": "teks",
+    "name": "Mewtwo & Mew GX",
+    "set_code": "AC3A",
+    "card_number": "054/205",
+    "rarity": "RR",
+    "variant": "",
+    "identified_by": "nomor di foto",
+    "set_by": "set dari angka total"
+   },
+   "cert": "A011786",
+   "counted": true,
+   "excluded": null,
+   "latest": {
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
+    "asking_idr": 1080000,
+    "in_stock": true
+   },
+   "previous_day": null,
+   "change_from_previous_day_idr": null,
+   "daily_latest": [
+    {
+     "date_wib": "2026-10-06",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
+     "asking_idr": 1080000,
+     "in_stock": true
+    }
+   ]
+  },
+  {
    "url": "https://toco.id/id/listing/pertarungan-penentuan-gladion-sar-ma5-id-egs-10-1790737403361-b38d",
    "source": "toco",
    "seller": "Gwyn Hobbyshop",
@@ -1397,10 +2031,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1420,7 +2054,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 500000,
     "in_stock": true
    },
@@ -1429,8 +2063,61 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 500000,
+     "in_stock": true
+    }
+   ]
+  },
+  {
+   "url": "https://toco.id/id/listing/pikachu-151-ar-sv2a-egs-95-1790735165776-a987",
+   "source": "toco",
+   "seller": "Gwyn Hobbyshop",
+   "seller_id": "552e5b3d",
+   "city": "Kota Jambi",
+   "title": "Pikachu 151 AR Sv2a EGS 9.5",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/12396adc-d56c-4688-b3cf-be5978a5e323-20260930-092447-0.webp",
+   "photos": [
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/12396adc-d56c-4688-b3cf-be5978a5e323-20260930-092447-0.webp"
+   ],
+   "asking_idr": 600000,
+   "list_idr": null,
+   "stock": 1,
+   "status": "ok",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
+   "first_seen": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
+   "origin": "search",
+   "verdict": "accepted",
+   "identity": {
+    "company": "EGS",
+    "grade": "9.5",
+    "cert": "A020470",
+    "language": "ID",
+    "language_by": "foto",
+    "name": "Pikachu",
+    "set_code": "SV2A",
+    "card_number": "173/165",
+    "rarity": "AR",
+    "variant": "",
+    "identified_by": "nomor di foto"
+   },
+   "cert": "A020470",
+   "counted": true,
+   "excluded": null,
+   "latest": {
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
+    "asking_idr": 600000,
+    "in_stock": true
+   },
+   "previous_day": null,
+   "change_from_previous_day_idr": null,
+   "daily_latest": [
+    {
+     "date_wib": "2026-10-06",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
+     "asking_idr": 600000,
      "in_stock": true
     }
    ]
@@ -1450,10 +2137,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-09-27T16:30:05.172022+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -1473,7 +2160,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 875000,
     "in_stock": true
    },
@@ -1486,7 +2173,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 875000,
      "in_stock": true
     },
@@ -1561,10 +2248,10 @@
    "list_idr": 3000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-09-28T16:30:08.362111+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -1584,7 +2271,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 2760000,
     "in_stock": true
    },
@@ -1597,7 +2284,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 2760000,
      "in_stock": true
     },
@@ -1666,10 +2353,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1689,7 +2376,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 1000000,
     "in_stock": true
    },
@@ -1698,7 +2385,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 1000000,
      "in_stock": true
     }
@@ -1719,10 +2406,10 @@
    "list_idr": 1000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1743,7 +2430,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 650000,
     "in_stock": true
    },
@@ -1752,8 +2439,62 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 650000,
+     "in_stock": true
+    }
+   ]
+  },
+  {
+   "url": "https://toco.id/id/listing/kartu-pokemon-roaring-moon-ex-1783223047087-c925",
+   "source": "toco",
+   "seller": "Ryuka TCG 24",
+   "seller_id": "98dce04e",
+   "city": "Kabupaten Karawang",
+   "title": "KARTU POKEMON ROARING MOON EX",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/56ceeba4-1b4d-4051-a891-32f3bfde40cf-98dce04e-b6d0-461f-afc6-874f22529b62-95dd8f5c-0566-4a48-8e04-35dbcbc51a0e.webp",
+   "photos": [
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/56ceeba4-1b4d-4051-a891-32f3bfde40cf-98dce04e-b6d0-461f-afc6-874f22529b62-95dd8f5c-0566-4a48-8e04-35dbcbc51a0e.webp"
+   ],
+   "asking_idr": 800000,
+   "list_idr": null,
+   "stock": 1,
+   "status": "ok",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
+   "first_seen": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
+   "origin": "search",
+   "verdict": "accepted",
+   "identity": {
+    "company": "EGS",
+    "grade": "9.5",
+    "cert": "A017415",
+    "language": "ID",
+    "language_by": "foto",
+    "name": "Roaring Moon ex",
+    "set_code": "SV8A",
+    "card_number": "218/187",
+    "rarity": "SAR",
+    "variant": "",
+    "identified_by": "nomor di foto",
+    "set_by": "set dari angka total"
+   },
+   "cert": "A017415",
+   "counted": true,
+   "excluded": null,
+   "latest": {
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
+    "asking_idr": 800000,
+    "in_stock": true
+   },
+   "previous_day": null,
+   "change_from_previous_day_idr": null,
+   "daily_latest": [
+    {
+     "date_wib": "2026-10-06",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
+     "asking_idr": 800000,
      "in_stock": true
     }
    ]
@@ -1773,10 +2514,10 @@
    "list_idr": 1500000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1797,7 +2538,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 1050000,
     "in_stock": true
    },
@@ -1806,7 +2547,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 1050000,
      "in_stock": true
     }
@@ -1827,10 +2568,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1850,7 +2591,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 175000,
     "in_stock": true
    },
@@ -1859,8 +2600,62 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 175000,
+     "in_stock": true
+    }
+   ]
+  },
+  {
+   "url": "https://toco.id/id/listing/pokemon-vaporeon-masterball-holo-egs-95-1778401133684-1f85",
+   "source": "toco",
+   "seller": "Gothic Colection",
+   "seller_id": "e74956b4",
+   "city": "Kota Jakarta Utara",
+   "title": "Pokemon Vaporeon masterball holo EGS 9.5",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/27f02a0a-db1d-4a00-b477-fdfdee53b829-e74956b4-1520-405d-a7e7-fec76d41eec5-ce38c3cc-d6ae-4efd-abe3-33d8159c4739.webp",
+   "photos": [
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/27f02a0a-db1d-4a00-b477-fdfdee53b829-e74956b4-1520-405d-a7e7-fec76d41eec5-ce38c3cc-d6ae-4efd-abe3-33d8159c4739.webp"
+   ],
+   "asking_idr": 765000,
+   "list_idr": 850000,
+   "stock": 1,
+   "status": "ok",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
+   "first_seen": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
+   "origin": "search",
+   "verdict": "accepted",
+   "identity": {
+    "company": "EGS",
+    "grade": "9.5",
+    "cert": "A003203",
+    "language": "ID",
+    "language_by": "foto",
+    "name": "Vaporeon",
+    "set_code": "SV8A",
+    "card_number": "030/187",
+    "rarity": null,
+    "variant": "master_ball",
+    "identified_by": "nomor di foto",
+    "set_by": "set dari angka total"
+   },
+   "cert": "A003203",
+   "counted": true,
+   "excluded": null,
+   "latest": {
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
+    "asking_idr": 765000,
+    "in_stock": true
+   },
+   "previous_day": null,
+   "change_from_previous_day_idr": null,
+   "daily_latest": [
+    {
+     "date_wib": "2026-10-06",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
+     "asking_idr": 765000,
      "in_stock": true
     }
    ]
@@ -1880,10 +2675,10 @@
    "list_idr": 750000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "first_seen": "2026-09-28T16:30:13.065047+00:00",
-   "last_seen_in_search": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -1904,7 +2699,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-06T06:44:56.138235+00:00",
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
     "asking_idr": 550000,
     "in_stock": true
    },
@@ -1917,7 +2712,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-06",
-     "observed_at": "2026-10-06T06:44:56.138235+00:00",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
      "asking_idr": 550000,
      "in_stock": true
     },
@@ -1970,6 +2765,61 @@
      "in_stock": true
     }
    ]
+  },
+  {
+   "url": "https://toco.id/id/listing/wegs-slab-95-gem-mint-sar-zoroark-n-ex-1788054027204-00af",
+   "source": "toco",
+   "seller": "Chuko Hobby",
+   "seller_id": "a2d18ed8",
+   "city": "Kota Jakarta Barat",
+   "title": "EGS slab 9.5 gem mint SAR Zoroark N EX",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/a1f09c73-1d8a-488b-8be9-c7250801ecff-a2d18ed8-449c-41a3-add3-c5697a6adca9-10107c6f-fe50-45f1-9274-0fe4f2b53239.webp",
+   "photos": [
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/a1f09c73-1d8a-488b-8be9-c7250801ecff-a2d18ed8-449c-41a3-add3-c5697a6adca9-10107c6f-fe50-45f1-9274-0fe4f2b53239.webp",
+    "https://d13eru2cpf9i9v.cloudfront.net/toco/8bdc2ea1-9db7-4ed5-861e-98ad5c4d57c0-a2d18ed8-449c-41a3-add3-c5697a6adca9-6ae75b58-d340-43a5-8102-7e644f370217.webp"
+   ],
+   "asking_idr": 850000,
+   "list_idr": null,
+   "stock": 1,
+   "status": "ok",
+   "status_at": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
+   "first_seen": "2026-10-06T06:44:56.138235+00:00",
+   "last_seen_in_search": "2026-10-06T08:02:32.232555+00:00",
+   "origin": "search",
+   "verdict": "accepted",
+   "identity": {
+    "company": "EGS",
+    "grade": "9.5",
+    "cert": null,
+    "language": "ID",
+    "language_by": "foto",
+    "name": "Zoroark <N> ex",
+    "set_code": "MA3",
+    "card_number": "242/193",
+    "rarity": "SAR",
+    "variant": "",
+    "identified_by": "nomor di foto",
+    "set_by": "set dari angka total"
+   },
+   "cert": null,
+   "counted": true,
+   "excluded": null,
+   "latest": {
+    "observed_at": "2026-10-06T08:02:32.232555+00:00",
+    "asking_idr": 850000,
+    "in_stock": true
+   },
+   "previous_day": null,
+   "change_from_previous_day_idr": null,
+   "daily_latest": [
+    {
+     "date_wib": "2026-10-06",
+     "observed_at": "2026-10-06T08:02:32.232555+00:00",
+     "asking_idr": 850000,
+     "in_stock": true
+    }
+   ]
   }
  ],
  "queue": [
@@ -1983,8 +2833,12 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
+    {
+     "code": "photo_unsure",
+     "text": "Pembaca foto tidak sepakat soal nomor kartu (234/193 / 330/190): nomor dari foto tidak dipakai"
+    },
     {
      "code": "number_missing",
      "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
@@ -2037,8 +2891,12 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
+    {
+     "code": "photo_unsure",
+     "text": "Pembaca foto tidak sepakat soal nomor kartu (228/171 / SV3/SV4): nomor dari foto tidak dipakai"
+    },
     {
      "code": "number_missing",
      "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
@@ -2091,8 +2949,39 @@
    "city": "Kota Jakarta Utara",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
+    {
+     "code": "set_unknown",
+     "text": "set tidak ditulis dan angka total /28 cocok dengan tidak ada set di katalog"
+    }
+   ],
+   "suggestions": [],
+   "identity": {
+    "company": "EGS",
+    "grade": "10",
+    "cert": "A011790",
+    "language": "ID",
+    "language_by": "teks",
+    "identified_by": "nomor di foto"
+   }
+  },
+  {
+   "url": "https://toco.id/id/listing/pikachu-ex-sar-indonesia-egs10-1784605865622-b712",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/95c365a9-509d-46c0-b418-68434eb5cbec-20260721-105030-0.webp",
+   "title": "Pikachu ex SAR Indonesia EGS10",
+   "asking_idr": 3500000,
+   "stock": 1,
+   "seller": "Gwyn Hobbyshop",
+   "city": "Kota Jambi",
+   "status": "ok",
+   "first_seen": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
+   "reasons": [
+    {
+     "code": "photo_unsure",
+     "text": "Pembaca foto tidak sepakat soal nomor kartu (230/182 / 220/198): nomor dari foto tidak dipakai"
+    },
     {
      "code": "number_missing",
      "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
@@ -2136,87 +3025,6 @@
    }
   },
   {
-   "url": "https://toco.id/id/listing/come-on-well-fight-you-optcg-op09-020-1780402882141-6ea0",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/b501312f-da0c-4320-9591-2331ba610a43-63842b93-8eff-4f2e-b22e-ff57298c2f30-903dcbc7-abec-4959-b473-f7456dd4cef3.webp",
-   "title": "Come On!! We’ll Fight You !! - OPTCG - OP09 -020",
-   "asking_idr": 3500000,
-   "stock": 1,
-   "seller": "CTCGstore",
-   "city": "Kota Semarang",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [],
-   "identity": {
-    "company": "EGS",
-    "grade": "10"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/mega-gengar-ex-versi-indo-1780977442968-0056",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/c674e7aa-c8dd-4cf6-9817-6baff087953d-769af89d-1aae-4020-8496-83ee65b1073a-9343b633-66aa-4144-bd23-07004c41e64f.webp",
-   "title": "mega gengar ex versi indo",
-   "asking_idr": 2700000,
-   "stock": 1,
-   "seller": "liam gallery",
-   "city": "Kota Banda Aceh",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [
-    {
-     "set_code": "MA2",
-     "card_number": "058/103",
-     "name": "Mega Gengar ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00016872.png"
-    },
-    {
-     "set_code": "MA3",
-     "card_number": "230/193",
-     "name": "Mega Gengar ex",
-     "rarity": "MA",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017553.png"
-    },
-    {
-     "set_code": "MA3",
-     "card_number": "240/193",
-     "name": "Mega Gengar ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017563.png"
-    },
-    {
-     "set_code": "MA4",
-     "card_number": "076/123",
-     "name": "Gengar",
-     "rarity": "U",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00018347.png"
-    }
-   ],
-   "identity": {
-    "company": "EGS",
-    "grade": "9.5",
-    "language": "ID",
-    "language_by": "teks"
-   }
-  },
-  {
    "url": "https://toco.id/id/listing/mega-latias-ex-jp-egs-10-1785765419130-9475",
    "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/9740bd2f-1568-46f0-ae30-f9012c76b0fd-5455b0dd-8547-4afa-8ed4-cc68a268198c-b41ca923-3c61-46ec-9d83-0e8f55ff6ddf.webp",
    "title": "Mega Darkrai Ex ID EGS 10",
@@ -2226,238 +3034,26 @@
    "city": "Kota Pekanbaru",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "title_changed",
+     "text": "Judul sekarang berbeda dari alamat listing (kemungkinan listing dipakai ulang untuk kartu lain): perlu cek foto"
     }
    ],
-   "suggestions": [
-    {
-     "set_code": "MA5",
-     "card_number": "099/164",
-     "name": "Mega Darkrai ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00018763.png"
-    },
-    {
-     "set_code": "MA5",
-     "card_number": "199/164",
-     "name": "Mega Darkrai ex",
-     "rarity": "SR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00018863.png"
-    },
-    {
-     "set_code": "MA5",
-     "card_number": "229/164",
-     "name": "Mega Darkrai ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00018893.png"
-    },
-    {
-     "set_code": "MA5",
-     "card_number": "238/164",
-     "name": "Mega Darkrai ex",
-     "rarity": "MUR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00018902.png"
-    }
-   ],
+   "suggestions": [],
    "identity": {
     "company": "EGS",
     "grade": "10",
+    "cert": "A022885",
     "language": "ID",
-    "language_by": "teks"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/super-saiyans-gotenks-egs-9-1784780185604-b3c7",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/b1b22a99-13c8-4e72-a65c-4ff350249680-6586e902-36b9-4310-b949-26d444115921-f9ad14f5-4357-471f-b84e-8fd5c760ce7f.webp",
-   "title": "SUPER SAIYANS GOTENKS EGS 9",
-   "asking_idr": 2500000,
-   "stock": 1,
-   "seller": "Tokoku Kartu",
-   "city": "Kabupaten Majalengka",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [],
-   "identity": {
-    "company": "EGS",
-    "grade": "9"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/mega-greninja-ex-sar-egs-grade-10-1785228611648-cecc",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/88d45ea9-614d-4d55-96c0-d3440ff2c837-e1a1c789-bdf1-4b4a-aa34-72f5677866f7-e107a6be-5a6a-43dc-b8be-0d53f91e6650.webp",
-   "title": "Mega Greninja EX SAR EGS Grade 10",
-   "asking_idr": 2300000,
-   "stock": 1,
-   "seller": "Zamacian Shop",
-   "city": "Kabupaten Sidoarjo",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [
-    {
-     "set_code": "AC3B",
-     "card_number": "106/204",
-     "name": "Greninja",
-     "rarity": "R",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002372.png"
-    },
-    {
-     "set_code": "MA5",
-     "card_number": "038/164",
-     "name": "Mega Greninja ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00018702.png"
-    },
-    {
-     "set_code": "MA5",
-     "card_number": "193/164",
-     "name": "Mega Greninja ex",
-     "rarity": "SR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00018857.png"
-    },
-    {
-     "set_code": "MA5",
-     "card_number": "225/164",
-     "name": "Mega Greninja ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00018889.png"
-    }
-   ],
-   "identity": {
-    "company": "EGS",
-    "grade": "10"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/gardevoir-ex-sar-egs-9-sv4a-1782733310013-2782",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/00843834-2ba6-4993-b18c-791591f06710-020fcee9-ce73-4ffe-b343-bc25038ccaea-7af6c2ea-c25c-4ff4-8cda-fb00c5ba2f7c.webp",
-   "title": "Gardevoir ex sar EGS 9 sv4a",
-   "asking_idr": 2070000,
-   "stock": 1,
-   "seller": "TCG PLAY SHOP",
-   "city": "Kota Semarang",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    }
-   ],
-   "suggestions": [],
-   "identity": {
-    "company": "EGS",
-    "grade": "9",
-    "name": "Gardevoir ex",
-    "set_code": "SV4A",
-    "card_number": "348/190",
+    "language_by": "teks",
+    "name": "Mega Darkrai ex",
+    "set_code": "MA5",
+    "card_number": "229/164",
     "rarity": "SAR",
-    "identified_by": "nama, set dan rarity (satu-satunya di katalog)"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/wanted-buggy-gem-mint-10-by-egs-1788367013119-acc5",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/ff6bae65-6c7a-41c5-a928-c19acde1d577-9ca11703-c6d3-40e3-acb6-769d6c8951ae-aa828c49-1772-460a-9ff2-40f3cbf90a75.webp",
-   "title": "Wanted Buggy GEM MINT 9.5 by EGS",
-   "asking_idr": 1500000,
-   "stock": 1,
-   "seller": "Dmk29 TCG",
-   "city": "Kota Jakarta Selatan",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "grade_missing",
-     "text": "Grade EGS tidak terbaca dari judul atau deskripsi"
-    },
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [],
-   "identity": {
-    "company": "EGS"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/gol-d-roger-psec-egs-10-1776696479595-73ec",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/e1b8125a-b1bd-473d-9c2d-05e0e1b25989-93a5bce3-b2c6-4775-a7e2-59a7a80fdd5d-d1a32b46-2379-4c86-b527-de8ef4a046bd.webp",
-   "title": "Gol D Roger PSEC* EGS 10 & Gold Don!! Roger",
-   "asking_idr": 1300000,
-   "stock": 1,
-   "seller": "Random Things 29",
-   "city": "Kabupaten Mojokerto",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [
-    {
-     "set_code": "SV4A",
-     "card_number": "175/190",
-     "name": "Don",
-     "rarity": "U",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00010075.png"
-    },
-    {
-     "set_code": "SV4A",
-     "card_number": "344/190",
-     "name": "Don",
-     "rarity": "SR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00010273.png"
-    },
-    {
-     "set_code": "SV4A",
-     "card_number": "352/190",
-     "name": "Don",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00010281.png"
-    }
-   ],
-   "identity": {
-    "company": "EGS",
-    "grade": "10"
+    "identified_by": "nomor di foto",
+    "set_by": "set dari angka total"
    }
   },
   {
@@ -2470,37 +3066,20 @@
    "city": "Kota Jakarta Selatan",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "grade_missing",
-     "text": "Grade EGS tidak terbaca dari judul atau deskripsi"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "set_unknown",
+     "text": "set tidak ditulis dan angka total /25 cocok dengan tidak ada set di katalog"
     }
    ],
-   "suggestions": [
-    {
-     "set_code": "MA3",
-     "card_number": "127/193",
-     "name": "Rayquaza",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017365.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "185/130",
-     "name": "Rayquaza EX",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019826.png"
-    }
-   ],
+   "suggestions": [],
    "identity": {
     "company": "EGS",
+    "grade": "10",
     "language": "ID",
-    "language_by": "teks"
+    "language_by": "teks",
+    "identified_by": "nomor di foto"
    }
   },
   {
@@ -2513,7 +3092,7 @@
    "city": "Kabupaten Bogor",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
      "code": "title_changed",
@@ -2543,75 +3122,21 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "set_unknown",
+     "text": "set S8B tidak ada di katalog resmi yang dimuat"
     }
    ],
    "suggestions": [],
    "identity": {
     "company": "EGS",
     "grade": "9",
+    "cert": "A019712",
     "language": "ID",
-    "language_by": "teks"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/flareon-ex-sar-egs-10-extended-art-1784300768867-71cd",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/c1bbff02-3a0f-4872-9252-cd55c6ce36b6-f798ff3c-3eef-40ec-a901-c5f5fcbdeef9-9b25d459-c64d-40cd-aea9-9841f007fa7c.webp",
-   "title": "Flareon EX SAR 🇮🇩 (EGS 10 + Extended Art)",
-   "asking_idr": 1196000,
-   "stock": 1,
-   "seller": "Dizle Official",
-   "city": "Kota Jakarta Timur",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [
-    {
-     "set_code": "AC3B",
-     "card_number": "004/204",
-     "name": "Flareon",
-     "rarity": "C",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002198.png"
-    },
-    {
-     "set_code": "SV2A",
-     "card_number": "136/165",
-     "name": "Flareon",
-     "rarity": "R",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00008547.png"
-    },
-    {
-     "set_code": "SV8A",
-     "card_number": "021/187",
-     "name": "Flareon",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00014993.png"
-    },
-    {
-     "set_code": "SV8A",
-     "card_number": "022/187",
-     "name": "Flareon ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00014994.png"
-    }
-   ],
-   "identity": {
-    "company": "EGS",
-    "grade": "10"
+    "language_by": "teks",
+    "identified_by": "nomor di foto"
    }
   },
   {
@@ -2624,19 +3149,21 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "set_unknown",
+     "text": "set S11 tidak ada di katalog resmi yang dimuat"
     }
    ],
    "suggestions": [],
    "identity": {
     "company": "EGS",
     "grade": "9.5",
+    "cert": "A021956",
     "language": "ID",
-    "language_by": "teks"
+    "language_by": "teks",
+    "identified_by": "nomor di foto"
    }
   },
   {
@@ -2649,7 +3176,7 @@
    "city": "Kota Jakarta Pusat",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
      "code": "language_unproven",
@@ -2664,97 +3191,22 @@
      "text": "Judul tampak berisi lebih dari satu kartu (paket, pilihan, atau jumlah)"
     },
     {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "name_mismatch",
+     "text": "Nama di katalog (Mega Hawlucha ex) tidak cocok dengan judul"
+    },
+    {
+     "code": "rarity_mismatch",
+     "text": "Rarity di judul (SAR) berbeda dari katalog (MA)"
     }
    ],
-   "suggestions": [
-    {
-     "set_code": "AC3D",
-     "card_number": "021/172",
-     "name": "Charizard",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002404.png"
-    },
-    {
-     "set_code": "AC3D",
-     "card_number": "097/172",
-     "name": "Scrafty",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002478.png"
-    },
-    {
-     "set_code": "MA4",
-     "card_number": "076/123",
-     "name": "Gengar",
-     "rarity": "U",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00018347.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "092/130",
-     "name": "Gengar ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019738.png"
-    }
-   ],
+   "suggestions": [],
    "identity": {
     "company": "EGS",
-    "grade": "10"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/pokemon-mewtwo-mew-gx-tagteam-ind-egs-95-1778378533009-36e0",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/7bbef81e-33f6-4a70-8ee8-114df71330b0-e74956b4-1520-405d-a7e7-fec76d41eec5-db8092b7-7f91-48e8-9e18-198480c21bdf.webp",
-   "title": "Pokemon Mewtwo & Mew GX tagteam ind EGS 9.5",
-   "asking_idr": 1080000,
-   "stock": 1,
-   "seller": "Gothic Colection",
-   "city": "Kota Jakarta Utara",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [
-    {
-     "set_code": "AC3A",
-     "card_number": "054/205",
-     "name": "Mewtwo & Mew GX",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002051.png"
-    },
-    {
-     "set_code": "AC3A",
-     "card_number": "072/205",
-     "name": "Mewtwo",
-     "rarity": "R",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002064.png"
-    },
-    {
-     "set_code": "AC3A",
-     "card_number": "073/205",
-     "name": "Mew",
-     "rarity": "R",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002065.png"
-    },
-    {
-     "set_code": "MA3",
-     "card_number": "063/193",
-     "name": "Mewtwo <Tim Roket> ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017301.png"
-    }
-   ],
-   "identity": {
-    "company": "EGS",
-    "grade": "9.5",
-    "language": "ID",
-    "language_by": "teks"
+    "grade": "10",
+    "set_code": "MA3",
+    "card_number": "229/193",
+    "identified_by": "nomor di foto",
+    "set_by": "set dari angka total"
    }
   },
   {
@@ -2767,15 +3219,23 @@
    "city": "Kabupaten Deli Serdang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
+    {
+     "code": "language_conflict",
+     "text": "Teks menulis Indonesia, tetapi foto terbaca berbahasa OTHER: perlu cek manual"
+    },
+    {
+     "code": "photo_conflict",
+     "text": "Foto menunjukkan slab PSA, teks menulis EGS"
+    },
     {
      "code": "language_conflict",
      "text": "Menyebut Indonesia dan juga bahasa lain: bahasa kartu tidak jelas"
     },
     {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "photo_unsure",
+     "text": "Pembaca foto tidak sepakat soal nomor kartu (001 / #001): nomor dari foto tidak dipakai"
     }
    ],
    "suggestions": [
@@ -2810,97 +3270,8 @@
    ],
    "identity": {
     "company": "EGS",
-    "grade": "10"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/slab-6pcs-cocok-untuk-bahan-jump-1790683142398-3735",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/012445b5-b0ba-4928-8ffc-8a3bd8bde48f-6ee39780-e0e8-463e-aa26-29e02e2ebbcd-3e7b9c1b-7a79-432e-947c-635587ec80c1.webp",
-   "title": "SLAB 6PCS cocok untuk bahan jump",
-   "asking_idr": 1000000,
-   "stock": 1,
-   "seller": "Bill Collectible",
-   "city": "Kabupaten Sidoarjo",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "grade_missing",
-     "text": "Grade EGS tidak terbaca dari judul atau deskripsi"
-    },
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "bundle",
-     "text": "Judul tampak berisi lebih dari satu kartu (paket, pilihan, atau jumlah)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [],
-   "identity": {
-    "company": "EGS"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/metagross-steven-ex-slab-egs-10-pokemon-1782712736450-f932",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/28626b87-702c-4ff8-ab8c-fefe09f9c996-123bc5ff-84b0-4141-8112-7a0ec4c738dd-b4a1c5c2-56a6-46a1-89a2-24348e6cf6c6.webp",
-   "title": "metagross steven ex slab egs 10 pokemon",
-   "asking_idr": 1000000,
-   "stock": 1,
-   "seller": "pejuang mouse",
-   "city": "Kota Jakarta Timur",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [
-    {
-     "set_code": "MA3",
-     "card_number": "245/193",
-     "name": "Metagross <Steven> ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017568.png"
-    },
-    {
-     "set_code": "MA5",
-     "card_number": "117/164",
-     "name": "Metagross",
-     "rarity": "U",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00018781.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "177/130",
-     "name": "Metagross",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019819.png"
-    },
-    {
-     "set_code": "SV5S",
-     "card_number": "099/142",
-     "name": "Metagross",
-     "rarity": "U",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00010382.png"
-    }
-   ],
-   "identity": {
-    "company": "EGS",
-    "grade": "10"
+    "grade": "10",
+    "cert": "80509279"
    }
   },
   {
@@ -2913,8 +3284,12 @@
    "city": "Kota Jakarta Utara",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
+    {
+     "code": "photo_unsure",
+     "text": "Pembaca foto tidak sepakat soal nomor kartu (118/100 / HR - 118/100): nomor dari foto tidak dipakai"
+    },
     {
      "code": "number_missing",
      "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
@@ -2953,6 +3328,7 @@
    "identity": {
     "company": "EGS",
     "grade": "9",
+    "cert": "A011785",
     "language": "ID",
     "language_by": "teks"
    }
@@ -2967,50 +3343,21 @@
    "city": "Kota Jakarta Utara",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "set_unknown",
+     "text": "set tidak ditulis dan angka total /28 cocok dengan tidak ada set di katalog"
     }
    ],
-   "suggestions": [
-    {
-     "set_code": "AC3A",
-     "card_number": "073/205",
-     "name": "Mew",
-     "rarity": "R",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002065.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "066/130",
-     "name": "Mew",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019712.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "067/130",
-     "name": "Mew",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019713.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "068/130",
-     "name": "Mew ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019714.png"
-    }
-   ],
+   "suggestions": [],
    "identity": {
     "company": "EGS",
-    "grade": "9"
+    "grade": "9",
+    "cert": "A011784",
+    "language": "ID",
+    "language_by": "foto",
+    "identified_by": "nomor di foto"
    }
   },
   {
@@ -3023,8 +3370,12 @@
    "city": "Kabupaten Deli Serdang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
+    {
+     "code": "photo_unsure",
+     "text": "Pembaca foto tidak sepakat soal nomor kartu (XY - 121/108 / 052/023): nomor dari foto tidak dipakai"
+    },
     {
      "code": "number_missing",
      "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
@@ -3077,8 +3428,12 @@
    "city": "Kota Jakarta Utara",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
+    {
+     "code": "photo_unsure",
+     "text": "Pembaca foto tidak sepakat soal nomor kartu (084/071 / HR - 084/071): nomor dari foto tidak dipakai"
+    },
     {
      "code": "number_missing",
      "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
@@ -3117,6 +3472,7 @@
    "identity": {
     "company": "EGS",
     "grade": "9.5",
+    "cert": "A011787",
     "language": "ID",
     "language_by": "teks"
    }
@@ -3131,7 +3487,7 @@
    "city": "Kota Jakarta Barat",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
      "code": "grade_missing",
@@ -3185,62 +3541,6 @@
    }
   },
   {
-   "url": "https://toco.id/id/listing/wegs-slab-95-gem-mint-sar-zoroark-n-ex-1788054027204-00af",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/a1f09c73-1d8a-488b-8be9-c7250801ecff-a2d18ed8-449c-41a3-add3-c5697a6adca9-10107c6f-fe50-45f1-9274-0fe4f2b53239.webp",
-   "title": "EGS slab 9.5 gem mint SAR Zoroark N EX",
-   "asking_idr": 850000,
-   "stock": 1,
-   "seller": "Chuko Hobby",
-   "city": "Kota Jakarta Barat",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [
-    {
-     "set_code": "MA3",
-     "card_number": "112/193",
-     "name": "Zoroark <N> ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017350.png"
-    },
-    {
-     "set_code": "MA3",
-     "card_number": "242/193",
-     "name": "Zoroark <N> ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017565.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "098/130",
-     "name": "Zoroark",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019744.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "184/130",
-     "name": "N",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019825.png"
-    }
-   ],
-   "identity": {
-    "company": "EGS",
-    "grade": "9.5"
-   }
-  },
-  {
    "url": "https://toco.id/id/listing/pokemon-gyarados-jahat-25th-anniversary-egs-10-gem-mint-1783763561707-6c6f",
    "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/9212e0af-985d-4247-90f9-42a06225aaea-a1f55edf-d696-49ef-9e9d-fc6ba1e8d8ef-a707ad89-2278-4ca9-95ad-bba3228b3955.webp",
    "title": "Pokemon Gyarados Jahat 25th Anniversary EGS 10 GEM MINT",
@@ -3250,107 +3550,21 @@
    "city": "Kota Bekasi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "set_unknown",
+     "text": "set tidak ditulis dan angka total /25 cocok dengan tidak ada set di katalog"
     }
    ],
-   "suggestions": [
-    {
-     "set_code": "AC3B",
-     "card_number": "032/204",
-     "name": "Gyarados",
-     "rarity": "R",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002364.png"
-    },
-    {
-     "set_code": "SV10S",
-     "card_number": "035/138",
-     "name": "Gyarados <Misty>",
-     "rarity": "R",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00015895.png"
-    },
-    {
-     "set_code": "SV1A",
-     "card_number": "023/073",
-     "name": "Gyarados",
-     "rarity": "R",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00007997.png"
-    },
-    {
-     "set_code": "SV1S",
-     "card_number": "014/078",
-     "name": "Gyarados ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00006886.png"
-    }
-   ],
+   "suggestions": [],
    "identity": {
     "company": "EGS",
     "grade": "10",
+    "cert": "A021126",
     "language": "ID",
-    "language_by": "teks"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/kartu-pokemon-roaring-moon-ex-1783223047087-c925",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/56ceeba4-1b4d-4051-a891-32f3bfde40cf-98dce04e-b6d0-461f-afc6-874f22529b62-95dd8f5c-0566-4a48-8e04-35dbcbc51a0e.webp",
-   "title": "KARTU POKEMON ROARING MOON EX",
-   "asking_idr": 800000,
-   "stock": 1,
-   "seller": "Ryuka TCG 24",
-   "city": "Kabupaten Karawang",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "grade_missing",
-     "text": "Grade EGS tidak terbaca dari judul atau deskripsi"
-    },
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [
-    {
-     "set_code": "SV4S",
-     "card_number": "094/132",
-     "name": "Roaring Moon ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00009750.png"
-    },
-    {
-     "set_code": "SV4S",
-     "card_number": "165/132",
-     "name": "Roaring Moon ex",
-     "rarity": "SR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00009833.png"
-    },
-    {
-     "set_code": "SV4S",
-     "card_number": "179/132",
-     "name": "Roaring Moon ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00009847.png"
-    },
-    {
-     "set_code": "SV4S",
-     "card_number": "186/132",
-     "name": "Roaring Moon ex",
-     "rarity": "UR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017442.png"
-    }
-   ],
-   "identity": {
-    "company": "EGS"
+    "language_by": "teks",
+    "identified_by": "nomor di foto"
    }
   },
   {
@@ -3363,15 +3577,11 @@
    "city": "Kabupaten Karawang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "grade_missing",
-     "text": "Grade EGS tidak terbaca dari judul atau deskripsi"
-    },
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
+     "code": "photo_unsure",
+     "text": "Pembaca foto tidak sepakat soal nomor kartu (190/SV-P / PROMO - 190/SV-P): nomor dari foto tidak dipakai"
     },
     {
      "code": "number_missing",
@@ -3409,7 +3619,11 @@
     }
    ],
    "identity": {
-    "company": "EGS"
+    "company": "EGS",
+    "grade": "9.5",
+    "cert": "A017413",
+    "language": "ID",
+    "language_by": "foto"
    }
   },
   {
@@ -3422,12 +3636,8 @@
    "city": "Kota Tangerang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
     {
      "code": "number_missing",
      "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
@@ -3465,120 +3675,10 @@
    ],
    "identity": {
     "company": "EGS",
-    "grade": "10"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/pokemon-mega-latias-ex-sar-egs-95-1779679060743-754d",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/b0499a0f-bd16-4727-9afc-5bfc8d71bca0-e74956b4-1520-405d-a7e7-fec76d41eec5-6e81d077-9c28-441e-abac-497acc72ec01.webp",
-   "title": "Pokemon Mega Latias EX SAR EGS 9.5",
-   "asking_idr": 780000,
-   "stock": 1,
-   "seller": "AA Hobbies",
-   "city": "Kota Jakarta Utara",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [
-    {
-     "set_code": "AC3B",
-     "card_number": "120/204",
-     "name": "Latias",
-     "rarity": "U",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002295.png"
-    },
-    {
-     "set_code": "MA1",
-     "card_number": "100/126",
-     "name": "Mega Latias ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00016587.png"
-    },
-    {
-     "set_code": "MA1",
-     "card_number": "159/126",
-     "name": "Mega Latias ex",
-     "rarity": "SR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00016670.png"
-    },
-    {
-     "set_code": "MA1",
-     "card_number": "177/126",
-     "name": "Mega Latias ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00016688.png"
-    }
-   ],
-   "identity": {
-    "company": "EGS",
-    "grade": "9.5"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/pokemon-vaporeon-masterball-holo-egs-95-1778401133684-1f85",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/27f02a0a-db1d-4a00-b477-fdfdee53b829-e74956b4-1520-405d-a7e7-fec76d41eec5-ce38c3cc-d6ae-4efd-abe3-33d8159c4739.webp",
-   "title": "Pokemon Vaporeon masterball holo EGS 9.5",
-   "asking_idr": 765000,
-   "stock": 1,
-   "seller": "Gothic Colection",
-   "city": "Kota Jakarta Utara",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [
-    {
-     "set_code": "AC3B",
-     "card_number": "034/204",
-     "name": "Vaporeon",
-     "rarity": "C",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002220.png"
-    },
-    {
-     "set_code": "SV2A",
-     "card_number": "134/165",
-     "name": "Vaporeon",
-     "rarity": "R",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00008545.png"
-    },
-    {
-     "set_code": "SV8A",
-     "card_number": "030/187",
-     "name": "Vaporeon",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00015002.png"
-    },
-    {
-     "set_code": "SV8A",
-     "card_number": "031/187",
-     "name": "Vaporeon ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00015003.png"
-    }
-   ],
-   "identity": {
-    "company": "EGS",
-    "grade": "9.5",
-    "variant": "master_ball"
+    "grade": "10",
+    "cert": "A017728",
+    "language": "ID",
+    "language_by": "foto"
    }
   },
   {
@@ -3591,50 +3691,24 @@
    "city": "Kota Padang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "name_mismatch",
+     "text": "Nama di katalog (Mega Charizard X ex) tidak cocok dengan judul"
     }
    ],
-   "suggestions": [
-    {
-     "set_code": "AC3D",
-     "card_number": "021/172",
-     "name": "Charizard",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002404.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "168/130",
-     "name": "Charizard",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019810.png"
-    },
-    {
-     "set_code": "SV2A",
-     "card_number": "006/165",
-     "name": "Charizard ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00008417.png"
-    },
-    {
-     "set_code": "SV2A",
-     "card_number": "185/165",
-     "name": "Charizard ex",
-     "rarity": "SR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00008764.png"
-    }
-   ],
+   "suggestions": [],
    "identity": {
     "company": "EGS",
-    "grade": "9.5"
+    "grade": "9.5",
+    "cert": "A01211",
+    "language": "ID",
+    "language_by": "foto",
+    "set_code": "MA3",
+    "card_number": "223/193",
+    "identified_by": "nomor di foto",
+    "set_by": "set dari angka total"
    }
   },
   {
@@ -3647,8 +3721,12 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
+    {
+     "code": "photo_unsure",
+     "text": "Pembaca foto tidak sepakat soal nomor kartu (245/184 / 215/184): nomor dari foto tidak dipakai"
+    },
     {
      "code": "number_missing",
      "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
@@ -3663,154 +3741,6 @@
    }
   },
   {
-   "url": "https://toco.id/id/listing/ijat-egs-1787980580967-b409",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/2f3cd98e-a8f4-4702-a127-32ac557ae7c8-21e0a15e-18a6-4c2f-be25-e418d889defa-eac8ea88-ed5c-4165-af09-ea9be4c48007.webp",
-   "title": "Ijat EGS",
-   "asking_idr": 700000,
-   "stock": 2,
-   "seller": "Ryuzi TCG",
-   "city": "Kota Denpasar",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "grade_missing",
-     "text": "Grade EGS tidak terbaca dari judul atau deskripsi"
-    },
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [],
-   "identity": {
-    "company": "EGS"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/egs-graded-grading-kartu-tcg-pokemon-card-magneton-1781075819379-77d7",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/4de8ad26-572e-4459-83c6-13d66c629548-4cc82594-79ba-4bf7-8e8f-030d6db1079f-07352af9-ea03-412e-8120-2f872cd45686.webp",
-   "title": "EGS Graded Grading Kartu TCG Pokemon Card Magneton",
-   "asking_idr": 688500,
-   "stock": 1,
-   "seller": "Fiore Hobbies",
-   "city": "Kota Bandung",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "grade_missing",
-     "text": "Grade EGS tidak terbaca dari judul atau deskripsi"
-    },
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [
-    {
-     "set_code": "AC3A",
-     "card_number": "038/205",
-     "name": "Magneton",
-     "rarity": "R",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002036.png"
-    },
-    {
-     "set_code": "MA1",
-     "card_number": "046/126",
-     "name": "Magneton",
-     "rarity": "C",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00016533.png"
-    },
-    {
-     "set_code": "MA3",
-     "card_number": "046/193",
-     "name": "Magneton",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017284.png"
-    },
-    {
-     "set_code": "SV1V",
-     "card_number": "027/078",
-     "name": "Magneton",
-     "rarity": "C",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00006977.png"
-    }
-   ],
-   "identity": {
-    "company": "EGS"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/egs-graded-grading-kartu-tcg-pokemon-card-pikachu-1781075387576-2616",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/6c9f405c-b084-48dd-9dfe-3ebfcf773f6c-4cc82594-79ba-4bf7-8e8f-030d6db1079f-13ec9202-8758-4e9c-90fa-eb5042af5a8c.webp",
-   "title": "EGS Graded Grading Kartu TCG Pokemon Card Pikachu",
-   "asking_idr": 679250,
-   "stock": 5,
-   "seller": "Fiore Hobbies",
-   "city": "Kota Bandung",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "grade_missing",
-     "text": "Grade EGS tidak terbaca dari judul atau deskripsi"
-    },
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [
-    {
-     "set_code": "AC3A",
-     "card_number": "034/205",
-     "name": "Pikachu",
-     "rarity": "C",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002033.png"
-    },
-    {
-     "set_code": "AC3D",
-     "card_number": "048/172",
-     "name": "Pikachu",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002431.png"
-    },
-    {
-     "set_code": "MA3",
-     "card_number": "044/193",
-     "name": "Pikachu ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017282.png"
-    },
-    {
-     "set_code": "MA3",
-     "card_number": "234/193",
-     "name": "Pikachu ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017557.png"
-    }
-   ],
-   "identity": {
-    "company": "EGS"
-   }
-  },
-  {
    "url": "https://toco.id/id/listing/tcg-pokemon-indonesia-ar-sv10-typhlosion-ethan-slab-egs-gem-mint-10-1780712420209-6b03",
    "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/9f84244a-13d4-4ccf-a8c1-32934148804e-20260606-092014-0.webp",
    "title": "TCG POKEMON INDONESIA AR SV10 TYPHLOSION & ETHAN + SLAB EGS GEM MINT 10",
@@ -3820,19 +3750,21 @@
    "city": "Kota Tangerang Selatan",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "set_unknown",
+     "text": "set SV10 tidak ada di katalog resmi yang dimuat"
     }
    ],
    "suggestions": [],
    "identity": {
     "company": "EGS",
     "grade": "10",
+    "cert": "A015556",
     "language": "ID",
-    "language_by": "teks"
+    "language_by": "teks",
+    "identified_by": "nomor di foto"
    }
   },
   {
@@ -3845,11 +3777,15 @@
    "city": "Kota Jakarta Timur",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
      "code": "title_changed",
      "text": "Judul sekarang berbeda dari alamat listing (kemungkinan listing dipakai ulang untuk kartu lain): perlu cek foto"
+    },
+    {
+     "code": "photo_unsure",
+     "text": "Pembaca foto tidak sepakat soal nomor kartu (238/193 / 230/193): nomor dari foto tidak dipakai"
     },
     {
      "code": "number_missing",
@@ -3903,11 +3839,11 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
+     "code": "photo_unsure",
+     "text": "Pembaca foto tidak sepakat soal nomor kartu (103/100 / 101/100): nomor dari foto tidak dipakai"
     },
     {
      "code": "number_missing",
@@ -3917,7 +3853,9 @@
    "suggestions": [],
    "identity": {
     "company": "EGS",
-    "grade": "9.5"
+    "grade": "9.5",
+    "language": "ID",
+    "language_by": "foto"
    }
   },
   {
@@ -3930,7 +3868,7 @@
    "city": "Kota Jakarta Timur",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
      "code": "set_unknown",
@@ -3956,12 +3894,8 @@
    "city": "Kabupaten Pemalang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
     {
      "code": "number_missing",
      "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
@@ -3970,7 +3904,9 @@
    "suggestions": [],
    "identity": {
     "company": "EGS",
-    "grade": "10"
+    "grade": "10",
+    "language": "ID",
+    "language_by": "foto"
    }
   },
   {
@@ -3983,8 +3919,12 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
+    {
+     "code": "photo_unsure",
+     "text": "Pembaca foto tidak sepakat soal nomor kartu (112/100 / 122/100): nomor dari foto tidak dipakai"
+    },
     {
      "code": "number_missing",
      "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
@@ -4008,49 +3948,20 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [],
-   "identity": {
-    "company": "EGS",
-    "grade": "9.5"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/pikachu-151-ar-sv2a-egs-95-1790735165776-a987",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/12396adc-d56c-4688-b3cf-be5978a5e323-20260930-092447-0.webp",
-   "title": "Pikachu 151 AR Sv2a EGS 9.5",
-   "asking_idr": 600000,
-   "stock": 1,
-   "seller": "Gwyn Hobbyshop",
-   "city": "Kota Jambi",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
+     "code": "set_unknown",
+     "text": "set S10A tidak ada di katalog resmi yang dimuat"
     }
    ],
    "suggestions": [],
    "identity": {
     "company": "EGS",
     "grade": "9.5",
-    "name": "Pikachu",
-    "set_code": "SV2A",
-    "card_number": "173/165",
-    "rarity": "AR",
-    "identified_by": "nama, set dan rarity (satu-satunya di katalog)"
+    "language": "ID",
+    "language_by": "foto",
+    "identified_by": "nomor di foto"
    }
   },
   {
@@ -4063,48 +3974,24 @@
    "city": "Kota Jakarta Timur",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "name_mismatch",
+     "text": "Nama di katalog (Mega Charizard X ex) tidak cocok dengan judul"
     }
    ],
-   "suggestions": [
-    {
-     "set_code": "AC3D",
-     "card_number": "021/172",
-     "name": "Charizard",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002404.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "168/130",
-     "name": "Charizard",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019810.png"
-    },
-    {
-     "set_code": "SV2A",
-     "card_number": "006/165",
-     "name": "Charizard ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00008417.png"
-    },
-    {
-     "set_code": "SV2A",
-     "card_number": "185/165",
-     "name": "Charizard ex",
-     "rarity": "SR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00008764.png"
-    }
-   ],
+   "suggestions": [],
    "identity": {
     "company": "EGS",
     "grade": "9.5",
+    "cert": "A011345",
     "language": "ID",
-    "language_by": "teks"
+    "language_by": "teks",
+    "set_code": "MA3",
+    "card_number": "223/193",
+    "identified_by": "nomor di foto",
+    "set_by": "set dari angka total"
    }
   },
   {
@@ -4117,160 +4004,20 @@
    "city": "Kota Bandar Lampung",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "set_unknown",
+     "text": "set tidak ditulis dan angka total /71 cocok dengan 2 set"
     }
    ],
-   "suggestions": [
-    {
-     "set_code": "AC3D",
-     "card_number": "021/172",
-     "name": "Charizard",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002404.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "168/130",
-     "name": "Charizard",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019810.png"
-    },
-    {
-     "set_code": "SV2A",
-     "card_number": "006/165",
-     "name": "Charizard ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00008417.png"
-    },
-    {
-     "set_code": "SV2A",
-     "card_number": "185/165",
-     "name": "Charizard ex",
-     "rarity": "SR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00008764.png"
-    }
-   ],
+   "suggestions": [],
    "identity": {
     "company": "EGS",
     "grade": "9",
     "language": "ID",
-    "language_by": "teks"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/2024-pokemon-scarlet-violet-terastal-fest-ex-iron-crown-ex-78-egs-10-gem-mint-1777768235515-f3c9",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/4f824141-e534-4c5f-b66f-0e16a87646fb-0eea07aa-26b5-48bc-ae30-5f600359b1b8-78f35d5e-e0fe-4e16-aa74-9597e4cc92df.webp",
-   "title": "2024 Pokemon Scarlet & Violet Terastal Fest ex Iron Crown ex #78 EGS 10 GEM MINT",
-   "asking_idr": 550000,
-   "stock": 1,
-   "seller": "Trutone card and toys",
-   "city": "Kota Jakarta Pusat",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [
-    {
-     "set_code": "SV5S",
-     "card_number": "069/142",
-     "name": "Iron Crown ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00010352.png"
-    },
-    {
-     "set_code": "SV5S",
-     "card_number": "173/142",
-     "name": "Iron Crown ex",
-     "rarity": "SR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00010596.png"
-    },
-    {
-     "set_code": "SV5S",
-     "card_number": "188/142",
-     "name": "Iron Crown ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00010611.png"
-    },
-    {
-     "set_code": "SV5S",
-     "card_number": "198/142",
-     "name": "Iron Crown ex",
-     "rarity": "UR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017455.png"
-    }
-   ],
-   "identity": {
-    "company": "EGS",
-    "grade": "10"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/mega-gengar-ex-grade-10-1790924015162-7be0",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/066bb415-52e1-47b3-9a96-c0fa18b62ad2-ef9526c2-806d-4f6f-a788-18bd9024f71f-defcb34e-eeda-49f0-af31-70888cbc9744.webp",
-   "title": "Mega Gengar EX Grade 10",
-   "asking_idr": 550000,
-   "stock": 1,
-   "seller": "PokeRico",
-   "city": "Kota Mojokerto",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [
-    {
-     "set_code": "MA2",
-     "card_number": "058/103",
-     "name": "Mega Gengar ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00016872.png"
-    },
-    {
-     "set_code": "MA3",
-     "card_number": "230/193",
-     "name": "Mega Gengar ex",
-     "rarity": "MA",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017553.png"
-    },
-    {
-     "set_code": "MA3",
-     "card_number": "240/193",
-     "name": "Mega Gengar ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017563.png"
-    },
-    {
-     "set_code": "MA4",
-     "card_number": "076/123",
-     "name": "Gengar",
-     "rarity": "U",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00018347.png"
-    }
-   ],
-   "identity": {
-    "company": "EGS",
-    "grade": "10"
+    "language_by": "teks",
+    "identified_by": "nomor di foto"
    }
   },
   {
@@ -4283,7 +4030,7 @@
    "city": "Kota Jakarta Utara",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
      "code": "name_mismatch",
@@ -4307,36 +4054,6 @@
    }
   },
   {
-   "url": "https://toco.id/id/listing/egs031-egs032-three-phase-pure-sine-wave-inverter-board-egs-031-032-eg8030-eg2132-1778474941355-91fc",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/img/image-1778474946229-50ccc198-b676-414a-8542-d177b24ebbeb.webp",
-   "title": "Egs031 Egs032 Three-Phase Pure Sine Wave Inverter Board Egs 031 032 Eg8030 Eg2132",
-   "asking_idr": 530000,
-   "stock": 135,
-   "seller": "Ryaentynk",
-   "city": "Jakarta Utara",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "grade_missing",
-     "text": "Grade EGS tidak terbaca dari judul atau deskripsi"
-    },
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [],
-   "identity": {
-    "company": "EGS"
-   }
-  },
-  {
    "url": "https://toco.id/id/listing/pikachu-batik-slab-egs-1785066187282-ede5",
    "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/c9f312ae-07d4-4375-93ae-ad8282b4f931-87242a01-ce17-4470-83d0-f2503d3634de-af6dff91-5d24-49b9-813a-12528f4ff5c6.webp",
    "title": "Pikachu batik slab EGS",
@@ -4346,16 +4063,8 @@
    "city": "Kabupaten Cianjur",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
-    {
-     "code": "grade_missing",
-     "text": "Grade EGS tidak terbaca dari judul atau deskripsi"
-    },
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
     {
      "code": "number_missing",
      "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
@@ -4392,7 +4101,10 @@
     }
    ],
    "identity": {
-    "company": "EGS"
+    "company": "EGS",
+    "grade": "9",
+    "language": "ID",
+    "language_by": "foto"
    }
   },
   {
@@ -4405,48 +4117,25 @@
    "city": "Kota Bandar Lampung",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "language_conflict",
+     "text": "Teks menulis Indonesia, tetapi foto terbaca berbahasa JP: perlu cek manual"
     }
    ],
-   "suggestions": [
-    {
-     "set_code": "AC3A",
-     "card_number": "113/205",
-     "name": "Lucario",
-     "rarity": "R",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002192.png"
-    },
-    {
-     "set_code": "AC3B",
-     "card_number": "083/204",
-     "name": "Lucario",
-     "rarity": "U",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002371.png"
-    },
-    {
-     "set_code": "MA1",
-     "card_number": "077/126",
-     "name": "Mega Lucario ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00016564.png"
-    },
-    {
-     "set_code": "MA1",
-     "card_number": "156/126",
-     "name": "Mega Lucario ex",
-     "rarity": "SR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00016667.png"
-    }
-   ],
+   "suggestions": [],
    "identity": {
     "company": "EGS",
     "grade": "10",
     "language": "ID",
-    "language_by": "teks"
+    "language_by": "teks",
+    "name": "Mega Lucario ex",
+    "set_code": "MA3",
+    "card_number": "228/193",
+    "rarity": "MA",
+    "identified_by": "nomor di foto",
+    "set_by": "set dari angka total"
    }
   },
   {
@@ -4459,25 +4148,24 @@
    "city": "Kabupaten Ponorogo",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
     {
      "code": "bundle",
      "text": "Judul tampak berisi lebih dari satu kartu (paket, pilihan, atau jumlah)"
     },
     {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "set_unknown",
+     "text": "set tidak ditulis dan angka total /69 cocok dengan tidak ada set di katalog"
     }
    ],
    "suggestions": [],
    "identity": {
     "company": "EGS",
-    "grade": "9"
+    "grade": "9",
+    "language": "ID",
+    "language_by": "foto",
+    "identified_by": "nomor di foto"
    }
   },
   {
@@ -4490,12 +4178,8 @@
    "city": "Kota Tangerang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
     {
      "code": "number_missing",
      "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
@@ -4533,96 +4217,9 @@
    ],
    "identity": {
     "company": "EGS",
-    "grade": "9.5"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/grading-egs-koleksi-kartu-naruto-kayou-original-mr-jiraiya-pohon-t4w5-cr-jiraiya-lentera-t2w2-sannin-legendaris-1778496402685-2871",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/d9a3f8d8-bffa-4095-9d2d-30e4639d9d9a-7d390f8c-3ca0-474a-8365-98eaddb03537-fc8d2d48-6045-4f0d-b67a-eaf066a3e923.webp",
-   "title": "Grading EGS Koleksi Kartu Naruto Kayou Original - MR Jiraiya Pohon T4W5 & CR Jiraiya Lentera T2W2 - Sannin Legendaris",
-   "asking_idr": 432250,
-   "stock": 2,
-   "seller": "Toko Kecil Perintis",
-   "city": "Kota Tangerang Selatan",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "grade_missing",
-     "text": "Grade EGS tidak terbaca dari judul atau deskripsi"
-    },
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [],
-   "identity": {
-    "company": "EGS"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/egs-clefairy-1783437601469-c663",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/4b1271c6-1a80-40b7-a776-b28e48b0b8d8-15007112-1026-49f5-aefe-cc651ac955b5-adff7aa1-5428-4300-8753-c5f84257e704.webp",
-   "title": "Egs Clefairy",
-   "asking_idr": 412500,
-   "stock": 1,
-   "seller": "toko keykeyyy",
-   "city": "Kota Tangerang",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "grade_missing",
-     "text": "Grade EGS tidak terbaca dari judul atau deskripsi"
-    },
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [
-    {
-     "set_code": "AC3A",
-     "card_number": "119/205",
-     "name": "Clefairy",
-     "rarity": "U",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002105.png"
-    },
-    {
-     "set_code": "AC3D",
-     "card_number": "106/172",
-     "name": "Clefairy",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002487.png"
-    },
-    {
-     "set_code": "MA3",
-     "card_number": "060/193",
-     "name": "Clefairy <Lillie> ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017298.png"
-    },
-    {
-     "set_code": "MA4",
-     "card_number": "050/123",
-     "name": "Clefairy",
-     "rarity": "C",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00018321.png"
-    }
-   ],
-   "identity": {
-    "company": "EGS"
+    "grade": "9.5",
+    "language": "ID",
+    "language_by": "foto"
    }
   },
   {
@@ -4635,113 +4232,25 @@
    "city": "Kota Jakarta Barat",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
-    {
-     "code": "grade_missing",
-     "text": "Grade EGS tidak terbaca dari judul atau deskripsi"
-    },
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
     {
      "code": "bundle",
      "text": "Judul tampak berisi lebih dari satu kartu (paket, pilihan, atau jumlah)"
     },
     {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "set_unknown",
+     "text": "set tidak ditulis dan angka total /71 cocok dengan 2 set"
     }
    ],
-   "suggestions": [
-    {
-     "set_code": "MA6",
-     "card_number": "117/130",
-     "name": "Ditto",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019763.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "150/130",
-     "name": "Ditto",
-     "rarity": "AR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019795.png"
-    },
-    {
-     "set_code": "SV2A",
-     "card_number": "132/165",
-     "name": "Ditto",
-     "rarity": "R",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00008543.png"
-    },
-    {
-     "set_code": "SV4A",
-     "card_number": "144/190",
-     "name": "Ditto",
-     "rarity": "R",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00010044.png"
-    }
-   ],
-   "identity": {
-    "company": "EGS"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/mew-25th-anniversary-1780122470391-84c1",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/ff8acdad-cc19-42dd-a500-1f9109098abc-9ffdf6e6-2d34-4c5f-842e-ad70a52e3d1d-f2428dca-2ec9-4f71-8198-a1e93f7cc37e.webp",
-   "title": "Mew 25th Anniversary",
-   "asking_idr": 405000,
-   "stock": 1,
-   "seller": "Pokewaw TCG",
-   "city": "Kota Tangerang",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [
-    {
-     "set_code": "AC3A",
-     "card_number": "073/205",
-     "name": "Mew",
-     "rarity": "R",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002065.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "066/130",
-     "name": "Mew",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019712.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "067/130",
-     "name": "Mew",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019713.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "068/130",
-     "name": "Mew ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019714.png"
-    }
-   ],
+   "suggestions": [],
    "identity": {
     "company": "EGS",
-    "grade": "9"
+    "grade": "9",
+    "cert": "A020403",
+    "language": "ID",
+    "language_by": "foto",
+    "identified_by": "nomor di foto"
    }
   },
   {
@@ -4754,106 +4263,48 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "set_unknown",
+     "text": "set S12A tidak ada di katalog resmi yang dimuat"
     }
    ],
    "suggestions": [],
    "identity": {
     "company": "EGS",
     "grade": "10",
+    "cert": "A017626",
     "language": "ID",
-    "language_by": "teks"
+    "language_by": "teks",
+    "identified_by": "nomor di foto"
    }
   },
   {
-   "url": "https://toco.id/id/listing/kartu-pokemon-lapras-misty-ar-sv10s-slab-egs-10-1783959175736-4328",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/a2c24239-6b49-4da9-a3b0-95afffdc5e9c-76ec33d5-bb71-4c2d-a66e-5df775dc9506-7df045c1-0c5a-446b-840a-c6afeecdf43e.webp",
-   "title": "Kartu Pokemon Lapras Misty AR sv10s Slab EGS 10",
+   "url": "https://toco.id/id/listing/urshifu-serangan-beruntun-v-sr-aa-s5r-egs-8-1790735274224-1dae",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/b04f546c-db79-4f20-8ad2-ec49de7a8479-20260930-092703-0.webp",
+   "title": "Urshifu Serangan Beruntun V SR AA S5R EGS 8",
    "asking_idr": 400000,
    "stock": 1,
-   "seller": "ZToysID",
-   "city": "Kota Jakarta Selatan",
+   "seller": "Gwyn Hobbyshop",
+   "city": "Kota Jambi",
    "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "first_seen": "2026-10-06T08:02:32.232555+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
+     "code": "set_unknown",
+     "text": "set S5R tidak ada di katalog resmi yang dimuat"
     }
    ],
    "suggestions": [],
    "identity": {
     "company": "EGS",
-    "grade": "10",
-    "name": "Lapras <Misty>",
-    "set_code": "SV10S",
-    "card_number": "145/138",
-    "rarity": "AR",
-    "identified_by": "nama, set dan rarity (satu-satunya di katalog)"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/slab-mew-seleb-1782570297390-3091",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/659a8a8e-cca9-4b71-a13d-6dc3dd3b7a7a-dd7ba201-b412-4a9c-b73c-ac224da89949-bce812cf-6011-407e-9c2f-4f6c382837dc.webp",
-   "title": "slab mew seleb , Inggris",
-   "asking_idr": 400000,
-   "stock": 1,
-   "seller": "atheng",
-   "city": "Kota Bekasi",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "grade_missing",
-     "text": "Grade EGS tidak terbaca dari judul atau deskripsi"
-    },
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [
-    {
-     "set_code": "AC3A",
-     "card_number": "073/205",
-     "name": "Mew",
-     "rarity": "R",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002065.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "066/130",
-     "name": "Mew",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019712.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "067/130",
-     "name": "Mew",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019713.png"
-    },
-    {
-     "set_code": "MA6",
-     "card_number": "068/130",
-     "name": "Mew ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00019714.png"
-    }
-   ],
-   "identity": {
-    "company": "EGS"
+    "grade": "8",
+    "cert": "A021956",
+    "language": "ID",
+    "language_by": "foto",
+    "identified_by": "nomor di foto"
    }
   },
   {
@@ -4866,27 +4317,24 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "language_conflict",
+     "text": "Teks menulis Indonesia, tetapi foto terbaca berbahasa JP: perlu cek manual"
     }
    ],
-   "suggestions": [
-    {
-     "set_code": "MA3",
-     "card_number": "223/193",
-     "name": "Mega Charizard X ex",
-     "rarity": "MA",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017546.png"
-    }
-   ],
+   "suggestions": [],
    "identity": {
     "company": "EGS",
     "grade": "9.5",
     "language": "ID",
-    "language_by": "teks"
+    "language_by": "teks",
+    "name": "Mega Charizard X ex",
+    "set_code": "MA3",
+    "card_number": "223/193",
+    "rarity": "MA",
+    "identified_by": "nomor di foto"
    }
   },
   {
@@ -4899,51 +4347,24 @@
    "city": "Kota Tangerang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "grade_missing",
-     "text": "Grade EGS tidak terbaca dari judul atau deskripsi"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "name_mismatch",
+     "text": "Nama di katalog (Rotom Kipas) tidak cocok dengan judul"
     }
    ],
-   "suggestions": [
-    {
-     "set_code": "AC3D",
-     "card_number": "033/172",
-     "name": "Psyduck",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00002416.png"
-    },
-    {
-     "set_code": "MA3",
-     "card_number": "032/193",
-     "name": "Psyduck",
-     "rarity": null,
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017270.png"
-    },
-    {
-     "set_code": "MA3",
-     "card_number": "199/193",
-     "name": "Psyduck",
-     "rarity": "AR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017522.png"
-    },
-    {
-     "set_code": "SV10S",
-     "card_number": "031/138",
-     "name": "Psyduck <Misty>",
-     "rarity": "U",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00015891.png"
-    }
-   ],
+   "suggestions": [],
    "identity": {
     "company": "EGS",
+    "grade": "9.5",
+    "cert": "A017010",
     "language": "ID",
-    "language_by": "teks"
+    "language_by": "teks",
+    "set_code": "MA3",
+    "card_number": "139/193",
+    "identified_by": "nomor di foto",
+    "set_by": "set dari angka total"
    }
   },
   {
@@ -4956,7 +4377,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
      "code": "number_missing",
@@ -5010,48 +4431,27 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "name_mismatch",
+     "text": "Nama di katalog (Salvio) tidak cocok dengan judul"
+    },
+    {
+     "code": "photo_conflict",
+     "text": "Foto menunjukkan rarity SAR, katalog SR"
     }
    ],
-   "suggestions": [
-    {
-     "set_code": "SV5S",
-     "card_number": "034/142",
-     "name": "Gouging Fire ex",
-     "rarity": "RR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00010317.png"
-    },
-    {
-     "set_code": "SV5S",
-     "card_number": "170/142",
-     "name": "Gouging Fire ex",
-     "rarity": "SR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00010593.png"
-    },
-    {
-     "set_code": "SV5S",
-     "card_number": "186/142",
-     "name": "Gouging Fire ex",
-     "rarity": "SAR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00010609.png"
-    },
-    {
-     "set_code": "SV5S",
-     "card_number": "196/142",
-     "name": "Gouging Fire ex",
-     "rarity": "UR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00017453.png"
-    }
-   ],
+   "suggestions": [],
    "identity": {
     "company": "EGS",
     "grade": "9.5",
+    "cert": "A017627",
     "language": "ID",
-    "language_by": "teks"
+    "language_by": "teks",
+    "set_code": "SV5S",
+    "card_number": "180/142",
+    "identified_by": "nomor di foto"
    }
   },
   {
@@ -5064,8 +4464,12 @@
    "city": "Kota Bandar Lampung",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
+    {
+     "code": "photo_unsure",
+     "text": "Pembaca foto tidak sepakat soal nomor kartu (022/171 / GG-017/SV1): nomor dari foto tidak dipakai"
+    },
     {
      "code": "number_missing",
      "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
@@ -5118,7 +4522,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
      "code": "title_changed",
@@ -5139,65 +4543,6 @@
    }
   },
   {
-   "url": "https://toco.id/id/listing/garbodor-vmax-slab-egs-1789912422305-9534",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/cc35cb4d-9954-461d-86bf-49c4075f9e6c-0d7798c0-ffe8-48ca-8423-0a3e483f0e23-0c385ce6-2a43-4f76-90cb-c3563e073f0a.webp",
-   "title": "Garbodor VMAX Slab EGS",
-   "asking_idr": 200000,
-   "stock": 1,
-   "seller": "meissa",
-   "city": "Kabupaten Banjar",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "grade_missing",
-     "text": "Grade EGS tidak terbaca dari judul atau deskripsi"
-    },
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [
-    {
-     "set_code": "MA5",
-     "card_number": "101/164",
-     "name": "Garbodor",
-     "rarity": "U",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00018765.png"
-    },
-    {
-     "set_code": "SV11S",
-     "card_number": "119/172",
-     "name": "Garbodor",
-     "rarity": "U",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00016258.png"
-    },
-    {
-     "set_code": "SV11S",
-     "card_number": "282/172",
-     "name": "Garbodor",
-     "rarity": "AR",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00016421.png"
-    },
-    {
-     "set_code": "SV4S",
-     "card_number": "090/132",
-     "name": "Garbodor",
-     "rarity": "U",
-     "image": "https://asia.pokemon-card.com/id/card-img/id00009746.png"
-    }
-   ],
-   "identity": {
-    "company": "EGS"
-   }
-  },
-  {
    "url": "https://toco.id/id/listing/genesect-sr-egs-9-pokemon-tcg-indonesia-1787201035467-5f87",
    "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/463d69a9-c3ea-4ab4-bfe4-c5e9d746eab5-49ffb3e2-b9e7-4b3d-a74a-d83eb7a2909c-0b72c027-32af-41fb-ac6e-4ef9d432bf86.webp",
    "title": "genesect SR EGS 9 pokemon tcg indonesia",
@@ -5207,11 +4552,15 @@
    "city": "Kabupaten Magetan",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
     {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+     "code": "language_conflict",
+     "text": "Teks menulis Indonesia, tetapi foto terbaca berbahasa JP: perlu cek manual"
+    },
+    {
+     "code": "photo_conflict",
+     "text": "Foto menunjukkan grade Mint, teks menulis 9"
     }
    ],
    "suggestions": [
@@ -5246,7 +4595,7 @@
    ],
    "identity": {
     "company": "EGS",
-    "grade": "9",
+    "cert": "A014100",
     "language": "ID",
     "language_by": "teks"
    }
@@ -5261,8 +4610,12 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
+   "last_ok": "2026-10-06T08:02:32.232555+00:00",
    "reasons": [
+    {
+     "code": "photo_unsure",
+     "text": "Pembaca foto tidak sepakat soal nomor kartu (100/SV-P / 007/S-P): nomor dari foto tidak dipakai"
+    },
     {
      "code": "number_missing",
      "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
@@ -5301,42 +4654,9 @@
    "identity": {
     "company": "EGS",
     "grade": "9.5",
+    "cert": "A024739",
     "language": "ID",
     "language_by": "teks"
-   }
-  },
-  {
-   "url": "https://toco.id/id/listing/bumper-guard-with-backplate-for-psa-cgc-egs-graded-guard-alternate-super-good-quality-1788160943833-d587",
-   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/beeadcac-9980-4cba-afb9-102aa29e2481-00a4dbc1-60e9-4770-bd3f-2302942b186b-f738ee67-8bad-4345-80be-f1716e3b28ee.webp",
-   "title": "Bumper Guard with Backplate for PSA CGC EGS | Graded Guard Alternate | Super Good Quality",
-   "asking_idr": 102000,
-   "stock": 100,
-   "seller": "OVERDOSE",
-   "city": "Kota Malang",
-   "status": "ok",
-   "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-06T06:44:56.138235+00:00",
-   "reasons": [
-    {
-     "code": "company_conflict",
-     "text": "Menyebut EGS dan juga CGC, PSA: perusahaan grading tidak jelas"
-    },
-    {
-     "code": "grade_missing",
-     "text": "Grade EGS tidak terbaca dari judul atau deskripsi"
-    },
-    {
-     "code": "language_unproven",
-     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
-    },
-    {
-     "code": "number_missing",
-     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
-    }
-   ],
-   "suggestions": [],
-   "identity": {
-    "company": "EGS"
    }
   }
  ],
