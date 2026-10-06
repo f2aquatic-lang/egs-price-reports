@@ -29,12 +29,12 @@ Diterima otomatis hanya kalau **semua** ini benar:
 - bahasa Indonesia terbukti: kata ID/Indo/Indonesia, kode set MA (hanya dipakai kartu Indonesia), atau foto. Tidak adanya kata asing **bukan** bukti;
 - satu kartu: tidak ada kata paket/lot/pilihan/jumlah, satu nomor kartu saja;
 - kartunya dikenali di katalog resmi: nomor tertulis, atau `#nomor` dengan set, atau (kalau nomor tidak ditulis) set + rarity + nama yang hanya cocok dengan **satu** kartu; nama dan rarity harus sama dengan katalog (rarity yang berbeda, misalnya judul SR padahal katalog SAR, membuatnya ambigu, tidak dibetulkan diam-diam);
-- alamat listing masih cocok dengan judulnya (listing yang dipakai ulang untuk kartu lain ditandai);
+- alamat listing masih cocok dengan judulnya: alamat menyimpan judul pertama, jadi nama kartu atau kata Jepang di alamat yang sudah tidak ada di judul menandakan listing dipakai ulang untuk kartu lain (kata pengisi seperti "original" atau "ready" tidak dihitung);
 - harga masuk akal (di atas Rp50.000) dan, kalau nomornya punya versi foil dan judul hanya menulis "holo", polanya jelas.
 
-Ditolak (tidak masuk antrean): bukan Pokémon, produk segel, perusahaan grading lain, kartu RAW, bahasa asing (judul Jepang, Inggris, Mandarin; foto JP atau EN). Selain itu **ambigu**: tetap disimpan dengan foto, tautan, alasan, dan daftar kartu katalog yang mungkin cocok, tetapi tidak masuk hitungan harga apa pun.
+Ditolak (tidak masuk antrean): bukan Pokémon (One Piece, Dragon Ball, Digimon ..., atau judul tanpa satu pun tanda Pokémon: kata Pokémon, kode set, rarity, nomor kartu, atau nama kartu di katalog), produk segel, perusahaan grading lain, kartu RAW, bahasa asing (judul Jepang, Inggris, Mandarin; foto JP atau EN). Selain itu **ambigu**: tetap disimpan dengan foto, tautan, alasan, dan daftar kartu katalog yang mungkin cocok, tetapi tidak masuk hitungan harga apa pun.
 
-Foto dibaca (company, grade, nomor sertifikat, nomor kartu, rarity, bahasa) hanya dengan `--photo-mode openai|anthropic`: **bawaan mati**, karena butuh saldo API sendiri. Foto boleh melengkapi teks atau membantah; tidak pernah menimpa konflik. Pencocokan ilustrasi dengan katalog **belum** dibuat: tanpa nomor, tanpa foto yang terbaca, dan tanpa kecocokan tunggal di katalog, listing tetap di antrean.
+Foto dibaca (company, grade, nomor sertifikat, nomor kartu, rarity, bahasa) hanya dengan `--photo-mode openai|anthropic`: **bawaan mati**, karena butuh saldo API sendiri. Uji dulu dengan satu foto: `egs_watch.py --photo-mode openai --read-photo <alamat foto>` (kunci di `OPENAI_API_KEY`; nama model dengan `--photo-model`). Foto boleh melengkapi teks atau membantah; tidak pernah menimpa konflik. Pencocokan ilustrasi dengan katalog **belum** dibuat: tanpa nomor, tanpa foto yang terbaca, dan tanpa kecocokan tunggal di katalog, listing tetap di antrean.
 
 ## Status listing
 

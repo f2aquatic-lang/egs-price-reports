@@ -25,7 +25,11 @@ from collections import Counter, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_site  # noqa: E402
-from classify import NON_POKEMON, NUMBER, PRODUCT, RARITY, SET_CODE, variant_of  # noqa: E402
+from classify import NON_POKEMON as BASE_NON_POKEMON, NUMBER, PRODUCT, RARITY, SET_CODE, variant_of  # noqa: E402
+
+NON_POKEMON = re.compile(BASE_NON_POKEMON.pattern + r"|optcg|\bop\d{2}\s?-\s?\d{3}|super saiyan|saiyans|dbscg|\bbt\d{1,2}-\d{3}|gundam|lorcana|flesh and blood|"
+                         r"\bst\d{2}-\d{3}|yugioh|weiss|vanguard|one piece", re.I)
+POKEMON_WORD = re.compile(r"pok[e\u00e9]mon|\bptcg\b|\btcg\b", re.I)
 
 MIN_PRICE = 50_000  # a slab for less than this is a typo, a bundle fee or a different item
 GRADES = ("10", "9.5", "9", "8.5", "8", "7.5", "7")
@@ -40,7 +44,7 @@ COMPANIES = {
 }
 SLAB_WORD = re.compile(r"\b(slab|graded|grading|gem ?mint)\b", re.I)
 GRADE_AFTER = re.compile(
-    r"\begs(?![a-z])[\s:#_\-]*(?:grade|gem\s*mint|gm|mint|pristine|slab)?[\s:#_\-]*(10|9[.,]5|9|8[.,]5|8|7[.,]5|7)(?![\d/.,]?\d)", re.I)
+    r"\begs(?![a-z])[\s:#_\-]*(?:grading|grade|gem\s*mint|gm|mint|pristine|slab)?[\s:#_\-]*(10|9[.,]5|9|8[.,]5|8|7[.,]5|7)(?![\d/.,]?\d)", re.I)
 GRADE_BEFORE = re.compile(r"\b(10|9[.,]5|9|8[.,]5|8)\s*(?:gem\s*mint\s*)?egs\b", re.I)
 CERT = re.compile(
     r"(?:cert(?:ificate)?|sertifikat|serial(?:\s*number)?|\bs/?n\b|no\.?\s*seri|no\.?\s*cert)\W{0,4}(?:egs\W{0,3})?(?:no\.?|nomor|number|id)?\W{0,4}([A-Z]{0,3}\d{6,10})", re.I)
@@ -60,6 +64,10 @@ def tokens(text):
 
 def norm_grade(g):
     return g.replace(",", ".")
+
+
+SLUG_FILLER = {"original", "ready", "stock", "murah", "slab", "grading", "graded", "pokemon", "kartu", "indonesia", "indonesian", "clear",
+               "bagus", "card", "cards", "promo", "limited", "sale", "versi", "gradeing", "celar"}
 
 
 def title_matches_slug(title, slug):
@@ -136,6 +144,10 @@ class Catalog:
             return owners[0], "set dari angka total"
         return None, "set tidak ditulis dan angka total /" + str(den) + " cocok dengan " + (f"{len(owners)} set" if owners else "tidak ada set di katalog")
 
+    def knows_name_word(self, text):
+        """Is a word of the text the first word of an official card name (Pikachu, Mega, Dreepy ...)? A weak Pokemon signal."""
+        return any(w in self.name_index for w in tokens(text))
+
     def set_from_text(self, text):
         """The set whose official name is written in the text (a name of at least two words, exactly one set)."""
         low = " " + " ".join(tokens(text)) + " "
@@ -203,7 +215,7 @@ def text_evidence(title, description=""):
         "rarities": rarities, "variant": variant_of(both), "holo": bool(HOLO.search(t)), "special": bool(SPECIAL.search(t)),
         "foreign": bool(FOREIGN.search(both)), "id_mark": bool(ID_MARK.search(both)), "ma_set": bool(ID_ONLY_SET.search(t)),
         "bundle": bool(BUNDLE.search(t)), "product": bool(PRODUCT.search(t)) and not NUMBER.search(t),
-        "non_pokemon": bool(NON_POKEMON.search(both)),
+        "non_pokemon": bool(NON_POKEMON.search(both)), "pokemon_word": bool(POKEMON_WORD.search(both)),
     }
 
 
@@ -233,8 +245,12 @@ def verify(listing, catalog, photo=None, tracked=None):
     if ev["product"]:
         reasons.append(reason("product", "Produk segel atau aksesori, bukan satu kartu"))
         return done("rejected")
-    others = [c for c in ev["companies"] if c != "EGS"]
     photo = photo or {}
+    if not tracked and not photo.get("is_slab") and not (ev["pokemon_word"] or ev["set"] or ev["rarities"] or ev["numbers"] or ev["hash_no"] is not None
+                                                          or catalog.knows_name_word(title)):
+        reasons.append(reason("no_pokemon_signal", "Tidak ada tanda kartu Pokémon (kata Pokémon, kode set, rarity, nomor kartu, atau nama kartu di katalog)"))
+        return done("rejected")
+    others = [c for c in ev["companies"] if c != "EGS"]
     photo_company = (photo.get("company") or "").upper() or None
     if photo_company and photo_company != "EGS" and "EGS" not in ev["companies"]:
         reasons.append(reason("other_grader", f"Foto menunjukkan slab {photo_company}, bukan EGS"))
@@ -305,7 +321,9 @@ def verify(listing, catalog, photo=None, tracked=None):
 
     if listing.get("slug") and not tracked:
         share, missing_words = title_matches_slug(title, listing["slug"])
-        if share < 0.6 or len(missing_words) >= 2:
+        name_like = [w for w in missing_words if len(w) >= 5 and w.isalpha() and w not in SLUG_FILLER]
+        slug_foreign = any(FOREIGN.fullmatch(w) for w in listing["slug"].split("-")) and not FOREIGN.search(title)
+        if share < 0.6 or len(missing_words) >= 2 or name_like or slug_foreign:
             reasons.append(reason("title_changed", "Judul sekarang berbeda dari alamat listing (kemungkinan listing dipakai ulang untuk kartu lain): perlu cek foto"))
 
     # 5. one card

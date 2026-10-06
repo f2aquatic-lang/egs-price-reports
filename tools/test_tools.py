@@ -2216,6 +2216,30 @@ class EgsIdentity(unittest.TestCase):
         self.assertEqual(codes(verify_title("Pikachu ex SAR 234/193 MA3 ID NM"))[0], "not_slab")
         self.assertEqual(verify_title("Pikachu ex SAR 234/193 MA3 ID NM")["verdict"], "rejected")
 
+    def test_titles_of_other_games_that_the_real_search_returned_are_rejected_not_queued(self):
+        for title in ("Come On!! We\u2019ll Fight You !! - OPTCG - OP09 -020", "SUPER SAIYANS GOTENKS EGS 9", "Takato Matsuki EX2-056 P-R EGS 9"):
+            v = verify_title(title)
+            self.assertEqual((v["verdict"], codes(v)), ("rejected", ["not_pokemon"]), title)
+        for title in ("Wanted Buggy GEM MINT 9.5 by EGS", "Gol D Roger PSEC* EGS 10 & Gold Don!! Roger", "Pika egs 10"):
+            v = verify_title(title)
+            self.assertEqual((v["verdict"], codes(v)), ("rejected", ["no_pokemon_signal"]), title)
+        self.assertEqual(verify_title("Dreepy EGS 10 ID")["verdict"], "ambiguous")                  # a catalog name is a signal
+        self.assertEqual(verify_title("Kartu EGS 10 pokemon langka")["verdict"], "ambiguous")        # so is the word Pokemon
+
+    def test_a_listing_re_used_for_another_card_is_caught_by_its_address(self):
+        v = verify_title("Mega Darkrai Ex ID EGS 10", listing={"slug": "mega-latias-ex-jp-egs-10-1785765419130-9475"})
+        self.assertEqual((v["verdict"], "title_changed" in codes(v)), ("ambiguous", True))
+        v = verify_title("Dreepy AR MA3 ID EGS 10", listing={"slug": "dreepy-ar-ma3-japan-egs-10-1785765419130-9475"})
+        self.assertIn("title_changed", codes(v))                                                      # the address said Japan, the title now says nothing of it
+        v = verify_title("Dreepy AR MA3 ID EGS 10 ready", listing={"slug": "dreepy-ar-ma3-id-egs-10-original-ready-1785765419130-9475"})
+        self.assertEqual(v["verdict"], "accepted")                                                    # dropped filler words are not a change of card
+
+    def test_egs_grading_ten_and_a_glued_grade_with_a_catalog_card_to_suggest(self):
+        self.assertEqual(verify_title("Pikachu ex SAR 234/193 MA3 ID EGS Grading 10")["identity"]["grade"], "10")
+        v = verify_title("Pikachu ex SAR Indonesia EGS10")
+        self.assertEqual((v["verdict"], codes(v), v["identity"]["grade"]), ("ambiguous", ["number_missing"], "10"))
+        self.assertEqual([s["card_number"] for s in v["suggestions"]], ["100/193", "234/193"])      # the Pikachu and the Pikachu ex that fit the words
+
     def test_sellers_who_glue_the_grade_to_the_company_are_read_too(self):
         for title, grade in (("Pikachu ex SAR 234/193 MA3 ID EGS10", "10"), ("Pikachu ex SAR 234/193 MA3 ID EGS9.5", "9.5"), ("Pikachu ex SAR 234/193 MA3 ID EGS-9", "9")):
             self.assertEqual((verify_title(title)["verdict"], verify_title(title)["identity"]["grade"]), ("accepted", grade), title)
@@ -2705,6 +2729,13 @@ class EgsWatch(unittest.TestCase):
         self.assertIsNone(egs_watch.parse_photo_answer("I cannot read this"))
         self.assertIsNone(egs_watch.parse_photo_answer("{not json}"))
         self.assertIsNone(egs_watch.parse_photo_answer('["a"]'))
+
+    def test_the_photo_test_command_needs_a_provider(self):
+        out = []
+        with mock.patch("builtins.print", lambda *a, **k: out.append(" ".join(map(str, a)))):
+            code = egs_watch.main(["--read-photo", "https://img.example/x.webp"])
+        self.assertEqual(code, 1)
+        self.assertIn("--photo-mode", out[0])
 
     def test_report_and_validation_commands(self):
         fake = FakeEgsToco(self.catalog_listings())

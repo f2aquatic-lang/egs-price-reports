@@ -868,6 +868,7 @@ def main(argv=None):
                     help="baca foto kandidat ambigu dengan model visi (butuh saldo API sendiri; bawaan mati)")
     ap.add_argument("--photo-model", default=os.environ.get("EGS_PHOTO_MODEL"))
     ap.add_argument("--photo-budget", type=int, default=30, help="batas pembacaan foto per putaran")
+    ap.add_argument("--read-photo", metavar="URL", help="uji pembaca foto pada satu foto (butuh --photo-mode dan kunci API), lalu selesai")
     ap.add_argument("--report", metavar="EXPORT", help="cetak laporan teks dari egs_watch.json, lalu selesai")
     ap.add_argument("--validate", metavar="EXPORT", help="periksa egs_watch.json, lalu selesai")
     a = ap.parse_args(argv)
@@ -882,6 +883,14 @@ def main(argv=None):
             return 1 if errors else 0
         print(format_report(d))
         return 0
+    if a.read_photo:
+        if a.photo_mode == "off":
+            print("Pakai --photo-mode openai (atau anthropic) bersama --read-photo.")
+            return 1
+        reader = make_photo_reader(a.photo_mode, a.photo_model or collect_raw.DEFAULT_MODELS[a.photo_mode])
+        answer = reader(a.read_photo)
+        print(json.dumps(answer, ensure_ascii=False, indent=1) if answer else "foto tidak terbaca atau jawabannya tidak bisa dipakai")
+        return 0 if answer else 1
     a.cache_dir = a.cache_dir or os.path.join(os.path.dirname(os.path.abspath(a.db)), "egs_cache")
     photo_fn = None
     if a.photo_mode != "off":
