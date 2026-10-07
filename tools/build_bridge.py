@@ -6,7 +6,9 @@ Why: an Indonesian card is numbered differently from its Japanese original (Mega
 neither prices nor references can be looked up by number. The chain used here, each step with a visible rule:
 
   1. Indonesian set -> English set: every English set is tried and the one that pairs the most cards wins, if it pairs at least 40% of the Indonesian
-     set's cards and is clearly ahead of the next one. (Trainer cards have Indonesian names and never pair; the Pokemon of a set carry it.)
+     set's cards, is clearly ahead of the next one, and the pairs include at least 5 cards that carry a rarity mark (a name alone is weak evidence: the
+     same Pokemon is a Common in many sets). A set that the English edition split in two (Black Bolt and White Flare) pairs with both when the second
+     adds at least 30 points of the set and is not the home of another Indonesian set. (Trainer cards have Indonesian names and never pair.)
   2. Indonesian card -> English card, inside that pair of sets: the same name and the same rarity (Common = C, Uncommon = U, Rare = R, Double rare = RR,
      Illustration rare = AR, Ultra Rare = SR, Special illustration rare = SAR, Mega Hyper Rare = MUR). A card with no mark in a High Class set is a
      Common, Uncommon or Rare. When several cards share name and rarity they are paired in order of number only if both sides have the same count.
@@ -31,6 +33,9 @@ RARITY = {"common": "C", "uncommon": "U", "rare": "R", "double rare": "RR", "ill
 PLAIN = {"C", "U", "R", None}      # what an Indonesian card without a rarity mark can be on the English side
 MIN_YIELD = 0.4                    # share of an Indonesian set's cards that its English set must pair
 MARGIN = 0.15                      # and by how much (in share of the set) it must beat the runner-up
+MIN_STRONG = 5                     # cards with a rarity mark among the pairs: a plain name match alone proves nothing
+MIN_SECOND = 0.3                   # a second English set (the English edition split the set in two) must pair this share of the set on its own
+MIN_GAIN = 0.3                     # and add this much to what the first pairs
 
 
 def norm_name(text):
@@ -65,18 +70,6 @@ def regular_cards(catalog):
         seen.add(key)
         out[c["set"]].append(c)
     return out
-
-
-def pair_sets(id_cards, en_by_set):
-    """(english set id, {catalog number: english card id}, ambiguous count, yield) for the English set that pairs the most cards, else (None, {}, 0, best yield)."""
-    tries = sorted(((len(found) / len(id_cards), sid, found, amb) for sid, en_cards in en_by_set.items()
-                    for found, amb in [match_id_to_en(id_cards, en_cards)]), key=lambda t: (-t[0], t[1]))
-    if not tries:
-        return None, {}, 0, 0.0
-    best = tries[0]
-    if best[0] >= MIN_YIELD and (len(tries) == 1 or best[0] - tries[1][0] >= MARGIN):
-        return best[1], best[2], best[3], best[0]
-    return None, {}, 0, best[0]
 
 
 def match_id_to_en(id_cards, en_cards):
@@ -149,6 +142,49 @@ def pair_ja_sets(en_cards, ja_by_set, min_share=0.25):
     return [sid for _, sid in sorted(picked, reverse=True)]
 
 
+def strong_count(id_cards, found):
+    """How many of the paired cards carry a rarity mark (AR, SR, SAR, RR, MUR ...)."""
+    return sum(1 for c in id_cards if c.get("rarity") not in PLAIN and c["number"] in found)
+
+
+def passes(id_cards, share, found, runner):
+    return share >= MIN_YIELD and share - runner >= MARGIN and strong_count(id_cards, found) >= MIN_STRONG
+
+
+def pair_all(id_sets, en_by_set):
+    """{Indonesian set code: (english set ids, {catalog number: english card id}, ambiguous count, share)}; the English sets are [] where nothing pairs cleanly.
+    First every Indonesian set is paired with a single English set (the home of that set); then a set that stays unpaired or that an English split
+    explains better may take a second English set, but never one that is the home of another Indonesian set."""
+    tries = {code: {sid: match_id_to_en(cards, en_cards) for sid, en_cards in en_by_set.items()} for code, cards in id_sets.items()}
+    ranked = {code: sorted(((len(found) / len(id_sets[code]), sid) for sid, (found, _) in t.items()), key=lambda r: (-r[0], r[1])) for code, t in tries.items()}
+    homes = {}
+    for code, order in ranked.items():
+        if order and passes(id_sets[code], order[0][0], tries[code][order[0][1]][0], order[1][0] if len(order) > 1 else 0):
+            homes.setdefault(order[0][1], set()).add(code)
+    out = {}
+    for code, cards in id_sets.items():
+        order, n = ranked[code], len(cards)
+        if not order:
+            out[code] = ([], {}, 0, 0.0)
+            continue
+        share, first = order[0]
+        chosen, found, amb = [first], *tries[code][first]
+        unions = []
+        for second_share, second in order[1:]:
+            if second_share < MIN_SECOND or homes.get(second, set()) - {code}:
+                continue
+            f, a = match_id_to_en(cards, en_by_set[first] + en_by_set[second])
+            if len(f) / n - share >= MIN_GAIN:
+                unions.append((len(f) / n, second, f, a))
+        unions.sort(key=lambda u: (-u[0], u[1]))
+        if unions and (len(unions) == 1 or unions[0][0] - unions[1][0] >= 0.05):
+            chosen, found, amb = [first, unions[0][1]], unions[0][2], unions[0][3]
+        final = len(found) / n
+        runner = max((r for r, sid in order if sid not in chosen), default=0.0)
+        out[code] = (chosen, found, amb, final) if passes(cards, final, found, runner) else ([], {}, 0, final)
+    return out
+
+
 def yuyutei_set(ja_set_id):
     """Yuyu-tei's set code of a Japanese set id: M2a -> m02a, SV8a -> sv08a, M1L -> m01l (lower case, the number zero padded to two digits)."""
     m = re.fullmatch(r"([A-Za-z]+)(\d+)([A-Za-z]*)", ja_set_id or "")
@@ -163,7 +199,8 @@ def jp_key(ja_card):
 
 
 def squash(text):
-    return re.sub(r"\s+", "", text or "")
+    """A Japanese name without spaces, in one width: Yuyu-tei writes "タイプ:ヌル" where TCGdex writes "タイプ：ヌル"."""
+    return re.sub(r"\s+", "", unicodedata.normalize("NFKC", text or ""))
 
 
 def check_jp(bridge, tcgdex, jp):
@@ -211,11 +248,13 @@ def build(catalog, tcgdex, now=None):
     for c in tcgdex["cards"]:
         (en_by_set if c["lang"] == "en" else ja_by_set)[c["set"]].append(c)
     cards_out, sets_out = {}, []
+    paired = pair_all(id_sets, en_by_set)
     for code, cards in sorted(id_sets.items()):
-        en_set, to_en, ambiguous, share = pair_sets(cards, en_by_set)
-        row = {"id_set": code, "cards": len(cards), "en_set": en_set, "yield": round(share, 2), "ja_sets": [], "en_matched": len(to_en), "ja_matched": 0, "ambiguous": ambiguous}
-        if en_set:
-            en_cards = en_by_set[en_set]
+        en_sets, to_en, ambiguous, share = paired[code]
+        row = {"id_set": code, "cards": len(cards), "en_set": "+".join(en_sets) or None, "en_sets": en_sets, "yield": round(share, 2), "ja_sets": [],
+               "en_matched": len(to_en), "ja_matched": 0, "ambiguous": ambiguous}
+        if en_sets:
+            en_cards = [c for sid in en_sets for c in en_by_set[sid]]
             row["ja_sets"] = pair_ja_sets(en_cards, ja_by_set)
             to_ja = match_en_to_ja(en_cards, [c for sid in row["ja_sets"] for c in ja_by_set[sid]])
             for number, en_id in to_en.items():
@@ -229,9 +268,9 @@ def build(catalog, tcgdex, now=None):
 
 
 def report(data):
-    lines = [f"{'set':7} {'kartu':>5} {'set Inggris':12} {'hasil':>5} {'set Jepang':16} {'cocok EN':>8} {'cocok JP':>8} {'ambigu':>6}"]
+    lines = [f"{'set':7} {'kartu':>5} {'set Inggris':16} {'hasil':>5} {'set Jepang':16} {'cocok EN':>8} {'cocok JP':>8} {'ambigu':>6}"]
     for r in data["sets"]:
-        lines.append(f"{r['id_set']:7} {r['cards']:5} {(r['en_set'] or '-'):12} {r['yield']:5.0%} {','.join(r['ja_sets']) or '-':16} {r['en_matched']:8} {r['ja_matched']:8} {r['ambiguous']:6}")
+        lines.append(f"{r['id_set']:7} {r['cards']:5} {(r['en_set'] or '-'):16} {r['yield']:5.0%} {','.join(r['ja_sets']) or '-':16} {r['en_matched']:8} {r['ja_matched']:8} {r['ambiguous']:6}")
     total = sum(r["cards"] for r in data["sets"] if r["en_set"])
     lines.append(f"kartu di set yang berpasangan: {total}; cocok ke Inggris: {sum(r['en_matched'] for r in data['sets'])}; ke Jepang: {sum(r['ja_matched'] for r in data['sets'])}")
     return "\n".join(lines)

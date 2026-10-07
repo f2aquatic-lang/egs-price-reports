@@ -3486,18 +3486,21 @@ def bridge_fixture():
     charizard = "Mega Charizard X ex"
     catalog = {"cards": [idc("001/103", "Oddish", "C"), idc("002/103", "Vileplume", "U"), idc("003/103", "Garchomp <Cynthia> ex", "RR"), idc("004/103", "Archer Tim Roket", None),
                          idc("005/103", "Perintah Bos", None), idc("006/103", "Pikachu", None), idc("007/103", "Pikachu", None),
-                         idc("013/103", charizard, "RR"), idc("121/103", charizard, "SR"), idc("137/103", charizard, "SAR"), idc("137/103", charizard, "SAR", id=999)],
-               "sets": [{"code": "MA2", "series": "Evolusi Mega", "name": "Api Fantasi", "released": "2025-11-14", "total": 10, "fetched": 10, "complete": True}]}
+                         idc("013/103", charizard, "RR"), idc("121/103", charizard, "SR"), idc("137/103", charizard, "SAR"), idc("137/103", charizard, "SAR", id=999),
+                         idc("100/103", "Oddish", "AR"), idc("101/103", "Gloom", "AR")],
+               "sets": [{"code": "MA2", "series": "Evolusi Mega", "name": "Api Fantasi", "released": "2025-11-14", "total": 12, "fetched": 12, "complete": True}]}
     en = [tg("en", "me02", "001", "Oddish", "Common", "Ill A", [43]), tg("en", "me02", "002", "Vileplume", "Rare", "Ill B", [45]),
           tg("en", "me02", "003", "Cynthia's Garchomp ex", "Double rare", "Ill C", [445]), tg("en", "me02", "004", "Team Rocket's Archer", "Uncommon", "Ill D", None),
           tg("en", "me02", "020", "Pikachu", "Common", "Ill E", [25]),
           tg("en", "me02", "013", charizard, "Double rare", "Takuyoa", [6], {"avg30": 2.0}),
           tg("en", "me02", "109", charizard, "Ultra Rare", "Takuyoa", [6], {"trend": 25.57, "avg30": 24.0}),
           tg("en", "me02", "125", charizard, "Special illustration rare", "danciao", [6], {"trend": 663.11, "low": 500.0}),
+          tg("en", "me02", "095", "Oddish", "Illustration rare", "Ill F", [43]), tg("en", "me02", "096", "Gloom", "Illustration rare", "Ill G", [44]),
           tg("en", "me01", "001", "Oddish", "Common", "Ill A", [43]), tg("en", "me01", "002", "Zubat", "Common", "Ill Z", [41])]
     ja = [tg("ja", "M2", "001", "ナゾノクサ", None, "Ill A", [43]), tg("ja", "M2", "002", "ラフレシア", "Rare", "Ill B", [45]), tg("ja", "M2", "003", "ガブリアスex", "Double rare", "Ill C", [445]),
           tg("ja", "M2", "013", "メガリザードンXex", "Double rare", "takuyoa", [6]), tg("ja", "M2", "094", "メガリザードンXex", "Ultra Rare", "takuyoa", [6]),
           tg("ja", "M2", "110", "メガリザードンXex", "Special illustration rare", "danciao", [6]),
+          tg("ja", "M2", "095", "ナゾノクサ", "Illustration rare", "Ill F", [43]), tg("ja", "M2", "096", "クサイハナ", "Illustration rare", "Ill G", [44]),
           tg("ja", "M1L", "001", "ゼニガメ", "Common", "Someone Else", [7])]
     jp = {"generated_at": "2026-10-06T22:00:00+00:00", "card_url": "https://shop.example/{set}/{id}", "cards": [
         jp_card("m02", "110/080", "メガリザードンXex", 89800, id=110), jp_card("m02", "094/080", "メガリザードンXex", 3980, id=94),
@@ -3520,7 +3523,7 @@ class BuildBridge(unittest.TestCase):
 
     def test_the_set_and_the_cards_are_paired_by_name_and_rarity(self):
         row = next(r for r in self.bridge["sets"] if r["id_set"] == "MA2")
-        self.assertEqual((row["en_set"], row["ja_sets"], row["cards"]), ("me02", ["M2"], 10))          # the foil copy of 137/103 is not a card of its own
+        self.assertEqual((row["en_set"], row["ja_sets"], row["cards"]), ("me02", ["M2"], 12))          # the foil copy of 137/103 is not a card of its own
         self.assertEqual(self.cards["MA2|137/103"]["en"], "me02-125")                                  # SAR with the SAR, not with the Ultra Rare of the same name
         self.assertEqual(self.cards["MA2|121/103"]["en"], "me02-109")
         self.assertEqual(self.cards["MA2|013/103"]["en"], "me02-013")
@@ -3555,21 +3558,57 @@ class BuildBridge(unittest.TestCase):
         self.assertIsNone(row["en_set"])
 
     def test_the_japanese_names_prove_the_pairing_against_the_shop(self):
+        self.assertEqual(build_bridge.squash("タイプ：ヌル"), build_bridge.squash("タイプ:ヌル "))           # full-width colon, trailing space
         self.assertEqual(build_bridge.yuyutei_set("M2a"), "m02a")
         self.assertEqual((build_bridge.yuyutei_set("SV8a"), build_bridge.yuyutei_set("M1L"), build_bridge.yuyutei_set("SV11B")), ("sv08a", "m01l", "sv11b"))
         self.assertEqual(build_bridge.jp_key({"set": "M2", "local": "110"}), ("m02", 110))
         self.assertIsNone(build_bridge.jp_key({"set": "M2", "local": "SV-P"}))
         check = build_bridge.check_jp(self.bridge, self.tcgdex, self.jp)
-        self.assertEqual(check, {"same": 4, "different": 0, "absent": 2})     # 110, 094, 013 (listed as a foil) and 001 carry the same name; 002 and 003 are not listed
+        self.assertEqual(check, {"same": 4, "different": 0, "absent": 4})     # 110, 094, 013 (listed as a foil) and 001 carry the same name; 002, 003, 095 and 096 are not listed
         self.jp["cards"][0]["name"] = "ミュウツーex"
         self.assertEqual(build_bridge.check_jp(self.bridge, self.tcgdex, self.jp)["different"], 1)
 
     def test_the_whole_chain_is_tested_on_sets_whose_numbers_are_the_same_in_japan(self):
         # pretend MA2 is such a set: Japanese number = Indonesian number, which is not true for 121/103 (094 in Japan) and 137/103 (110) but is for the four others
         result = build_bridge.check_numbers(self.bridge, self.tcgdex, {"MA2": "m02"})
-        self.assertEqual(result, {"MA2": {"same": 4, "other_number": 2, "other_set": 0}})                 # 001, 002, 003 and 013 agree; 121 and 137 sit under other numbers
-        self.assertEqual(build_bridge.check_numbers(self.bridge, self.tcgdex, {"MA2": "m01l"})["MA2"]["other_set"], 6)    # a wrong mapping is seen as another set
+        self.assertEqual(result, {"MA2": {"same": 4, "other_number": 4, "other_set": 0}})                 # 001, 002, 003 and 013 agree; 100, 101, 121 and 137 sit under other numbers
+        self.assertEqual(build_bridge.check_numbers(self.bridge, self.tcgdex, {"MA2": "m01l"})["MA2"]["other_set"], 8)    # a wrong mapping is seen as another set
         self.assertEqual(build_bridge.check_numbers(self.bridge, self.tcgdex, {}), {})                      # sets that are not mapped are not judged
+
+    def test_a_name_alone_is_not_enough_to_pair_a_set(self):
+        # an Indonesian set of plain cards whose Pokemon are all Commons in an English set that is not its own: 100% by name, no rarity mark to prove it
+        en = [{"lang": "en", "id": f"x-{n}", "set": "x", "local": f"{n:03d}", "name": name, "rarity": "Common", "illustrator": "I", "dex": [n], "hp": None}
+              for n, name in enumerate(("Oddish", "Gloom", "Zubat", "Golbat", "Meowth", "Persian"), 1)]
+        cards = [{"set": "ZZ1", "number": f"{n:03d}/010", "num": n, "den": 10, "name": name, "rarity": None, "id": n}
+                 for n, name in enumerate(("Oddish", "Gloom", "Zubat", "Golbat", "Meowth", "Persian"), 1)]
+        row = build_bridge.build({"cards": cards}, {"cards": en})["sets"][0]
+        self.assertEqual((row["en_set"], row["yield"]), (None, 1.0))
+
+    def test_a_set_the_english_edition_split_in_two_pairs_with_both(self):
+        def pair(n, sid, rarity):
+            return ({"set": "ZZ2", "number": f"{n:03d}/100", "num": n, "den": 100, "name": f"Mon {n}", "rarity": rarity, "id": n},
+                    {"lang": "en", "id": f"{sid}-{n}", "set": sid, "local": f"{n:03d}", "name": f"Mon {n}", "rarity": "Illustration rare" if rarity else "Common", "illustrator": "I", "dex": [n], "hp": None})
+        made = [pair(n, "sa" if n <= 6 else "sb", "AR") for n in range(1, 13)]
+        data = build_bridge.build({"cards": [m[0] for m in made]}, {"cards": [m[1] for m in made]})
+        row = data["sets"][0]
+        self.assertEqual((row["en_sets"], row["en_set"], row["en_matched"]), (["sa", "sb"], "sa+sb", 12))        # neither half alone pairs 40% with a clear lead
+        self.assertEqual(data["cards"]["ZZ2|007/100"]["en"], "sb-7")
+
+    def test_an_english_set_that_is_the_home_of_another_indonesian_set_is_not_a_second_half(self):
+        def mk(set_code, sid, numbers):
+            cards, en = [], []
+            for n in numbers:
+                cards.append({"set": set_code, "number": f"{n:03d}/100", "num": n, "den": 100, "name": f"Mon {n}", "rarity": "AR", "id": n})
+                en.append({"lang": "en", "id": f"{sid}-{n}", "set": sid, "local": f"{n:03d}", "name": f"Mon {n}", "rarity": "Illustration rare", "illustrator": "I", "dex": [n], "hp": None})
+            return cards, en
+        a_cards, a_en = mk("ZZ3", "sa", range(1, 11))                        # ZZ3 is the home of "sa"
+        b_cards, b_en = mk("ZZ4", "sb", range(101, 111))                     # ZZ4 is the home of "sb" ...
+        extra_cards, extra_en = mk("ZZ4", "sa", range(1, 6))                 # ... but five of its cards also exist in "sa" (a reprint, or a coincidence)
+        data = build_bridge.build({"cards": a_cards + b_cards + [{**c, "number": f"{c['num'] + 200:03d}/100", "num": c["num"] + 200, "name": f"Mon {c['num']}"} for c in extra_cards]},
+                                  {"cards": a_en + b_en})
+        rows = {r["id_set"]: r for r in data["sets"]}
+        self.assertEqual(rows["ZZ3"]["en_sets"], ["sa"])
+        self.assertEqual(rows["ZZ4"]["en_sets"], ["sb"])                     # "sa" belongs to ZZ3: it is not added to ZZ4
 
     def test_the_command_line_writes_the_file_and_the_report(self):
         with tempfile.TemporaryDirectory() as tmp:
