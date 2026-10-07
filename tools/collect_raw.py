@@ -456,16 +456,28 @@ def foil_numbers(official, jp):
     return out | {(code.lower(), number) for code, number in build_site.jp_versions(jp)}
 
 
-def outlier_check(jp, rates):
-    """is_outlier(set, number, variant, ask): True when the same card sells for far less at Yuyu-tei; always False without the yen rate."""
+def outlier_check(jp, rates, refs=None):
+    """is_outlier(set, number, variant, ask): True when the same card sells for far less at Yuyu-tei; always False without the yen rate.
+    The Yuyu-tei card is the one with the same set and number (mapped sets) or, for a set whose numbers differ in Japan, the one the bridge
+    (tools/build_bridge.py, refs from build_site.bridge_refs) paired with the Indonesian card; only the regular version is paired."""
     rate = ((rates or {}).get("rates") or {}).get("JPY", {}).get("idr")
     mapping, jpx = build_site.jp_sets(), build_site.jp_index(jp)
 
     def is_outlier(code, number, variant, ask):
         jpcode = mapping.get(code.upper())
         card = jpx.get(build_site.card_key(jpcode, number, variant)) if jpcode and rate else None
+        if card is None and not jpcode and not variant and refs and rate:
+            ref = refs.get(build_site.card_key(code, number)[:2])
+            card = ref["jp"] if ref else None
         return bool(card) and ask > OUTLIER_FACTOR * card["yen"] * rate and ask > OUTLIER_MIN
     return is_outlier
+
+
+def bridge_refs_of(cfg, catalog_on, jp):
+    """{(set, number): reference} of the cards the bridge pairs with a Japanese card (build_site.bridge_refs); {} without the catalog or tcgdex.json."""
+    tcgdex = load_json(getattr(cfg, "tcgdex_json", None))
+    catalog = load_json(getattr(cfg, "catalog_json", None)) if catalog_on else None
+    return build_site.bridge_refs(catalog, tcgdex, jp) if catalog and tcgdex and jp else {}
 
 
 def load_official(path):
@@ -512,7 +524,7 @@ def majority(values):
     return min(counts, key=lambda v: (-counts[v], len(v), v)) if counts else ""
 
 
-def build_raw(db, types, now, max_age_hours, record=True, catalog=False, official=None, defaults=None, jp=None, rates=None):
+def build_raw(db, types, now, max_age_hours, record=True, catalog=False, official=None, defaults=None, jp=None, rates=None, refs=None):
     cutoff = (now - timedelta(hours=max_age_hours)).isoformat()
     rows = db.execute(
         "SELECT l.url, l.title, l.ask_idr, l.city, l.stock, l.card_set, l.card_number, l.conf, l.last_seen, g.lang, g.lang_by, l.image_url, l.variant "
@@ -568,7 +580,7 @@ def build_raw(db, types, now, max_age_hours, record=True, catalog=False, officia
         cards.append({"name": t["name"], "set_code": t["set"], "card_number": t["number"], "rarity": t["rarity"],
                       "stats": stats, "history": history, "listings": listings})
     cards.sort(key=lambda c: -c["stats"]["n"])
-    extra, outlier_listings, is_outlier = [], 0, outlier_check(jp, rates)
+    extra, outlier_listings, is_outlier = [], 0, outlier_check(jp, rates, refs)
     for key, items in found_catalog.items():
         cset, cnum, variant = items[0][1], items[0][2], items[0][3]
         everything = sorted(r for r, _, _, _ in items)
@@ -671,6 +683,7 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
     sets_by_total = denominator_sets(l["title"] for l in listings) if catalog_on else {}
     official = load_official(getattr(cfg, "catalog_json", None)) if catalog_on else {}
     jp, rates = load_json(getattr(cfg, "jp_json", None)), load_json(getattr(cfg, "rates_json", None))
+    refs = bridge_refs_of(cfg, catalog_on, jp)
     foil = foil_numbers(official, jp) if catalog_on else set()
     known_sets = {o["set"].upper() for o in official.values()}
     by_set_num = defaultdict(list)
@@ -722,7 +735,7 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
     db.commit()
     raw = build_raw(db, types, now, cfg.max_age_hours, record=not cfg.dry_run, catalog=catalog_on,
                     official=load_official(getattr(cfg, "catalog_json", None)),
-                    defaults=load_defaults(getattr(cfg, "default_prices", None)), jp=jp, rates=rates)
+                    defaults=load_defaults(getattr(cfg, "default_prices", None)), jp=jp, rates=rates, refs=refs)
     db.commit()  # the daily snapshots written by build_raw must survive the run
     db.close()
     ctr.update({"listing_dibaca": len(items), "foto_dicek_sekarang": checker.calls})
@@ -774,6 +787,8 @@ def main(argv=None):
                     help="katalog resmi (tools/fetch_catalog.py): nama dan rarity resmi, dan kartu tanpa listing")
     ap.add_argument("--jp-json", default="jp_prices.json" if os.path.exists("jp_prices.json") else None,
                     help="jp_prices.json (tools/fetch_jp_prices.py): dipakai untuk mengenali versi foil dan listing yang kemahalan")
+    ap.add_argument("--tcgdex-json", default="tcgdex.json" if os.path.exists("tcgdex.json") else None,
+                    help="tcgdex.json (tools/fetch_tcgdex.py): menghubungkan kartu Indonesia dengan kartu Jepang yang nomornya beda, supaya harga Yuyutei bisa dipakai untuk mengenali listing kemahalan")
     ap.add_argument("--rates-json", default="rates.json" if os.path.exists("rates.json") else None,
                     help="rates.json (tools/fetch_rates.py): kurs yen untuk membandingkan dengan harga Yuyutei")
     ap.add_argument("--default-prices", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "default_prices.json"),

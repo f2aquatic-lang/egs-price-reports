@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the "Papan Harga Kartu Pokemon" page (RAW and EGS slab asking prices) from latest.json and raw.json. Read-only on the data.
 
-Usage: python3 tools/build_site.py [latest.json] [--raw raw.json] [--catalog catalog.json] [--jp jp_prices.json] [--rates rates.json] [--egs egs_watch.json] [--out FILE] [--standalone]
+Usage: python3 tools/build_site.py [latest.json] [--raw raw.json] [--catalog catalog.json] [--jp jp_prices.json] [--rates rates.json] [--egs egs_watch.json] [--marks card_marks.json] [--tcgdex tcgdex.json] [--out FILE] [--standalone]
 
 Every asking price is treated as the price (price_type OBSERVED_ASKING_ONLY);
 nothing waits for a sale. For each tracked card type the page lists every known
@@ -14,7 +14,9 @@ Match confidence of a discovery candidate to a tracked card:
 Foreign-language versions are shown but never counted. Non-Pokemon cards are hidden.
 With --raw (see docs/raw-dataset.md) each card also shows the RAW (ungraded) asking range next to the
 slabs, and RAW-only cards get their own table. With --catalog every official card of each set is a row; with --jp the Japanese
-shop price (tools/fetch_jp_prices.py) is shown beside the Indonesian prices for the sets that 'jp_sets' in tools/sets.json maps.
+shop price (tools/fetch_jp_prices.py) is shown beside the Indonesian prices for the sets that 'jp_sets' in tools/sets.json maps; with --tcgdex
+(and --catalog) the cards of the other sets are paired with their Japanese and English editions (tools/build_bridge.py), which adds the Japanese
+price of those cards and the English (Cardmarket) reference column.
 Without --standalone the output is a fragment for the Artifact tool (no <html> tag).
 """
 import argparse
@@ -29,6 +31,7 @@ from urllib.parse import quote_plus
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from triage_candidates import FOREIGN, NON_POKEMON, clean_name, parse  # noqa: E402
 from fetch_jp_prices import split_name  # noqa: E402
+import build_bridge  # noqa: E402
 
 WIB = timezone(timedelta(hours=7))
 RARITY = re.compile(r"\b(SAR|SR|AR|UR|HR|CSR|SSR|RRR|RR)\b")
@@ -88,7 +91,7 @@ def match_type(text, types):
     return (best[1], best[2]) if best else None
 
 
-def build(d, raw=None, catalog=None, jp=None, rates=None, watch=None, marks=None):
+def build(d, raw=None, catalog=None, jp=None, rates=None, watch=None, marks=None, tcgdex=None):
     d = merge_egs_watch(d, watch)
     gen = datetime.fromisoformat(d["generated_at"])
     types, index = [], {}
@@ -141,11 +144,11 @@ def build(d, raw=None, catalog=None, jp=None, rates=None, watch=None, marks=None
         "last_observed": wib_label(d["coverage"]["last_observed_at"]),
         "discovery": wib_label(d["discovery"]["generated_at"]),
         "types": types, "others": others, "hidden": hidden,
-        "raw_meta": None, "raw_only": [], "raw_cards": [], "sets": [], "families": [],
+        "raw_meta": None, "raw_only": [], "raw_cards": [], "sets": [], "families": [], "en_meta": None,
         "rates": rates_block(rates), "egs_watch": watch_block(watch),
     }
     if raw:
-        attach_raw(data, raw, gen, catalog, jp, marks)
+        attach_raw(data, raw, gen, catalog, jp, marks, tcgdex)
     return data
 
 
@@ -241,6 +244,40 @@ def jp_versions(jp, mapping=None):
         code, variant = back.get(c["set"]), jp_variant(c)
         if code and variant in BALL_VARIANTS:
             out.setdefault((code, card_key(c["set"], c["number"])[1]), set()).add(variant)
+    return out
+
+
+def en_price(card):
+    """{'eur', 'name', 'id'} of an English card of tcgdex.json: the Cardmarket price trend, else the 30-day average, else the lowest ask; None without a price."""
+    cm = card.get("cardmarket") or {}
+    eur = next((cm[k] for k in ("trend", "avg30", "avg", "low") if cm.get(k)), None)
+    if not eur or (cm.get("unit") or "EUR") != "EUR":
+        return None
+    return {"eur": round(eur, 2), "name": " ".join(x for x in (card["name"], card.get("rarity")) if x), "id": card["id"]}
+
+
+def bridge_refs(catalog, tcgdex, jp):
+    """{(set code lower, number key): {'jp': Yuyu-tei card or None, 'via': its set code, 'en': en_price or None}} for the Indonesian cards that
+    tools/build_bridge.py pairs with an English and a Japanese card: the Japanese reference where the Indonesian and the Japanese number differ,
+    and the English one (Cardmarket) everywhere. Only the regular version of a card is paired; a foil version is a card of its own."""
+    if not (catalog and tcgdex):
+        return {}
+    bridge = build_bridge.build(catalog, tcgdex)
+    by_card = {(c["lang"], c["id"]): c for c in tcgdex["cards"]}
+    shop = {}
+    for c in (jp or {}).get("cards", []):
+        m = re.match(r"\d+", c["number"])
+        if m and not jp_variant(c):
+            shop.setdefault((c["set"], int(m.group(0))), c)
+    out = {}
+    for key, entry in bridge["cards"].items():
+        code, number = key.split("|", 1)
+        ja = by_card.get(("ja", entry.get("ja")))
+        jk = build_bridge.jp_key(ja) if ja else None
+        yuyu = shop.get(jk) if jk else None
+        en = en_price(by_card[("en", entry["en"])])
+        if yuyu or en:
+            out[card_key(code, number)[:2]] = {"jp": yuyu, "via": jk[0] if yuyu else None, "en": en}
     return out
 
 
@@ -357,7 +394,7 @@ def egs_lowest(t):
     return [{"grade": g, "ask": low, "n": n} for g, (n, low) in sorted(best.items(), key=lambda kv: -float(kv[0]))]
 
 
-def attach_raw(data, raw, gen, catalog=None, jp=None, marks=None):
+def attach_raw(data, raw, gen, catalog=None, jp=None, marks=None, tcgdex=None):
     """Join raw.json cards to the tracked types on (set_code, card_number)."""
     by = {card_key(c["set_code"], c["card_number"], c.get("variant", "")): c for c in raw["cards"]}
     used = set()
@@ -380,26 +417,38 @@ def attach_raw(data, raw, gen, catalog=None, jp=None, marks=None):
         key=lambda c: (-c["n"], c["set"], c["number"]))
     data["raw_meta"] = {"generated": wib_label(raw["generated_at"]), "cards": len(raw["cards"]),
                         "listings": raw["coverage"]["listings_counted"]}
-    attach_sets(data, raw, catalog, jp, marks)
+    attach_sets(data, raw, catalog, jp, marks, tcgdex)
 
 
-def jp_price(row, mapping, jpx, jp):
-    """The Yuyu-tei card with the same set, number and foil version as a board row (None where the set is not mapped or the card is not listed)."""
+def jp_price(row, mapping, jpx, jp, refs=None):
+    """The Yuyu-tei card with the same set, number and foil version as a board row; where the set is not mapped (the numbers differ) the card the
+    bridge paired with it ('via' says which Yuyu-tei set). None where neither finds the card."""
     jpcode = mapping.get(row["set"])
     c = jpx.get(card_key(jpcode, row["number"], row["variant"])) if jpcode else None
+    via = None
+    if not c and not jpcode and not row["variant"] and refs:
+        ref = refs.get(card_key(row["set"], row["number"])[:2])
+        c, via = (ref["jp"], ref["via"]) if ref else (None, None)
     if not c:
         return None
     return {"yen": c["yen"], "in_stock": c.get("in_stock", True), "stock": c.get("stock"), "rarity": c.get("rarity"), "name": c.get("name"),
-            "url": jp["card_url"].format(**c) if jp.get("card_url") else None}
+            "url": jp["card_url"].format(**c) if jp.get("card_url") else None, **({"via": via} if via else {})}
 
 
-def attach_sets(data, raw, catalog=None, jp=None, marks=None):
+def en_ref(row, refs):
+    """The English (Cardmarket) reference of a board row, or None; the regular version of a card only."""
+    ref = refs.get(card_key(row["set"], row["number"])[:2]) if refs and not row["variant"] else None
+    return ref["en"] if ref else None
+
+
+def attach_sets(data, raw, catalog=None, jp=None, marks=None, tcgdex=None):
     """Every card as a row, grouped by set code: priced from listings, base-priced, or (with the official catalog) unpriced."""
     meta = load_sets()
     known = {m["code"].upper(): m for m in meta["sets"]}
     family_order = {f["id"]: i for i, f in enumerate(meta["families"])}
     tracked = {card_key(t["set"], t["number"]): t for t in data["types"]}
     mapping, jpx = jp_sets() if jp else {}, jp_index(jp)
+    refs = bridge_refs(catalog, tcgdex, jp)
     official = {}
     official_sets = {}
     if catalog:
@@ -408,7 +457,8 @@ def attach_sets(data, raw, catalog=None, jp=None, marks=None):
     rows, per_set, seen = [], {}, set()
 
     def add(row):
-        row["jp"] = jp_price(row, mapping, jpx, jp)
+        row["jp"] = jp_price(row, mapping, jpx, jp, refs)
+        row["en"] = en_ref(row, refs)
         rows.append(row)
         per_set.setdefault(row["set"], []).append(row)
 
@@ -443,9 +493,10 @@ def attach_sets(data, raw, catalog=None, jp=None, marks=None):
             c["sub"] = 0 if c["den"] == base else 1
         released = o.get("released") or m.get("released")
         worth = [c for c in cards if c["basis"] and c.get("median")]     # the card price for ordering: the median of its listings, or its base price
-        top = max(worth, key=lambda c: (c["median"], -c["num"]), default=None)
+        solid = [c for c in worth if c["basis"] == "listing" and c["n"] >= 2]  # one seller's ask is not yet a price: it orders the set only when no card has two or more
+        top = max(solid or worth, key=lambda c: (c["median"], -c["num"]), default=None)
         sets.append({**m, "code": code, "base": base, "cards": len(cards),
-                     "top_price": top["median"] if top else None,
+                     "top_price": top["median"] if top else None, "top_n": top["n"] if top and top["basis"] == "listing" else None,
                      "top_card": " ".join(x for x in (top["name"], top["number"], top["rarity"]) if x) if top else None,
                      "name_id": o.get("name") or m.get("name_id"),
                      "total": (o.get("total") or m.get("total")) if o else m.get("total"),
@@ -454,7 +505,8 @@ def attach_sets(data, raw, catalog=None, jp=None, marks=None):
                      "base_priced": sum(1 for c in cards if c["basis"] == "default"),
                      "unpriced": sum(1 for c in cards if c["basis"] is None),
                      "listings": sum(c["n"] for c in cards),
-                     "jp_set": mapping.get(code), "jp_cards": sum(1 for c in cards if c["jp"]),
+                     "jp_set": mapping.get(code) or ", ".join(sorted({c["jp"]["via"] for c in cards if c["jp"] and c["jp"].get("via")})) or None,
+                     "jp_via_bridge": not mapping.get(code), "jp_cards": sum(1 for c in cards if c["jp"]), "en_cards": sum(1 for c in cards if c["en"]),
                      "released": released,
                      "released_label": (lambda d: f"{d.day} {MONTHS[d.month - 1]} {d.year}")(date.fromisoformat(released))
                                        if released else None})
@@ -464,6 +516,7 @@ def attach_sets(data, raw, catalog=None, jp=None, marks=None):
     rows.sort(key=lambda c: (order[c["set"]], c["sub"], c["den"], c["num"], vorder.get(c["variant"], 9)))
     data["raw_cards"], data["sets"], data["families"] = rows, sets, meta["families"]
     data["jp_meta"] = {"generated": wib_label(jp["generated_at"]), "cards": sum(1 for c in rows if c["jp"])} if jp else None
+    data["en_meta"] = {"generated": wib_label(tcgdex["generated_at"]), "cards": sum(1 for c in rows if c["en"])} if tcgdex and refs else None
 
 
 def render(data, standalone):
@@ -493,6 +546,7 @@ def main():
     ap.add_argument("--egs", help="egs_watch.json from tools/egs_watch.py: more slab listings, with the review queue of the doubtful ones")
     ap.add_argument("--rates", help="rates.json from tools/fetch_rates.py: today's yen and dollar rates in rupiah")
     ap.add_argument("--marks", help="card_marks.json from tools/read_card_marks.py: the rarity printed on cards the official site lists without one, and the reprint flag")
+    ap.add_argument("--tcgdex", help="tcgdex.json from tools/fetch_tcgdex.py: with --catalog it gives the English (Cardmarket) reference and the Japanese reference of sets whose numbers differ")
     ap.add_argument("--out", default="-", help="output file (default: stdout)")
     ap.add_argument("--standalone", action="store_true", help="wrap in a full HTML document")
     a = ap.parse_args()
@@ -519,7 +573,11 @@ def main():
         with open(a.egs, encoding="utf-8") as fh:
             watch = json.load(fh)
     marks = load_marks(a.marks)["cards"] if a.marks else None
-    html = render(build(latest, raw, catalog, jp, rates, watch, marks), a.standalone)
+    tcgdex = None
+    if a.tcgdex:
+        with open(a.tcgdex, encoding="utf-8") as fh:
+            tcgdex = json.load(fh)
+    html = render(build(latest, raw, catalog, jp, rates, watch, marks, tcgdex), a.standalone)
     if a.out == "-":
         sys.stdout.write(html)
     else:

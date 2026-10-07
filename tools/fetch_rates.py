@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Fetch the day's exchange rates yen -> rupiah and US dollar -> rupiah into rates.json.
+"""Fetch the day's exchange rates yen -> rupiah, US dollar -> rupiah and euro -> rupiah (the Cardmarket prices) into rates.json.
 
 The rate is read from Google Finance (google.com/finance/quote/JPY-IDR), the one the owner looks at. As a check, and as the fallback when
 Google's page cannot be read, the daily reference rate of the European Central Bank (frankfurter.dev, free, no key) is fetched too:
 Google's number is used unless it is outside a sane range or differs from the ECB rate by more than 3 percent. rates.json says which
-source each rate came from. Four requests per run, so a daily refresh is a few requests a day.
+source each rate came from. Six requests per run, so a daily refresh is a few requests a day.
 
 Usage:
   python3 tools/fetch_rates.py --out /opt/egs-raw/rates.json
@@ -25,8 +25,9 @@ from urllib.request import Request, urlopen
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 GOOGLE = "https://www.google.com/finance/quote/{cur}-IDR?hl=en"
 ECB = "https://api.frankfurter.dev/v1/latest?base={cur}&symbols=IDR"
-CURRENCIES = ("JPY", "USD")
-SANE = {"JPY": (30.0, 400.0), "USD": (5000.0, 40000.0)}  # rupiah per unit: outside this the number is not a rate
+REQUIRED = ("JPY", "USD")     # without these two the file is not written; the euro (English reference prices) is carried when it can be read
+CURRENCIES = REQUIRED + ("EUR",)
+SANE = {"JPY": (30.0, 400.0), "USD": (5000.0, 40000.0), "EUR": (6000.0, 50000.0)}  # rupiah per unit: outside this the number is not a rate
 MAX_GAP = 0.03  # Google and the ECB may differ by this much (the ECB rate is fixed once a day)
 
 
@@ -123,10 +124,10 @@ def run(args, get=http_get, now=None, sleep=time.sleep, log=print):
             continue
         rates[cur], updated = {"idr": rate, "source": source, "fetched_at": now.isoformat(), "google": google, "ecb": ecb}, True
         log(f"  {cur}: Rp {rate:g} ({source}; Google {google if google else '-'}, ECB {ecb if ecb else '-'})" + (f" [{note}]" if note else ""))
-    if not updated or not all(c in rates for c in CURRENCIES):
+    if not updated or not all(c in rates for c in REQUIRED):
         log("Tidak ada kurs baru yang bisa dipakai. rates.json tidak diubah.")
         return old
-    data = {"schema_version": 1, "generated_at": now.isoformat(), "rates": {c: rates[c] for c in CURRENCIES}}
+    data = {"schema_version": 1, "generated_at": now.isoformat(), "rates": {c: rates[c] for c in CURRENCIES if c in rates}}
     os.makedirs(folder, exist_ok=True)
     with open(args.out + ".tmp", "w", encoding="utf-8") as fh:
         json.dump(data, fh, ensure_ascii=False, indent=1)

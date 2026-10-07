@@ -86,6 +86,7 @@ main() {
     [ -f rates.json ] && catalog_arg="$catalog_arg --rates rates.json"
     [ -f egs_watch.json ] && catalog_arg="$catalog_arg --egs egs_watch.json"
     [ -f card_marks.json ] && catalog_arg="$catalog_arg --marks card_marks.json"
+    [ -f tcgdex.json ] && catalog_arg="$catalog_arg --tcgdex tcgdex.json"
     if "$PYTHON" tools/build_site.py latest.json --raw raw.json $catalog_arg --standalone --out "$EGS_SITE_DIR/.index.html.new" \
         && chmod 644 "$EGS_SITE_DIR/.index.html.new" && mv -f "$EGS_SITE_DIR/.index.html.new" "$EGS_SITE_DIR/index.html"; then
       # robots.txt is static and setup_site.sh creates it (as root): write it only when it is missing, and never fail the run over it

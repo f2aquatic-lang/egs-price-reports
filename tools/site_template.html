@@ -410,13 +410,13 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
   function rate(cur){ return D.rates && D.rates[cur] ? D.rates[cur].idr : null; }
   if (D.rates && rate('JPY') && rate('USD')) {
     var kurs = $('#kurs'), SRC = {google: 'Google', ecb: 'Bank Sentral Eropa'}, old = false;
-    var parts = [['JPY', '¥1', 2], ['USD', 'US$1', 0]].map(function(c){
+    var parts = [['JPY', '¥1', 2], ['USD', 'US$1', 0]].concat(rate('EUR') ? [['EUR', '€1', 0]] : []).map(function(c){
       var r = D.rates[c[0]];
       old = old || (Date.now() - new Date(r.fetched_at).getTime() > 3 * 86400000);
       return h('span', {title: 'Sumber: ' + (SRC[r.source] || r.source) + ', diperbarui ' + r.label}, h('b', {text: c[1] + ' = Rp' + r.idr.toLocaleString('id-ID', {maximumFractionDigits: c[2]})}),
         r.source === 'google' ? null : ' (' + (SRC[r.source] || r.source) + ')');
     });
-    kurs.replaceChildren.apply(kurs, ['Kurs ', parts[0], ' · ', parts[1], ' · diperbarui ', h('b', {text: D.rates.JPY.label}),
+    kurs.replaceChildren.apply(kurs, ['Kurs ', parts[0], ' · ', parts[1], parts[2] ? ' · ' : null, parts[2], ' · diperbarui ', h('b', {text: D.rates.JPY.label}),
       old ? h('span', {'class': 'stale', text: ' · kurs lama: pembaruan harian gagal', title: 'Kurs belum diperbarui lebih dari tiga hari'}) : null].filter(Boolean));
     kurs.hidden = false;
   }
@@ -509,6 +509,12 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
       return [main, rate ? h('small', {text: '≈ ' + rp(Math.round(j.yen * rate / 100) * 100)}) : null,
               j.in_stock ? null : h('span', {'class': 'badge', text: 'habis', title: 'Stok Yuyutei habis; harganya tetap harga jual terakhir mereka'})];
     }
+    function enCell(e){
+      if (!e) return '—';
+      var rate = D.rates && D.rates.EUR ? D.rates.EUR.idr : null;
+      return [h('span', {text: '€' + e.eur.toLocaleString('id-ID', {minimumFractionDigits: 2, maximumFractionDigits: 2}), title: 'Cardmarket (Eropa), tren harga kartu bahasa Inggris: ' + e.name}),
+              rate ? h('small', {text: '≈ ' + rp(Math.round(e.eur * rate / 100) * 100)}) : null];
+    }
     function dateLabel(m){ return m.released_label ? 'dirilis ' + m.released_label : null; }
     function drawInfo(){
       var m = bySet[ro.set];
@@ -522,11 +528,12 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
         facts.push(m.cards + (denom ? ' dari ' + denom + ' kartu' : ' kartu') + ' punya harga RAW (' + m.listings + ' listing)');
         if (!denom) facts.push('nomor tercetak /' + m.base);
       }
-      if (m.top_card) facts.push('kartu termahal: ' + m.top_card + ' ' + rp(m.top_price));
+      if (m.top_card) facts.push('kartu termahal: ' + m.top_card + ' ' + rp(m.top_price) + (m.top_n === 1 ? ' (baru 1 listing)' : ''));
       var jpm = D.jp_meta;
       if (jpm) {
-        facts.push(m.jp_set ? 'Acuan JP: Yuyutei ' + m.jp_set + ' (' + m.jp_cards + ' kartu ada harganya)' : 'Acuan JP: belum ada untuk set ini');
+        facts.push(m.jp_set ? 'Acuan JP: Yuyutei ' + m.jp_set + (m.jp_via_bridge ? ', kartunya dicocokkan satu per satu' : '') + ' (' + m.jp_cards + ' kartu ada harganya)' : 'Acuan JP: belum ada untuk set ini');
       }
+      if (D.en_meta) facts.push(m.en_cards ? 'Acuan EN: Cardmarket (' + m.en_cards + ' kartu ada harganya)' : 'Acuan EN: belum ada untuk set ini');
       infoBox.replaceChildren.apply(infoBox, [
         h('h3', null, m.code + (m.name_id ? ' · ' + m.name_id : ' · nama belum diketahui'),
           m.name_en && m.name_en !== m.name_id ? h('small', {text: m.name_en}) : null,
@@ -552,7 +559,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
       var shown = ro.all ? rows : rows.slice(0, LIMIT);
       roCount.textContent = shown.length + ' dari ' + rows.length + ' kartu';
       if (!rows.length) { roBox.replaceChildren(h('div', {'class': 'empty', text: 'Tidak ada kartu yang cocok.'})); return; }
-      var heads = [D.photos ? 'Foto' : null, multi ? 'Set' : null, 'No', 'Kartu', 'Listing', 'Termurah', 'Median', 'Termahal', 'Tren', 'Slab EGS', D.jp_meta ? 'Acuan JP' : null, '']
+      var heads = [D.photos ? 'Foto' : null, multi ? 'Set' : null, 'No', 'Kartu', 'Listing', 'Termurah', 'Median', 'Termahal', 'Tren', 'Slab EGS', D.jp_meta ? 'Acuan JP' : null, D.en_meta ? 'Acuan EN' : null, '']
         .filter(function(c){ return c !== null; });
       var nodes = [h('table', null,
         h('thead', null, h('tr', null, heads.map(function(c){ return h('th', {text: c}); }))),
@@ -574,6 +581,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
             h('td', {'class': 'num', text: trendText(c.trend)}),
             h('td', {'class': 'num'}, c.egs.length ? c.egs.map(function(e){ return h('div', {text: 'EGS ' + e.grade + ' ' + rp(e.ask)}); }) : '—'),
             D.jp_meta ? h('td', {'class': 'num jp'}, jpCell(c.jp)) : null,
+            D.en_meta ? h('td', {'class': 'num jp'}, enCell(c.en)) : null,
             h('td', null, c.url ? h('a', {href: c.url, target: '_blank', rel: 'noopener', text: 'Buka ↗'}) : null));
         })))];
       if (shown.length < rows.length) nodes.push(h('button', {'class': 'chip', type: 'button', text: 'Tampilkan semua ' + rows.length,

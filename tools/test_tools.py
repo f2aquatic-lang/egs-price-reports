@@ -24,6 +24,7 @@ from urllib.parse import parse_qs, urlsplit
 from urllib.request import urlopen
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import build_bridge  # noqa: E402
 import build_site  # noqa: E402
 import collect_raw  # noqa: E402
 import db_report  # noqa: E402
@@ -303,11 +304,13 @@ class RawFormat(unittest.TestCase):
         self.assertTrue(any("outside" in e for e in validate_raw.validate(d)[0]))
 
 
-def rates_file(jpy, usd, source="google", fetched="2026-10-06T07:00:00+00:00"):
+def rates_file(jpy, usd, source="google", fetched="2026-10-06T07:00:00+00:00", eur=None):
     """rates.json as tools/fetch_rates.py writes it."""
-    return {"schema_version": 1, "generated_at": fetched, "rates": {
-        "JPY": {"idr": jpy, "source": source, "fetched_at": fetched, "google": jpy, "ecb": jpy},
-        "USD": {"idr": usd, "source": source, "fetched_at": fetched, "google": usd, "ecb": usd}}}
+    rates = {"JPY": {"idr": jpy, "source": source, "fetched_at": fetched, "google": jpy, "ecb": jpy},
+             "USD": {"idr": usd, "source": source, "fetched_at": fetched, "google": usd, "ecb": usd}}
+    if eur:
+        rates["EUR"] = {"idr": eur, "source": source, "fetched_at": fetched, "google": eur, "ecb": eur}
+    return {"schema_version": 1, "generated_at": fetched, "rates": rates}
 
 
 def jp_card(code, number, name, yen, id=1, in_stock=True):
@@ -409,6 +412,21 @@ class Board(unittest.TestCase):
         self.assertEqual(sorted(keys, key=keys.get), ["S12A", "S12", "S11", "S"])                                          # newest first although S12 and S12A share a number; undated last
         families = [f["id"] for f in build_site.load_sets()["families"]]
         self.assertEqual(families, ["MA", "SV", "SS", "SM", "AC"])
+
+    def test_a_lone_listing_does_not_decide_which_card_is_the_dearest(self):
+        import copy
+        raw, catalog = board_with_official_catalog()
+        listed = next(c for c in raw["cards"] if c.get("card_number") == "114/193")
+        lone = copy.deepcopy(listed)
+        lone.update(name="Other Rare", card_number="118/193", rarity="SR", stats={"n": 1, "min": 9000000, "p25": 9000000, "median": 9000000, "p75": 9000000, "max": 9000000})
+        for l in lone["listings"]:
+            l["url"] += "-118"
+        raw["cards"].append(lone)
+        ma3 = next(m for m in build_site.build(tiny_latest(), raw, catalog)["sets"] if m["code"] == "MA3")
+        self.assertEqual((ma3["top_card"], ma3["top_price"], ma3["top_n"]), ("Fezandipiti ex 114/193 RR", listed["stats"]["median"], listed["stats"]["n"]))   # one seller's ask of Rp9 million does not set the set's price
+        listed["stats"].update(n=1)
+        ma3 = next(m for m in build_site.build(tiny_latest(), raw, catalog)["sets"] if m["code"] == "MA3")
+        self.assertEqual((ma3["top_card"], ma3["top_price"], ma3["top_n"]), ("Other Rare 118/193 SR", 9000000, 1))        # when nothing better exists it is used, and says it is one listing
 
     def test_each_set_knows_its_dearest_card_and_unknown_codes_find_their_family_by_prefix(self):
         import copy
@@ -1592,7 +1610,8 @@ class FetchRates(unittest.TestCase):
         self.calls = []
         g = lambda cur, price: f'<div class="rPF6Lc" data-source="{cur}" data-target="IDR" data-last-price="{price}" data-x="1"><div class="YMlKec fxKbKc">{price}</div></div>'
         self.pages = {fetch_rates.GOOGLE.format(cur="JPY"): (200, g("JPY", "106.12")), fetch_rates.GOOGLE.format(cur="USD"): (200, g("USD", "16,250.5")),
-                      fetch_rates.ECB.format(cur="JPY"): (200, '{"base":"JPY","rates":{"IDR":106.0}}'), fetch_rates.ECB.format(cur="USD"): (200, '{"base":"USD","rates":{"IDR":16240.0}}')}
+                      fetch_rates.ECB.format(cur="JPY"): (200, '{"base":"JPY","rates":{"IDR":106.0}}'), fetch_rates.ECB.format(cur="USD"): (200, '{"base":"USD","rates":{"IDR":16240.0}}'),
+                      fetch_rates.GOOGLE.format(cur="EUR"): (200, g("EUR", "19,100.5")), fetch_rates.ECB.format(cur="EUR"): (200, '{"base":"EUR","rates":{"IDR":19090.0}}')}
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -1616,17 +1635,17 @@ class FetchRates(unittest.TestCase):
 
     def test_google_is_used_when_it_agrees_with_the_ecb(self):
         data = self.go()
-        self.assertEqual({c: (r["idr"], r["source"]) for c, r in data["rates"].items()}, {"JPY": (106.12, "google"), "USD": (16250.5, "google")})
+        self.assertEqual({c: (r["idr"], r["source"]) for c, r in data["rates"].items()}, {"JPY": (106.12, "google"), "USD": (16250.5, "google"), "EUR": (19100.5, "google")})
         with open(self.out, encoding="utf-8") as fh:
             saved = json.load(fh)
         self.assertEqual((saved["rates"]["JPY"]["ecb"], saved["rates"]["JPY"]["fetched_at"][:10]), (106.0, "2026-10-06"))
-        self.assertEqual(len(self.calls), 4)
+        self.assertEqual(len(self.calls), 6)
 
     def test_the_ecb_rate_is_used_when_google_cannot_be_read_or_disagrees(self):
         self.pages[fetch_rates.GOOGLE.format(cur="JPY")] = (200, "<html>Before you continue to Google consent</html>")
         self.pages[fetch_rates.GOOGLE.format(cur="USD")] = (200, '<div data-last-price="19000.0">')                  # 17% above the ECB rate
         data = self.go()
-        self.assertEqual({c: (r["idr"], r["source"]) for c, r in data["rates"].items()}, {"JPY": (106.0, "ecb"), "USD": (16240.0, "ecb")})
+        self.assertEqual({c: (r["idr"], r["source"]) for c, r in data["rates"].items()}, {"JPY": (106.0, "ecb"), "USD": (16240.0, "ecb"), "EUR": (19100.5, "google")})
         self.assertTrue(os.path.exists(os.path.join(self.tmp.name, "google_JPY.html")))                               # the page that could not be read is kept
         self.assertTrue(any("kurs tidak terbaca" in l and "consent" in l for l in self.logs))
 
@@ -1649,7 +1668,21 @@ class FetchRates(unittest.TestCase):
         self.go(max_age_hours=20)                                             # 0 hours old: no request at all
         self.assertEqual(self.calls, [])
         fetch_rates.run(self.args, get=self.get, now=self.now + timedelta(hours=21), sleep=lambda s: None, log=self.logs.append)
-        self.assertEqual(len(self.calls), 4)                                  # 21 hours old: tried again
+        self.assertEqual(len(self.calls), 6)                                  # 21 hours old: tried again
+
+    def test_the_euro_is_optional_but_the_yen_and_the_dollar_are_not(self):
+        del self.pages[fetch_rates.GOOGLE.format(cur="EUR")], self.pages[fetch_rates.ECB.format(cur="EUR")]
+        self.assertEqual(sorted(self.go()["rates"]), ["JPY", "USD"])          # no euro today: the file is still written
+        self.pages[fetch_rates.GOOGLE.format(cur="EUR")] = (200, '<div data-last-price="19100.5">')
+        self.calls.clear()
+        self.go(max_age_hours=20)                                             # a file without the euro is not "fresh": the euro is fetched at once
+        self.assertTrue(self.calls)
+        with open(self.out, encoding="utf-8") as fh:
+            self.assertEqual(sorted(json.load(fh)["rates"]), ["EUR", "JPY", "USD"])
+        for cur in ("JPY", "USD"):
+            self.pages.pop(fetch_rates.GOOGLE.format(cur=cur)), self.pages.pop(fetch_rates.ECB.format(cur=cur))
+        os.remove(self.out)
+        self.assertIsNone(self.go())                                          # only the euro readable: nothing is written
 
     def test_without_any_rate_there_is_no_file_and_the_exit_code_says_so(self):
         self.pages.clear()
@@ -2207,6 +2240,41 @@ class BrowserRender(unittest.TestCase):
         self.assertIn("¥1 = Rp105,5", kurs)                                                    # the rates are on the home page, not in each set's text
         self.assertIn("US$1 = Rp16.250", kurs)
         self.assertIn("diperbarui", kurs)
+
+    def test_board_shows_the_english_column_in_rupiah_and_the_bridged_japanese_price(self):
+        from playwright.sync_api import sync_playwright
+        catalog, tcgdex, jp = bridge_fixture()
+        raw = good_raw()
+        raw["cards"].append({**raw["cards"][0], "name": "Mega Charizard X ex", "set_code": "MA2", "card_number": "137/103", "rarity": "SAR"})
+        html = build_site.render(build_site.build(tiny_latest(), raw, catalog, jp, rates_file(106.0, 16300.0, eur=19000.0), None, None, tcgdex), True)
+        path = os.path.join(tempfile.mkdtemp(), "board.html")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(html)
+        errors = []
+        gif = bytes.fromhex("47494638396101000100800000000000ffffff21f90401000000002c00000000010001000002024401003b")
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path=chrome_path(), headless=True, args=["--no-sandbox"] if os.geteuid() == 0 else [])
+            page = browser.new_page()
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            page.route("https://**/*", lambda route: route.fulfill(status=200, content_type="image/gif", body=gif))
+            page.goto("file://" + path)
+            page.wait_for_timeout(300)
+            ev = page.evaluate
+            page.click("#rawonly-sets .chip:has-text('MA2')")
+            head = ev("() => [...document.querySelectorAll('#rawonly-body thead th')].map(th => th.innerText)")
+            rows = ev("() => [...document.querySelectorAll('#rawonly-body tbody tr')].map(tr => tr.innerText.replace(/\\s+/g, ' ').trim())")
+            info = ev("() => document.querySelector('#rawonly-info').innerText")
+            kurs = ev("() => document.querySelector('#kurs').innerText")
+            browser.close()
+        self.assertEqual(errors, [])
+        self.assertIn("ACUAN EN", head)
+        sar = next(r for r in rows if "137/103" in r)
+        self.assertIn("¥89.800", sar.replace(",", "."))                                      # Japanese price of a card whose number differs in Japan
+        self.assertIn("€663,11", sar)
+        self.assertIn("Rp12.599.100", sar)                                                   # 663.11 x 19,000, rounded to a hundred
+        self.assertIn("Acuan EN: Cardmarket (3 kartu ada harganya)", info)
+        self.assertIn("Acuan JP: Yuyutei m02, kartunya dicocokkan satu per satu", info)
+        self.assertIn("€1 = Rp19.000", kurs)
 
     def test_board_shows_the_egs_watch_summary_the_queue_and_marks_thin_data(self):
         from playwright.sync_api import sync_playwright
@@ -3401,6 +3469,182 @@ class FetchTcgdex(unittest.TestCase):
         self.assertIn("M2a", fetch_tcgdex.parse_sets(None, ["ja"])["ja"])
         self.assertIn("me02", fetch_tcgdex.parse_sets(None, ["en"])["en"])
         self.assertEqual(fetch_tcgdex.main(["--list"]), 0)
+
+
+def bridge_fixture():
+    """(catalog, tcgdex, jp): one Indonesian set whose numbers differ from the Japanese ones, its English set, a decoy English set and the Japanese set."""
+    def idc(number, name, rarity, **extra):
+        num, den = (int(x) for x in number.split("/"))
+        return {"set": "MA2", "number": number, "num": num, "den": den, "name": name, "rarity": rarity, "image": f"https://official.example/{num}.png", "id": num, **extra}
+
+    def tg(lang, sid, local, name, rarity, illustrator, dex, price=None, **extra):
+        row = {"lang": lang, "id": f"{sid}-{local}", "set": sid, "local": local, "name": name, "rarity": rarity, "illustrator": illustrator, "dex": dex, "hp": None,
+               "cardmarket_id": None, "tcgplayer_id": None, **extra}
+        if price:
+            row["cardmarket"] = {"unit": "EUR", **price}
+        return row
+    charizard = "Mega Charizard X ex"
+    catalog = {"cards": [idc("001/103", "Oddish", "C"), idc("002/103", "Vileplume", "U"), idc("003/103", "Garchomp <Cynthia> ex", "RR"), idc("004/103", "Archer Tim Roket", None),
+                         idc("005/103", "Perintah Bos", None), idc("006/103", "Pikachu", None), idc("007/103", "Pikachu", None),
+                         idc("013/103", charizard, "RR"), idc("121/103", charizard, "SR"), idc("137/103", charizard, "SAR"), idc("137/103", charizard, "SAR", id=999)],
+               "sets": [{"code": "MA2", "series": "Evolusi Mega", "name": "Api Fantasi", "released": "2025-11-14", "total": 10, "fetched": 10, "complete": True}]}
+    en = [tg("en", "me02", "001", "Oddish", "Common", "Ill A", [43]), tg("en", "me02", "002", "Vileplume", "Rare", "Ill B", [45]),
+          tg("en", "me02", "003", "Cynthia's Garchomp ex", "Double rare", "Ill C", [445]), tg("en", "me02", "004", "Team Rocket's Archer", "Uncommon", "Ill D", None),
+          tg("en", "me02", "020", "Pikachu", "Common", "Ill E", [25]),
+          tg("en", "me02", "013", charizard, "Double rare", "Takuyoa", [6], {"avg30": 2.0}),
+          tg("en", "me02", "109", charizard, "Ultra Rare", "Takuyoa", [6], {"trend": 25.57, "avg30": 24.0}),
+          tg("en", "me02", "125", charizard, "Special illustration rare", "danciao", [6], {"trend": 663.11, "low": 500.0}),
+          tg("en", "me01", "001", "Oddish", "Common", "Ill A", [43]), tg("en", "me01", "002", "Zubat", "Common", "Ill Z", [41])]
+    ja = [tg("ja", "M2", "001", "ナゾノクサ", None, "Ill A", [43]), tg("ja", "M2", "002", "ラフレシア", "Rare", "Ill B", [45]), tg("ja", "M2", "003", "ガブリアスex", "Double rare", "Ill C", [445]),
+          tg("ja", "M2", "013", "メガリザードンXex", "Double rare", "takuyoa", [6]), tg("ja", "M2", "094", "メガリザードンXex", "Ultra Rare", "takuyoa", [6]),
+          tg("ja", "M2", "110", "メガリザードンXex", "Special illustration rare", "danciao", [6]),
+          tg("ja", "M1L", "001", "ゼニガメ", "Common", "Someone Else", [7])]
+    jp = {"generated_at": "2026-10-06T22:00:00+00:00", "card_url": "https://shop.example/{set}/{id}", "cards": [
+        jp_card("m02", "110/080", "メガリザードンXex", 89800, id=110), jp_card("m02", "094/080", "メガリザードンXex", 3980, id=94),
+        jp_card("m02", "013/080", "メガリザードンXex (マスターボールミラー)", 9999, id=130),      # a foil version only: the regular card is not listed
+        jp_card("m02", "001/080", "ナゾノクサ", 20, id=1)]}
+    return catalog, {"generated_at": "2026-10-06T20:00:00+00:00", "cards": en + ja}, jp
+
+
+class BuildBridge(unittest.TestCase):
+    def setUp(self):
+        self.catalog, self.tcgdex, self.jp = bridge_fixture()
+        self.bridge = build_bridge.build(self.catalog, self.tcgdex)
+        self.cards = self.bridge["cards"]
+
+    def test_names_are_written_one_way_on_both_sides(self):
+        n = build_bridge.norm_name
+        self.assertEqual(n("Garchomp <Cynthia> ex"), n("Cynthia's Garchomp ex"))
+        self.assertEqual(n("Archer Tim Roket"), n("Team Rocket's Archer"))
+        self.assertEqual(n("Pokémon  Ex"), "pokemon ex")
+
+    def test_the_set_and_the_cards_are_paired_by_name_and_rarity(self):
+        row = next(r for r in self.bridge["sets"] if r["id_set"] == "MA2")
+        self.assertEqual((row["en_set"], row["ja_sets"], row["cards"]), ("me02", ["M2"], 10))          # the foil copy of 137/103 is not a card of its own
+        self.assertEqual(self.cards["MA2|137/103"]["en"], "me02-125")                                  # SAR with the SAR, not with the Ultra Rare of the same name
+        self.assertEqual(self.cards["MA2|121/103"]["en"], "me02-109")
+        self.assertEqual(self.cards["MA2|013/103"]["en"], "me02-013")
+        self.assertEqual(self.cards["MA2|002/103"]["en"], "me02-002")                                  # Uncommon in Indonesia, Rare in English: the same plain class
+        self.assertEqual(self.cards["MA2|003/103"]["en"], "me02-003")                                  # "Garchomp <Cynthia> ex" is "Cynthia's Garchomp ex"
+        self.assertEqual(self.cards["MA2|004/103"]["en"], "me02-004")
+        self.assertNotIn("MA2|005/103", self.cards)                                                    # a trainer with an Indonesian name stays unpaired
+
+    def test_two_cards_against_one_are_not_guessed(self):
+        self.assertNotIn("MA2|006/103", self.cards)
+        self.assertNotIn("MA2|007/103", self.cards)
+        self.assertEqual(next(r for r in self.bridge["sets"] if r["id_set"] == "MA2")["ambiguous"], 2)
+
+    def test_the_japanese_card_is_found_by_pokedex_number_illustrator_and_rarity(self):
+        self.assertEqual(self.cards["MA2|137/103"]["ja"], "M2-110")
+        self.assertEqual(self.cards["MA2|121/103"]["ja"], "M2-094")                                    # "Takuyoa" and "takuyoa" are one illustrator
+        self.assertEqual(self.cards["MA2|001/103"]["ja"], "M2-001")                                    # a Japanese card with no rarity mark is a plain card
+        self.assertNotIn("ja", self.cards["MA2|004/103"])                                              # no Pokedex number: no Japanese match
+        self.assertEqual(next(r for r in self.bridge["sets"] if r["id_set"] == "MA2")["ja_sets"], ["M2"])   # M1L shares nothing with the English set
+
+    def test_a_set_that_pairs_too_few_cards_stays_unpaired(self):
+        catalog = {"cards": [{"set": "ZZ1", "number": f"{n:03d}/010", "num": n, "den": 10, "name": name, "rarity": None, "id": n}
+                             for n, name in ((1, "Oddish"), (2, "Nobody One"), (3, "Nobody Two"), (4, "Nobody Three"), (5, "Nobody Four"))]}
+        row = build_bridge.build(catalog, self.tcgdex)["sets"][0]
+        self.assertEqual((row["en_set"], row["en_matched"]), (None, 0))                                # 1 of 5 is below the 40% a pairing needs
+        self.assertEqual(row["yield"], 0.2)
+
+    def test_two_english_sets_that_fit_equally_well_pair_nothing(self):
+        tcgdex = {"cards": [c for c in self.tcgdex["cards"] if c["lang"] == "en" and c["set"] == "me02"]}
+        tcgdex["cards"] += [{**c, "set": "me02b", "id": c["id"].replace("me02-", "me02b-")} for c in tcgdex["cards"]]
+        row = next(r for r in build_bridge.build(self.catalog, tcgdex)["sets"] if r["id_set"] == "MA2")
+        self.assertIsNone(row["en_set"])
+
+    def test_the_japanese_names_prove_the_pairing_against_the_shop(self):
+        self.assertEqual(build_bridge.yuyutei_set("M2a"), "m02a")
+        self.assertEqual((build_bridge.yuyutei_set("SV8a"), build_bridge.yuyutei_set("M1L"), build_bridge.yuyutei_set("SV11B")), ("sv08a", "m01l", "sv11b"))
+        self.assertEqual(build_bridge.jp_key({"set": "M2", "local": "110"}), ("m02", 110))
+        self.assertIsNone(build_bridge.jp_key({"set": "M2", "local": "SV-P"}))
+        check = build_bridge.check_jp(self.bridge, self.tcgdex, self.jp)
+        self.assertEqual(check, {"same": 4, "different": 0, "absent": 2})     # 110, 094, 013 (listed as a foil) and 001 carry the same name; 002 and 003 are not listed
+        self.jp["cards"][0]["name"] = "ミュウツーex"
+        self.assertEqual(build_bridge.check_jp(self.bridge, self.tcgdex, self.jp)["different"], 1)
+
+    def test_the_command_line_writes_the_file_and_the_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = {k: os.path.join(tmp, f"{k}.json") for k in ("catalog", "tcgdex", "jp", "bridge")}
+            for key, data in zip(("catalog", "tcgdex", "jp"), (self.catalog, self.tcgdex, self.jp)):
+                with open(paths[key], "w", encoding="utf-8") as fh:
+                    json.dump(data, fh, ensure_ascii=False)
+            out = []
+            with mock.patch("builtins.print", lambda *a, **k: out.append(" ".join(map(str, a)))):
+                self.assertEqual(build_bridge.main(["--catalog", paths["catalog"], "--tcgdex", paths["tcgdex"], "--out", paths["bridge"], "--report", "--check-jp", paths["jp"]]), 0)
+            with open(paths["bridge"], encoding="utf-8") as fh:
+                self.assertEqual(json.load(fh)["cards"]["MA2|137/103"]["en"], "me02-125")
+            text = "\n".join(out)
+            self.assertIn("MA2", text)
+            self.assertIn("me02", text)
+            self.assertIn("nama Jepang sama dengan Yuyutei: 4", text)
+
+
+class BoardBridge(unittest.TestCase):
+    def setUp(self):
+        self.catalog, self.tcgdex, self.jp = bridge_fixture()
+        self.raw = good_raw()
+        self.raw["cards"].append({**self.raw["cards"][0], "name": "Mega Charizard X ex", "set_code": "MA2", "card_number": "137/103", "rarity": "SAR"})
+
+    def board(self, tcgdex=True):
+        return build_site.build(tiny_latest(), self.raw, self.catalog, self.jp, rates_file(106.0, 16300.0), None, None, self.tcgdex if tcgdex else None)
+
+    def row(self, data, number):
+        return next(c for c in data["raw_cards"] if c["set"] == "MA2" and c["number"] == number and not c["variant"])
+
+    def test_a_set_whose_numbers_differ_gets_its_japanese_and_english_reference_through_the_bridge(self):
+        data = self.board()
+        sar = self.row(data, "137/103")
+        self.assertEqual((sar["jp"]["yen"], sar["jp"]["via"], sar["jp"]["url"]), (89800, "m02", "https://shop.example/m02/110"))
+        self.assertEqual(sar["en"], {"eur": 663.11, "name": "Mega Charizard X ex Special illustration rare", "id": "me02-125"})     # the Cardmarket trend
+        self.assertEqual(self.row(data, "013/103")["en"]["eur"], 2.0)                                    # no trend: the 30-day average
+        self.assertIsNone(self.row(data, "013/103")["jp"])                                               # Yuyu-tei lists only a foil version of that number
+        self.assertIsNone(self.row(data, "005/103")["en"])
+        m = next(x for x in data["sets"] if x["code"] == "MA2")
+        self.assertEqual((m["jp_set"], m["jp_via_bridge"], m["en_cards"]), ("m02", True, 3))      # three paired cards have a Cardmarket price
+        self.assertEqual(data["en_meta"]["cards"], 3)
+
+    def test_without_tcgdex_nothing_changes(self):
+        data = self.board(tcgdex=False)
+        sar = self.row(data, "137/103")
+        self.assertEqual((sar["jp"], sar["en"], data["en_meta"]), (None, None, None))
+
+    def test_a_mapped_set_keeps_its_number_for_number_pairing(self):
+        mapping, jpx = {"MA2": "m02"}, build_site.jp_index(self.jp)
+        refs = build_site.bridge_refs(self.catalog, self.tcgdex, self.jp)
+        row = {"set": "MA2", "number": "137/103", "variant": ""}
+        self.assertIsNone(build_site.jp_price(row, mapping, jpx, self.jp, refs))                           # the same number is not listed: the bridge does not override the mapping
+        self.assertEqual(build_site.jp_price(row, {}, jpx, self.jp, refs)["yen"], 89800)
+        self.assertIsNone(build_site.jp_price({**row, "variant": "master_ball"}, {}, jpx, self.jp, refs))  # a foil version is a card of its own
+        self.assertIsNone(build_site.en_ref({**row, "variant": "master_ball"}, refs))
+
+    def test_the_collector_judges_asks_against_the_bridged_japanese_price(self):
+        refs = build_site.bridge_refs(self.catalog, self.tcgdex, self.jp)
+        rates = rates_file(106.0, 16300.0)
+        judge = collect_raw.outlier_check(self.jp, rates, refs)
+        self.assertTrue(judge("MA2", "137/103", "", 60_000_000))              # Rp9.5 million in Japan (110/080 there): six times that is Rp57 million
+        self.assertFalse(judge("MA2", "137/103", "", 20_000_000))
+        self.assertTrue(judge("MA2", "121/103", "", 3_000_000))               # a different number in Japan (094/080): ¥3,980 is about Rp422,000
+        self.assertFalse(judge("MA2", "121/103", "master_ball", 3_000_000))   # a foil version is not judged against the regular card
+        self.assertFalse(judge("MA2", "005/103", "", 90_000_000))             # unpaired card: nothing to compare with
+        self.assertFalse(collect_raw.outlier_check(self.jp, rates)("MA2", "137/103", "", 60_000_000))             # no bridge: as before
+        self.assertFalse(collect_raw.outlier_check(self.jp, None, refs)("MA2", "137/103", "", 60_000_000))        # no yen rate: nothing judged
+        tmp = tempfile.mkdtemp()
+        paths = {}
+        for key, data in (("catalog", self.catalog), ("tcgdex", self.tcgdex), ("jp", self.jp)):
+            paths[key] = os.path.join(tmp, key + ".json")
+            with open(paths[key], "w", encoding="utf-8") as fh:
+                json.dump(data, fh, ensure_ascii=False)
+        cfg = argparse.Namespace(catalog_json=paths["catalog"], tcgdex_json=paths["tcgdex"])
+        self.assertEqual(collect_raw.bridge_refs_of(cfg, True, self.jp).keys(), refs.keys())
+        self.assertEqual(collect_raw.bridge_refs_of(cfg, False, self.jp), {})                # the collector without the catalog has nothing to pair
+        self.assertEqual(collect_raw.bridge_refs_of(argparse.Namespace(catalog_json=paths["catalog"], tcgdex_json=None), True, self.jp), {})
+
+    def test_a_card_without_a_cardmarket_price_has_no_english_reference(self):
+        self.assertIsNone(build_site.en_price({"id": "x", "name": "N", "cardmarket": {"unit": "EUR", "trend": None}}))
+        self.assertIsNone(build_site.en_price({"id": "x", "name": "N"}))
+        self.assertIsNone(build_site.en_price({"id": "x", "name": "N", "cardmarket": {"unit": "USD", "trend": 5.0}}))
 
 
 class MarketplaceProbe(unittest.TestCase):

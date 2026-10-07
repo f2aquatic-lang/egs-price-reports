@@ -94,6 +94,7 @@ if [ -f "$REPO/raw.json" ] && [ -f "$REPO/latest.json" ]; then
   [ -f "$REPO/rates.json" ] && CATALOG_ARG="$CATALOG_ARG --rates rates.json"
   [ -f "$REPO/egs_watch.json" ] && CATALOG_ARG="$CATALOG_ARG --egs egs_watch.json"
   [ -f "$REPO/card_marks.json" ] && CATALOG_ARG="$CATALOG_ARG --marks card_marks.json"
+  [ -f "$REPO/tcgdex.json" ] && CATALOG_ARG="$CATALOG_ARG --tcgdex tcgdex.json"
   (cd "$REPO" && as_bot env PYTHONDONTWRITEBYTECODE=1 python3 tools/build_site.py latest.json --raw raw.json $CATALOG_ARG --standalone --out "$SITE_DIR/index.html") \
     && chmod 644 "$SITE_DIR/index.html" \
     && printf 'User-agent: *\nDisallow: /\n' > "$SITE_DIR/robots.txt" \
