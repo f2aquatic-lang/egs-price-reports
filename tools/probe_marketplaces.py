@@ -59,7 +59,12 @@ TERMS_WORDS = re.compile(r"syarat|ketentuan|terms|privacy|privasi|kebijakan|robo
 # candidate sources besides Tokopedia and Shopee: (name, base address, search path with {q}); paths are best guesses: override with --site
 CANDIDATES = (("Cardtell", "https://cardtell.id", "/"),
               ("Pokepedia", "https://pokepedia.id", "/marketplace"),
-              ("Carousell Indonesia", "https://www.carousell.co.id", "/search/{q}"))
+              ("Carousell Indonesia", "https://www.carousell.co.id", "/search/{q}"),
+              ("Kaskus", "https://www.kaskus.co.id", "/search?q={q}"),
+              ("Bukalapak", "https://www.bukalapak.com", "/products?search%5Bkeywords%5D={q}"),
+              ("Blibli", "https://www.blibli.com", "/cari/{q}"),
+              ("OLX Indonesia", "https://www.olx.co.id", "/items/q-{q}"),
+              ("Lazada Indonesia", "https://www.lazada.co.id", "/catalog/?q={q}"))
 
 
 def robots_rules(text):

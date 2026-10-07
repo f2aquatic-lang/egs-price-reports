@@ -2244,6 +2244,8 @@ class BrowserRender(unittest.TestCase):
     def test_board_shows_the_english_column_in_rupiah_and_the_bridged_japanese_price(self):
         from playwright.sync_api import sync_playwright
         catalog, tcgdex, jp = bridge_fixture()
+        fetched = datetime.now(timezone.utc) - timedelta(hours=5)                           # fresh: the page is judged against the real clock
+        tcgdex["generated_at"] = fetched.isoformat()
         raw = good_raw()
         raw["cards"].append({**raw["cards"][0], "name": "Mega Charizard X ex", "set_code": "MA2", "card_number": "137/103", "rarity": "SAR"})
         html = build_site.render(build_site.build(tiny_latest(), raw, catalog, jp, rates_file(106.0, 16300.0, eur=19000.0), None, None, tcgdex), True)
@@ -2272,7 +2274,7 @@ class BrowserRender(unittest.TestCase):
         self.assertIn("¥89.800", sar.replace(",", "."))                                      # Japanese price of a card whose number differs in Japan
         self.assertIn("€663,11", sar)
         self.assertIn("Rp12.599.100", sar)                                                   # 663.11 x 19,000, rounded to a hundred
-        self.assertIn("Acuan EN: Cardmarket (3 kartu ada harganya) per 7 Okt 03:00 WIB", info)         # the age of the English data is on the page
+        self.assertIn("Acuan EN: Cardmarket (3 kartu ada harganya) per " + build_site.wib_label(fetched.isoformat()), info)         # the age of the English data is on the page
         self.assertNotIn("data lama", info)
         self.assertIn("Acuan JP: Yuyutei m02, kartunya dicocokkan satu per satu", info)
         self.assertIn("€1 = Rp19.000", kurs)
@@ -2299,7 +2301,7 @@ class BrowserRender(unittest.TestCase):
             info = page.evaluate("() => document.querySelector('#rawonly-info').innerText")
             browser.close()
         self.assertEqual(errors, [])
-        self.assertIn("per 1 Jan 07:00 WIB (data lama: pembaruan mingguan gagal)", info)
+        self.assertIn("per 1 Jan 07:00 WIB (data lama: pembaruan harian gagal)", info)
 
     def test_board_shows_the_egs_watch_summary_the_queue_and_marks_thin_data(self):
         from playwright.sync_api import sync_playwright
@@ -3826,7 +3828,7 @@ class MarketplaceProbe(unittest.TestCase):
         self.assertEqual(probe_marketplaces.judge_page(200, "https://x.example/p", "<html>nothing here</html>", "")[0], "empty")
 
     def test_site_option_and_candidate_list(self):
-        self.assertEqual([c[0] for c in probe_marketplaces.CANDIDATES], ["Cardtell", "Pokepedia", "Carousell Indonesia"])
+        self.assertEqual([c[0] for c in probe_marketplaces.CANDIDATES], ["Cardtell", "Pokepedia", "Carousell Indonesia", "Kaskus", "Bukalapak", "Blibli", "OLX Indonesia", "Lazada Indonesia"])
         base = self.serve({"/robots.txt": (404, {}, ""), "/cari": (200, {}, "".join(f"<div>Rp{n}.000</div>" for n in (450, 500, 650)))})
         lines = []
         with mock.patch("builtins.print", lambda *a, **k: lines.append(" ".join(str(x) for x in a))), mock.patch.object(probe_marketplaces.time, "sleep", lambda s: None):

@@ -254,7 +254,7 @@ sudo journalctl -u egs-tcgdex -f
 ```
 Kalau sumbernya menjawab 401/403/451 pengambilan berhenti dan tidak dilewati; tiga kartu berturut-turut gagal juga menghentikannya, dan putaran berikutnya melanjutkan.
 
-Harga kartu Inggris diambil ulang setelah 7 hari; kartu Jepang (harganya tidak dipakai) hanya diambil sekali. Supaya kolom Acuan EN tidak basi, jadwalkan pengambilan tiap minggu (hanya kartu yang harganya sudah 7 hari yang diambil lagi, jadi putaran mingguan sekitar 5 ribu permintaan, kurang dari satu jam). Papan menulis umur data ini di keterangan set ("per 7 Okt 07:50 WIB") dan menambahkan "(data lama: pembaruan mingguan gagal)" kalau lebih dari 10 hari:
+Harga kartu Inggris diambil ulang kalau sudah lebih tua dari `--price-days` (bawaan 7 hari); kartu Jepang (harganya tidak dipakai) hanya diambil sekali. Supaya kolom Acuan EN selalu baru, jadwalkan pengambilan **tiap hari** dengan `--price-days 0.9` (kartu yang harganya lebih tua dari sekitar 22 jam diambil lagi). Itu sekitar 5 ribu permintaan, kira-kira 45 menit per hari, pada API gratis milik pengembang lain; kalau ingin lebih ringan, ganti `0.9` dengan `3` (harga paling lama tiga hari) atau `7`. Pemicunya jam 05:10 CST (04:10 WIB), sebelum putaran penerbitan 07:20 CST yang menyalin hasilnya ke papan. Papan menulis umur data ini di keterangan set ("per 7 Okt 07:50 WIB") dan menambahkan "(data lama: pembaruan harian gagal)" kalau lebih dari 3 hari:
 
 ```bash
 sudo tee /etc/systemd/system/egs-tcgdex.service >/dev/null <<'EOF'
@@ -267,15 +267,15 @@ Type=oneshot
 User=egsprice
 WorkingDirectory=/opt/egs-raw/main
 Nice=10
-ExecStart=/usr/bin/python3 /opt/egs-raw/main/tools/fetch_tcgdex.py --db /opt/egs-raw/tcgdex.sqlite --out /opt/egs-raw/tcgdex.json
+ExecStart=/usr/bin/python3 /opt/egs-raw/main/tools/fetch_tcgdex.py --db /opt/egs-raw/tcgdex.sqlite --out /opt/egs-raw/tcgdex.json --price-days 0.9
 TimeoutStartSec=14400
 EOF
 sudo tee /etc/systemd/system/egs-tcgdex.timer >/dev/null <<'EOF'
 [Unit]
-Description=TCGdex card data, weekly
+Description=TCGdex card data and English prices, daily
 
 [Timer]
-OnCalendar=Sun *-*-* 05:10:00
+OnCalendar=*-*-* 05:10:00
 Persistent=true
 
 [Install]

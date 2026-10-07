@@ -533,7 +533,7 @@ input[type="search"]{flex:1 1 200px;min-width:0;border:1px solid var(--line);bac
       if (jpm) {
         facts.push(m.jp_set ? 'Acuan JP: Yuyutei ' + m.jp_set + (m.jp_via_bridge ? ', kartunya dicocokkan satu per satu' : '') + ' (' + m.jp_cards + ' kartu ada harganya)' : 'Acuan JP: belum ada untuk set ini');
       }
-      if (D.en_meta) facts.push(m.en_cards ? 'Acuan EN: Cardmarket (' + m.en_cards + ' kartu ada harganya) per ' + D.en_meta.generated + (Date.now() - new Date(D.en_meta.iso).getTime() > 10 * 86400000 ? ' (data lama: pembaruan mingguan gagal)' : '') : 'Acuan EN: belum ada untuk set ini');
+      if (D.en_meta) facts.push(m.en_cards ? 'Acuan EN: Cardmarket (' + m.en_cards + ' kartu ada harganya) per ' + D.en_meta.generated + (Date.now() - new Date(D.en_meta.iso).getTime() > 3 * 86400000 ? ' (data lama: pembaruan harian gagal)' : '') : 'Acuan EN: belum ada untuk set ini');
       infoBox.replaceChildren.apply(infoBox, [
         h('h3', null, m.code + (m.name_id ? ' · ' + m.name_id : ' · nama belum diketahui'),
           m.name_en && m.name_en !== m.name_id ? h('small', {text: m.name_en}) : null,
