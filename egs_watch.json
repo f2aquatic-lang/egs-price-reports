@@ -3,29 +3,29 @@
  "kind": "EGS_WATCH",
  "price_type": "OBSERVED_ASKING_ONLY",
  "source": "toco_public_search",
- "generated_at": "2026-10-07T16:50:02.137794+00:00",
+ "generated_at": "2026-10-07T22:50:02.035769+00:00",
  "run": {
-  "started_at": "2026-10-07T16:50:02.137794+00:00",
+  "started_at": "2026-10-07T22:50:02.035769+00:00",
   "queries": 143,
-  "requests": 269,
-  "ok_requests": 269,
+  "requests": 278,
+  "ok_requests": 278,
   "failed_requests": 0,
   "cached_requests": 0,
   "retries": 0,
   "blocked": null,
   "source_ok": true,
-  "results_seen": 3780,
-  "ignored_not_egs": 3617,
-  "candidates": 163,
+  "results_seen": 3299,
+  "ignored_not_egs": 3134,
+  "candidates": 165,
   "accepted_new": 0,
-  "rejected": 85,
+  "rejected": 86,
   "rejected_reasons": {
+   "foreign_language": 38,
    "no_pokemon_signal": 9,
-   "foreign_language": 37,
    "not_pokemon": 33,
    "product": 6
   },
-  "checked_ok": 79,
+  "checked_ok": 80,
   "check_failed": 0,
   "recheck": {
    "ok": 1,
@@ -36,19 +36,19 @@
   "imported": null,
   "worksheet": null,
   "dry_run": false,
-  "finished_at": "2026-10-07T16:53:59.984518+00:00"
+  "finished_at": "2026-10-07T22:54:26.152228+00:00"
  },
  "summary": {
-  "candidates_found": 163,
+  "candidates_found": 165,
   "accepted_total": 33,
   "accepted_existing": 6,
   "accepted_auto": 27,
   "accepted_new_this_run": 0,
-  "ambiguous": 46,
-  "rejected_this_run": 85,
+  "ambiguous": 47,
+  "rejected_this_run": 86,
   "rejected_reasons": {
+   "foreign_language": 38,
    "no_pokemon_signal": 9,
-   "foreign_language": 37,
    "not_pokemon": 33,
    "product": 6
   },
@@ -56,7 +56,7 @@
   "cards": 29,
   "sellers_unique": 15,
   "status": {
-   "ok": 79
+   "ok": 80
   },
   "by_source": {
    "toco": {
@@ -64,7 +64,7 @@
     "counted": 33
    }
   },
-  "checked_ok_this_run": 79,
+  "checked_ok_this_run": 80,
   "check_failed_this_run": 0,
   "price_changes_24h": 0,
   "price_changes": [],
@@ -72,8 +72,8 @@
    "fresh_8h": 33,
    "fresh_24h": 0,
    "older": 0,
-   "newest_ok": "2026-10-07T16:50:02.137794+00:00",
-   "oldest_ok": "2026-10-07T16:50:02.137794+00:00"
+   "newest_ok": "2026-10-07T22:50:02.035769+00:00",
+   "oldest_ok": "2026-10-07T22:50:02.035769+00:00"
   }
  },
  "cards": [
@@ -820,10 +820,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -843,17 +843,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 200000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 200000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 200000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -883,10 +889,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -906,17 +912,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 200000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 200000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 200000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -949,10 +961,10 @@
    "list_idr": 1300000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -973,17 +985,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 1196000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 1196000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 1196000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -1013,10 +1031,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1036,17 +1054,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 200000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 200000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 200000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -1077,10 +1101,10 @@
    "list_idr": 2300000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1100,17 +1124,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 2070000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 2070000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 2070000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -1140,10 +1170,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1163,17 +1193,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 500000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 500000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 500000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -1203,10 +1239,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1226,17 +1262,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 150000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 150000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 150000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -1266,10 +1308,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1289,17 +1331,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 175000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 175000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 175000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -1329,10 +1377,10 @@
    "list_idr": 500000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1352,17 +1400,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 400000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 400000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 400000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -1392,10 +1446,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-09-28T16:30:10.681264+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -1416,17 +1470,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 875000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 875000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 875000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -1504,10 +1564,10 @@
    "list_idr": 2000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1528,17 +1588,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 1340000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 1340000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 1340000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -1568,10 +1634,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1591,17 +1657,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 675000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 675000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 675000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -1631,10 +1703,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1654,17 +1726,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 850000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 850000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 850000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -1694,10 +1772,10 @@
    "list_idr": 750000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-09-28T16:30:15.397359+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -1718,17 +1796,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 600000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 600000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 600000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -1809,10 +1893,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1833,17 +1917,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 550000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 550000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 550000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -1873,10 +1963,10 @@
    "list_idr": 3000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1897,17 +1987,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 2700000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 2700000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 2700000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -1937,10 +2033,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1961,17 +2057,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 780000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 780000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 780000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -2001,10 +2103,10 @@
    "list_idr": 1000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2024,17 +2126,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 650000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 650000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 650000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -2064,10 +2172,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-09-27T16:30:02.943431+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -2087,17 +2195,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 650000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 650000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 650000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -2181,10 +2295,10 @@
    "list_idr": 1100000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2205,17 +2319,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 968000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 968000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 968000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -2245,10 +2365,10 @@
    "list_idr": 1200000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2269,17 +2389,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 1080000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 1080000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 1080000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -2309,10 +2435,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2332,17 +2458,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 500000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 500000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 500000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -2372,10 +2504,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2395,17 +2527,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 600000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 600000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 600000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -2435,10 +2573,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-09-27T16:30:05.172022+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -2458,17 +2596,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 875000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 875000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 875000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -2552,10 +2696,10 @@
    "list_idr": 3000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-09-28T16:30:08.362111+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -2575,17 +2719,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 2760000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 2760000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 2760000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -2663,10 +2813,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2686,17 +2836,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 1000000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 1000000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 1000000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -2726,10 +2882,10 @@
    "list_idr": 1000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2750,17 +2906,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 650000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 650000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 650000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -2790,10 +2952,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2814,17 +2976,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 800000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 800000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 800000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -2854,10 +3022,10 @@
    "list_idr": 1500000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2878,17 +3046,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 1050000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 1050000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 1050000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -2918,10 +3092,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2941,17 +3115,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 175000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 175000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 175000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -2981,10 +3161,10 @@
    "list_idr": 850000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -3005,17 +3185,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 765000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 765000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 765000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -3045,10 +3231,10 @@
    "list_idr": 750000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-09-28T16:30:13.065047+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -3069,17 +3255,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 550000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 550000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 550000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -3158,10 +3350,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-07T16:50:02.137794+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "status_at": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-07T16:50:02.137794+00:00",
+   "last_seen_in_search": "2026-10-07T22:50:02.035769+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -3182,17 +3374,23 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-07T16:50:02.137794+00:00",
+    "observed_at": "2026-10-07T22:50:02.035769+00:00",
     "asking_idr": 850000,
     "in_stock": true
    },
    "previous_day": {
-    "observed_at": "2026-10-06T16:50:01.880463+00:00",
+    "observed_at": "2026-10-07T16:50:02.137794+00:00",
     "asking_idr": 850000,
     "in_stock": true
    },
    "change_from_previous_day_idr": 0,
    "daily_latest": [
+    {
+     "date_wib": "2026-10-08",
+     "observed_at": "2026-10-07T22:50:02.035769+00:00",
+     "asking_idr": 850000,
+     "in_stock": true
+    },
     {
      "date_wib": "2026-10-07",
      "observed_at": "2026-10-07T16:50:02.137794+00:00",
@@ -3210,6 +3408,69 @@
  ],
  "queue": [
   {
+   "url": "https://toco.id/id/listing/mega-charizard-sar-dkk-1791356069273-df99",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/7d332fae-9d4f-4035-80d3-40ded6787bce-b864a349-7221-4872-aa28-e85fb2496a1e-b6f70bf1-ae6a-4be9-8549-8a9639a14866.webp",
+   "title": "MEGA CHARIZARD SAR DKK",
+   "asking_idr": 13550000,
+   "stock": 1,
+   "seller": "Poke Master",
+   "city": "Kabupaten Belitung",
+   "status": "ok",
+   "first_seen": "2026-10-07T22:50:02.035769+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
+   "reasons": [
+    {
+     "code": "company_conflict",
+     "text": "Menyebut EGS dan juga PSA: perusahaan grading tidak jelas"
+    },
+    {
+     "code": "multi_grade",
+     "text": "Beberapa grade disebut: 9.5 / 10"
+    },
+    {
+     "code": "language_unproven",
+     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
+    },
+    {
+     "code": "number_missing",
+     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+    }
+   ],
+   "suggestions": [
+    {
+     "set_code": "AC3D",
+     "card_number": "021/172",
+     "name": "Charizard",
+     "rarity": null,
+     "image": "https://asia.pokemon-card.com/id/card-img/id00002404.png"
+    },
+    {
+     "set_code": "AS3A",
+     "card_number": "044/183",
+     "name": "Charizard",
+     "rarity": "R",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00001686.png"
+    },
+    {
+     "set_code": "AS3D",
+     "card_number": "019/146",
+     "name": "Charizard",
+     "rarity": null,
+     "image": "https://asia.pokemon-card.com/id/card-img/id00003570.png"
+    },
+    {
+     "set_code": "MA6",
+     "card_number": "168/130",
+     "name": "Charizard",
+     "rarity": null,
+     "image": "https://asia.pokemon-card.com/id/card-img/id00019810.png"
+    }
+   ],
+   "identity": {
+    "company": "EGS"
+   }
+  },
+  {
    "url": "https://toco.id/id/listing/charizard-ex-sar-indonesia-egs10-1784605485568-6d6e",
    "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/e4d10afb-30ae-4023-9879-347303574493-20260721-104412-0.webp",
    "title": "Charizard ex SAR Indonesia EGS10",
@@ -3219,7 +3480,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -3277,7 +3538,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -3335,7 +3596,7 @@
    "city": "Kota Jakarta Utara",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "card_not_in_catalog",
@@ -3362,7 +3623,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T08:02:32.232555+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -3420,7 +3681,7 @@
    "city": "Kota Pekanbaru",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "title_changed",
@@ -3451,7 +3712,7 @@
    "city": "Kota Jakarta Selatan",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "set_unknown",
@@ -3477,7 +3738,7 @@
    "city": "Kabupaten Bogor",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "title_changed",
@@ -3507,7 +3768,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "card_not_in_catalog",
@@ -3534,7 +3795,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "card_not_in_catalog",
@@ -3561,7 +3822,7 @@
    "city": "Kota Jakarta Pusat",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "language_unproven",
@@ -3604,7 +3865,7 @@
    "city": "Kabupaten Deli Serdang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "language_conflict",
@@ -3669,7 +3930,7 @@
    "city": "Kota Jakarta Utara",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -3728,7 +3989,7 @@
    "city": "Kabupaten Deli Serdang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -3786,7 +4047,7 @@
    "city": "Kota Jakarta Utara",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -3845,7 +4106,7 @@
    "city": "Kota Jakarta Barat",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "grade_missing",
@@ -3908,7 +4169,7 @@
    "city": "Kota Bekasi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "set_unknown",
@@ -3935,7 +4196,7 @@
    "city": "Kabupaten Karawang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -3994,7 +4255,7 @@
    "city": "Kota Tangerang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "number_missing",
@@ -4049,7 +4310,7 @@
    "city": "Kota Padang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "name_mismatch",
@@ -4079,7 +4340,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -4116,7 +4377,7 @@
    "city": "Kota Tangerang Selatan",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "set_unknown",
@@ -4143,7 +4404,7 @@
    "city": "Kota Jakarta Timur",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "title_changed",
@@ -4205,7 +4466,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -4242,7 +4503,7 @@
    "city": "Kota Jakarta Timur",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "set_unknown",
@@ -4268,7 +4529,7 @@
    "city": "Kabupaten Pemalang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "number_missing",
@@ -4293,7 +4554,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -4330,7 +4591,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "card_not_in_catalog",
@@ -4356,7 +4617,7 @@
    "city": "Kota Jakarta Timur",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "name_mismatch",
@@ -4386,7 +4647,7 @@
    "city": "Kota Bandar Lampung",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "set_unknown",
@@ -4412,7 +4673,7 @@
    "city": "Kota Jakarta Utara",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "name_mismatch",
@@ -4445,7 +4706,7 @@
    "city": "Kabupaten Cianjur",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "number_missing",
@@ -4499,7 +4760,7 @@
    "city": "Kota Bandar Lampung",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "language_conflict",
@@ -4530,7 +4791,7 @@
    "city": "Kabupaten Ponorogo",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "bundle",
@@ -4563,7 +4824,7 @@
    "city": "Kota Tangerang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "number_missing",
@@ -4617,7 +4878,7 @@
    "city": "Kota Jakarta Barat",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "bundle",
@@ -4648,7 +4909,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "card_not_in_catalog",
@@ -4675,7 +4936,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T08:02:32.232555+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "card_not_in_catalog",
@@ -4702,7 +4963,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "language_conflict",
@@ -4732,7 +4993,7 @@
    "city": "Kota Tangerang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "name_mismatch",
@@ -4762,7 +5023,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "number_missing",
@@ -4816,7 +5077,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "name_mismatch",
@@ -4849,7 +5110,7 @@
    "city": "Kota Bandar Lampung",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -4907,7 +5168,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "title_changed",
@@ -4937,7 +5198,7 @@
    "city": "Kabupaten Magetan",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "language_conflict",
@@ -4995,7 +5256,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -5054,7 +5315,7 @@
    "city": "Kota Malang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-07T16:50:02.137794+00:00",
+   "last_ok": "2026-10-07T22:50:02.035769+00:00",
    "reasons": [
     {
      "code": "company_conflict",
