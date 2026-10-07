@@ -30,7 +30,7 @@ UA = "RadarKartu-fetch (price board; reads only, one request per second or slowe
 DEFAULT_SETS = {
     "en": ["me01", "me02", "me02.5", "me03", "me04", "me05", "30th", "sv01", "sv02", "sv03", "sv03.5", "sv04", "sv04.5", "sv05", "sv06", "sv06.5",
            "sv07", "sv08", "sv08.5", "sv09", "sv10", "sv10.5b", "sv10.5w"],
-    "ja": ["M1L", "M1S", "M2", "M2a", "M3", "M4", "M5", "M6", "SV1S", "SV1V", "SV1a", "SV2D", "SV2P", "SV2a", "SV3", "SV3a", "SV4K", "SV4M", "SV4a",
+    "ja": ["M1L", "M1S", "M2", "M2a", "M3", "M4", "M5", "M6", "M6a", "SV1S", "SV1V", "SV1a", "SV2D", "SV2P", "SV2a", "SV3", "SV3a", "SV4K", "SV4M", "SV4a",
            "SV5K", "SV5M", "SV5a", "SV6", "SV6a", "SV7", "SV7a", "SV8", "SV8a", "SV9", "SV9a", "SV10", "SV11B", "SV11W"]}
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS setinfo(lang TEXT, id TEXT, name TEXT, total INTEGER, official INTEGER, cards TEXT, fetched_at TEXT, PRIMARY KEY(lang, id));
