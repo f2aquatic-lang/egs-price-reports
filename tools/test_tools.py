@@ -2272,9 +2272,34 @@ class BrowserRender(unittest.TestCase):
         self.assertIn("¥89.800", sar.replace(",", "."))                                      # Japanese price of a card whose number differs in Japan
         self.assertIn("€663,11", sar)
         self.assertIn("Rp12.599.100", sar)                                                   # 663.11 x 19,000, rounded to a hundred
-        self.assertIn("Acuan EN: Cardmarket (3 kartu ada harganya)", info)
+        self.assertIn("Acuan EN: Cardmarket (3 kartu ada harganya) per 7 Okt 03:00 WIB", info)         # the age of the English data is on the page
+        self.assertNotIn("data lama", info)
         self.assertIn("Acuan JP: Yuyutei m02, kartunya dicocokkan satu per satu", info)
         self.assertIn("€1 = Rp19.000", kurs)
+
+    def test_board_flags_old_english_data(self):
+        from playwright.sync_api import sync_playwright
+        catalog, tcgdex, jp = bridge_fixture()
+        tcgdex["generated_at"] = "2026-01-01T00:00:00+00:00"                                 # months old
+        raw = good_raw()
+        raw["cards"].append({**raw["cards"][0], "name": "Mega Charizard X ex", "set_code": "MA2", "card_number": "137/103", "rarity": "SAR"})
+        html = build_site.render(build_site.build(tiny_latest(), raw, catalog, jp, rates_file(106.0, 16300.0, eur=19000.0), None, None, tcgdex), True)
+        path = os.path.join(tempfile.mkdtemp(), "board.html")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(html)
+        errors = []
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path=chrome_path(), headless=True, args=["--no-sandbox"] if os.geteuid() == 0 else [])
+            page = browser.new_page()
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            page.route("https://**/*", lambda route: route.abort())
+            page.goto("file://" + path)
+            page.wait_for_timeout(300)
+            page.click("#rawonly-sets .chip:has-text('MA2')")
+            info = page.evaluate("() => document.querySelector('#rawonly-info').innerText")
+            browser.close()
+        self.assertEqual(errors, [])
+        self.assertIn("per 1 Jan 07:00 WIB (data lama: pembaruan mingguan gagal)", info)
 
     def test_board_shows_the_egs_watch_summary_the_queue_and_marks_thin_data(self):
         from playwright.sync_api import sync_playwright
@@ -3423,13 +3448,16 @@ class FetchTcgdex(unittest.TestCase):
         self.assertEqual(self.calls, ["ja/sets/M2", "ja/cards/M2-111", "en/sets/me02"])                 # the first card is not fetched again
         self.assertEqual([c["id"] for c in data["cards"]], ["M2-110", "M2-111"])
 
-    def test_prices_are_fetched_again_only_after_the_price_age(self):
+    def test_english_prices_are_fetched_again_after_the_price_age_and_japanese_cards_never(self):
+        self.pages["en/sets/me02"] = {"id": "me02", "name": "Phantasmal Flames", "cardCount": {"total": 1, "official": 1}, "cards": [{"id": "me02-013", "localId": "013", "name": "a", "image": "i"}]}
+        self.pages["en/cards/me02-013"] = {"id": "me02-013", "localId": "013", "name": "Mega Charizard X ex", "illustrator": "Takuyoa", "rarity": "Double rare", "dexId": [6], "hp": 330,
+                                           "set": {"id": "me02"}, "pricing": {"cardmarket": {"unit": "EUR", "trend": 2.82}, "tcgplayer": None}}
         self.go()
         self.calls.clear()
         self.go(now=self.T0 + timedelta(days=3))
         self.assertEqual([c for c in self.calls if "/cards/" in c], [])
         self.go(now=self.T0 + timedelta(days=8))
-        self.assertEqual([c for c in self.calls if "/cards/" in c], ["ja/cards/M2-110", "ja/cards/M2-111"])
+        self.assertEqual([c for c in self.calls if "/cards/" in c], ["en/cards/me02-013"])     # the price of the English card is old; the Japanese cards (no price used) stay
 
     def test_a_missing_card_is_not_asked_for_again_a_failed_one_is_and_a_refusal_stops_the_run_keeping_what_was_learned(self):
         self.pages["ja/cards/M2-111"] = 404

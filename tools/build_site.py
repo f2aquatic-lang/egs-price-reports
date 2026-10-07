@@ -516,7 +516,7 @@ def attach_sets(data, raw, catalog=None, jp=None, marks=None, tcgdex=None):
     rows.sort(key=lambda c: (order[c["set"]], c["sub"], c["den"], c["num"], vorder.get(c["variant"], 9)))
     data["raw_cards"], data["sets"], data["families"] = rows, sets, meta["families"]
     data["jp_meta"] = {"generated": wib_label(jp["generated_at"]), "cards": sum(1 for c in rows if c["jp"])} if jp else None
-    data["en_meta"] = {"generated": wib_label(tcgdex["generated_at"]), "cards": sum(1 for c in rows if c["en"])} if tcgdex and refs else None
+    data["en_meta"] = {"generated": wib_label(tcgdex["generated_at"]), "iso": tcgdex["generated_at"], "cards": sum(1 for c in rows if c["en"])} if tcgdex and refs else None
 
 
 def render(data, standalone):

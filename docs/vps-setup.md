@@ -254,3 +254,34 @@ sudo journalctl -u egs-tcgdex -f
 ```
 Kalau sumbernya menjawab 401/403/451 pengambilan berhenti dan tidak dilewati; tiga kartu berturut-turut gagal juga menghentikannya, dan putaran berikutnya melanjutkan.
 
+Harga kartu Inggris diambil ulang setelah 7 hari; kartu Jepang (harganya tidak dipakai) hanya diambil sekali. Supaya kolom Acuan EN tidak basi, jadwalkan pengambilan tiap minggu (hanya kartu yang harganya sudah 7 hari yang diambil lagi, jadi putaran mingguan sekitar 5 ribu permintaan, kurang dari satu jam). Papan menulis umur data ini di keterangan set ("per 7 Okt 07:50 WIB") dan menambahkan "(data lama: pembaruan mingguan gagal)" kalau lebih dari 10 hari:
+
+```bash
+sudo tee /etc/systemd/system/egs-tcgdex.service >/dev/null <<'EOF'
+[Unit]
+Description=TCGdex card data and English prices fetch
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=egsprice
+WorkingDirectory=/opt/egs-raw/main
+Nice=10
+ExecStart=/usr/bin/python3 /opt/egs-raw/main/tools/fetch_tcgdex.py --db /opt/egs-raw/tcgdex.sqlite --out /opt/egs-raw/tcgdex.json
+TimeoutStartSec=14400
+EOF
+sudo tee /etc/systemd/system/egs-tcgdex.timer >/dev/null <<'EOF'
+[Unit]
+Description=TCGdex card data, weekly
+
+[Timer]
+OnCalendar=Sun *-*-* 05:10:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+sudo systemctl daemon-reload && sudo systemctl enable --now egs-tcgdex.timer
+```
+(Kalau unit sementara `egs-tcgdex` dari `systemd-run` masih ada, pastikan sudah selesai sebelum mengaktifkan unit tetap ini: namanya sama.) Set Jepang 30th Celebration (padanan MA6) belum ada di TCGdex per 7 Okt 2026 (daftar set Jepang hanya memuat M5, M6, dan M-P pada deret M); MA6 hanya punya acuan EN sampai set itu muncul.
+
