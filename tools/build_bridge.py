@@ -168,7 +168,8 @@ def squash(text):
 
 def check_jp(bridge, tcgdex, jp):
     """{'same': n, 'different': n, 'absent': n}: do the Japanese cards the bridge found have the same name on Yuyu-tei under (set code, number)?
-    The independent proof that the pairing is right, because the Japanese name is not used anywhere in the pairing."""
+    This checks only the last step (the Yuyu-tei set code and number derived from a Japanese card of TCGdex). It says nothing about whether the
+    Indonesian card was paired with the right Japanese card: for that see check_numbers."""
     ja = {c["id"]: c for c in tcgdex["cards"] if c["lang"] == "ja"}
     shop = defaultdict(list)
     for c in jp.get("cards", []):
@@ -183,6 +184,23 @@ def check_jp(bridge, tcgdex, jp):
             continue
         names = shop.get(key)
         out["absent" if not names else "same" if squash(card["name"]) in names else "different"] += 1
+    return out
+
+
+def check_numbers(bridge, tcgdex, mapping):
+    """{set: {'same': n, 'other_number': n, 'other_set': n}} for the Indonesian sets that tools/sets.json maps to a Yuyu-tei set because every number is the
+    same in both (jp_sets). There the right Japanese card is known without the bridge: the Yuyu-tei set of the mapping and the Indonesian number.
+    Comparing it with the Japanese card the bridge reached through the English edition tests the whole chain (name, rarity, Pokedex number, illustrator)."""
+    ja = {c["id"]: c for c in tcgdex["cards"] if c["lang"] == "ja"}
+    out = {}
+    for key, entry in bridge["cards"].items():
+        code, number = key.split("|", 1)
+        card = ja.get(entry.get("ja"))
+        jk = jp_key(card) if card else None
+        if code not in mapping or not jk:
+            continue
+        row = out.setdefault(code, {"same": 0, "other_number": 0, "other_set": 0})
+        row["same" if jk == (mapping[code], int(number.split("/")[0])) else "other_set" if jk[0] != mapping[code] else "other_number"] += 1
     return out
 
 
@@ -225,7 +243,8 @@ def main(argv=None):
     ap.add_argument("--tcgdex", default="tcgdex.json")
     ap.add_argument("--out", default="bridge.json")
     ap.add_argument("--report", action="store_true", help="cetak ringkasan per set")
-    ap.add_argument("--check-jp", metavar="JP_PRICES_JSON", help="cocokkan nama Jepang tiap pasangan dengan Yuyutei (bukti pasangan benar)")
+    ap.add_argument("--check-jp", metavar="JP_PRICES_JSON", help="cocokkan nama Jepang kartu hasil jembatan dengan baris Yuyutei (hanya menguji langkah terakhir)")
+    ap.add_argument("--check-numbers", action="store_true", help="uji seluruh rantai pada set yang nomornya sama di Jepang (jp_sets di tools/sets.json)")
     a = ap.parse_args(argv)
     with open(a.catalog, encoding="utf-8") as fh:
         catalog = json.load(fh)
@@ -237,9 +256,17 @@ def main(argv=None):
     os.replace(a.out + ".tmp", a.out)
     if a.report:
         print(report(data))
+    if a.check_numbers:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "sets.json"), encoding="utf-8") as fh:
+            mapping = {k.upper(): v for k, v in json.load(fh).get("jp_sets", {}).items()}
+        result = check_numbers(data, tcgdex, mapping)
+        for code, r in sorted(result.items()):
+            print(f"  {code:6} kartu Jepang sama dengan nomornya: {r['same']:4}  nomor lain di set yang sama: {r['other_number']:3}  set lain: {r['other_set']:3}")
+        total = {k: sum(r[k] for r in result.values()) for k in ("same", "other_number", "other_set")}
+        print("uji rantai (set bernomor sama): sama {same}, nomor lain {other_number}, set lain {other_set}".format(**total))
     if a.check_jp:
         with open(a.check_jp, encoding="utf-8") as fh:
-            print("nama Jepang sama dengan Yuyutei: {same}, beda: {different}, tidak ada barisnya: {absent}".format(**check_jp(data, tcgdex, json.load(fh))))
+            print("langkah terakhir (nama Jepang = baris Yuyutei): sama {same}, beda {different}, tidak ada barisnya {absent}".format(**check_jp(data, tcgdex, json.load(fh))))
     print(f"ditulis: {a.out} ({len(data['cards'])} kartu berpasangan)")
     return 0
 

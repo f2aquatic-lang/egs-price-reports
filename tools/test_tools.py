@@ -3564,6 +3564,13 @@ class BuildBridge(unittest.TestCase):
         self.jp["cards"][0]["name"] = "ミュウツーex"
         self.assertEqual(build_bridge.check_jp(self.bridge, self.tcgdex, self.jp)["different"], 1)
 
+    def test_the_whole_chain_is_tested_on_sets_whose_numbers_are_the_same_in_japan(self):
+        # pretend MA2 is such a set: Japanese number = Indonesian number, which is not true for 121/103 (094 in Japan) and 137/103 (110) but is for the four others
+        result = build_bridge.check_numbers(self.bridge, self.tcgdex, {"MA2": "m02"})
+        self.assertEqual(result, {"MA2": {"same": 4, "other_number": 2, "other_set": 0}})                 # 001, 002, 003 and 013 agree; 121 and 137 sit under other numbers
+        self.assertEqual(build_bridge.check_numbers(self.bridge, self.tcgdex, {"MA2": "m01l"})["MA2"]["other_set"], 6)    # a wrong mapping is seen as another set
+        self.assertEqual(build_bridge.check_numbers(self.bridge, self.tcgdex, {}), {})                      # sets that are not mapped are not judged
+
     def test_the_command_line_writes_the_file_and_the_report(self):
         with tempfile.TemporaryDirectory() as tmp:
             paths = {k: os.path.join(tmp, f"{k}.json") for k in ("catalog", "tcgdex", "jp", "bridge")}
@@ -3578,7 +3585,7 @@ class BuildBridge(unittest.TestCase):
             text = "\n".join(out)
             self.assertIn("MA2", text)
             self.assertIn("me02", text)
-            self.assertIn("nama Jepang sama dengan Yuyutei: 4", text)
+            self.assertIn("langkah terakhir (nama Jepang = baris Yuyutei): sama 4", text)
 
 
 class BoardBridge(unittest.TestCase):
