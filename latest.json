@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-08T08:10:05.704408+00:00",
+  "generated_at": "2026-10-08T14:10:05.412774+00:00",
   "price_type": "OBSERVED_ASKING_ONLY",
   "source": "toco_public_reviewed",
   "coverage": {
     "watched": 6,
     "observed_within_14_days": 6,
     "fresh_within_8_hours": 6,
-    "last_observed_at": "2026-10-08T04:30:15.045214+00:00"
+    "last_observed_at": "2026-10-08T10:30:15.155492+00:00"
   },
   "discovery": {
-    "generated_at": "2026-10-08T07:49:01.636972+00:00",
+    "generated_at": "2026-10-08T13:40:48.959660+00:00",
     "pages": 2,
     "links_examined": 90,
     "candidates_latest": 48,
@@ -316,7 +316,7 @@
       "grade": "10",
       "url": "https://toco.id/id/listing/egs-10-mega-venusaur-ex-sar-173-ma1-pokemon-evolusi-mega-id-1790389583180-2c05",
       "latest": {
-        "observed_at": "2026-10-08T04:30:03.587079+00:00",
+        "observed_at": "2026-10-08T10:30:03.209861+00:00",
         "asking_idr": 650000,
         "in_stock": true
       },
@@ -329,7 +329,7 @@
       "daily_latest": [
         {
           "date_wib": "2026-10-08",
-          "observed_at": "2026-10-08T04:30:03.587079+00:00",
+          "observed_at": "2026-10-08T10:30:03.209861+00:00",
           "asking_idr": 650000,
           "in_stock": true
         },
@@ -409,7 +409,7 @@
       "grade": "10",
       "url": "https://toco.id/id/listing/kartu-pokemon-pikachu-ex-sr-211182-egs-grading-10-kilat-rasi-original-1788853700917-e73b",
       "latest": {
-        "observed_at": "2026-10-08T04:30:05.777893+00:00",
+        "observed_at": "2026-10-08T10:30:05.580998+00:00",
         "asking_idr": 875000,
         "in_stock": true
       },
@@ -422,7 +422,7 @@
       "daily_latest": [
         {
           "date_wib": "2026-10-08",
-          "observed_at": "2026-10-08T04:30:05.777893+00:00",
+          "observed_at": "2026-10-08T10:30:05.580998+00:00",
           "asking_idr": 875000,
           "in_stock": true
         },
@@ -502,7 +502,7 @@
       "grade": "10",
       "url": "https://toco.id/id/listing/egs-10-pikachu-234-pokemon-indonesia-set-mega-impian-1784389258255-e1eb",
       "latest": {
-        "observed_at": "2026-10-08T04:30:07.971058+00:00",
+        "observed_at": "2026-10-08T10:30:08.041768+00:00",
         "asking_idr": 2760000,
         "in_stock": true
       },
@@ -515,7 +515,7 @@
       "daily_latest": [
         {
           "date_wib": "2026-10-08",
-          "observed_at": "2026-10-08T04:30:07.971058+00:00",
+          "observed_at": "2026-10-08T10:30:08.041768+00:00",
           "asking_idr": 2760000,
           "in_stock": true
         },
@@ -589,7 +589,7 @@
       "grade": "10",
       "url": "https://toco.id/id/listing/kartu-pokemon-mega-charizard-x-ex-ma-223193-egs-grading-10-mega-impian-original-1788853544170-191d",
       "latest": {
-        "observed_at": "2026-10-08T04:30:10.204543+00:00",
+        "observed_at": "2026-10-08T10:30:10.380873+00:00",
         "asking_idr": 875000,
         "in_stock": true
       },
@@ -602,7 +602,7 @@
       "daily_latest": [
         {
           "date_wib": "2026-10-08",
-          "observed_at": "2026-10-08T04:30:10.204543+00:00",
+          "observed_at": "2026-10-08T10:30:10.380873+00:00",
           "asking_idr": 875000,
           "in_stock": true
         },
@@ -676,7 +676,7 @@
       "grade": "9.5",
       "url": "https://toco.id/id/listing/tcg-pokemon-indonesia-ar-210193-zekrom-n-slab-egs-95-1782381348156-dcc2",
       "latest": {
-        "observed_at": "2026-10-08T04:30:12.442746+00:00",
+        "observed_at": "2026-10-08T10:30:12.684526+00:00",
         "asking_idr": 550000,
         "in_stock": true
       },
@@ -689,7 +689,7 @@
       "daily_latest": [
         {
           "date_wib": "2026-10-08",
-          "observed_at": "2026-10-08T04:30:12.442746+00:00",
+          "observed_at": "2026-10-08T10:30:12.684526+00:00",
           "asking_idr": 550000,
           "in_stock": true
         },
@@ -763,7 +763,7 @@
       "grade": "9.5",
       "url": "https://toco.id/id/listing/tcg-pokemon-indonesia-ma-232193-mega-dragonite-ex-slab-egs-95-1782381379114-3b4d",
       "latest": {
-        "observed_at": "2026-10-08T04:30:15.045214+00:00",
+        "observed_at": "2026-10-08T10:30:15.155492+00:00",
         "asking_idr": 600000,
         "in_stock": true
       },
@@ -776,7 +776,7 @@
       "daily_latest": [
         {
           "date_wib": "2026-10-08",
-          "observed_at": "2026-10-08T04:30:15.045214+00:00",
+          "observed_at": "2026-10-08T10:30:15.155492+00:00",
           "asking_idr": 600000,
           "in_stock": true
         },
