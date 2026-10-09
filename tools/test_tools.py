@@ -24,6 +24,7 @@ from urllib.parse import parse_qs, urlsplit
 from urllib.request import urlopen
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import audit_board  # noqa: E402
 import build_bridge  # noqa: E402
 import build_site  # noqa: E402
 import collect_raw  # noqa: E402
@@ -2303,6 +2304,35 @@ class BrowserRender(unittest.TestCase):
         self.assertEqual(errors, [])
         self.assertIn("per 1 Jan 07:00 WIB (data lama: pembaruan harian gagal)", info)
 
+    def test_a_link_from_the_data_is_http_or_nothing(self):
+        from playwright.sync_api import sync_playwright
+        export = make_egs_export(tempfile.mkdtemp())
+        export["queue"][0]["url"] = "javascript:alert(document.domain)"             # a hostile address that reached the data by any route
+        export["queue"][1]["url"] = "data:text/html,<script>alert(1)</script>"
+        html = build_site.render(build_site.build(tiny_latest(), None, None, None, None, export), True)
+        path = os.path.join(tempfile.mkdtemp(), "board.html")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(html)
+        errors, dialogs = [], []
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path=chrome_path(), headless=True, args=["--no-sandbox"] if os.geteuid() == 0 else [])
+            page = browser.new_page()
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            page.on("dialog", lambda d: dialogs.append(d.message) or d.dismiss())
+            page.route("https://**/*", lambda route: route.abort())
+            page.goto("file://" + path)
+            page.wait_for_timeout(300)
+            page.click("#egswatch-queue summary")
+            hrefs = page.evaluate("() => [...document.querySelectorAll('#egswatch-body a')].map(a => a.getAttribute('href'))")
+            for a in page.query_selector_all("#egswatch-body a")[:2]:
+                a.click(force=True, no_wait_after=True)
+            browser.close()
+        self.assertEqual((errors, dialogs), ([], []))
+        self.assertIsNone(hrefs[0])
+        self.assertIsNone(hrefs[1])
+        self.assertTrue(all(h is None or h.startswith("https://") for h in hrefs))
+        self.assertTrue(any(h for h in hrefs))                                       # ordinary toco links are untouched
+
     def test_board_shows_the_egs_watch_summary_the_queue_and_marks_thin_data(self):
         from playwright.sync_api import sync_playwright
         export = make_egs_export(tempfile.mkdtemp())
@@ -3721,6 +3751,61 @@ class BoardBridge(unittest.TestCase):
         self.assertIsNone(build_site.en_price({"id": "x", "name": "N", "cardmarket": {"unit": "EUR", "trend": None}}))
         self.assertIsNone(build_site.en_price({"id": "x", "name": "N"}))
         self.assertIsNone(build_site.en_price({"id": "x", "name": "N", "cardmarket": {"unit": "USD", "trend": 5.0}}))
+
+
+class AuditBoard(unittest.TestCase):
+    NOW = datetime(2026, 10, 3, 3, 0, tzinfo=timezone.utc)
+
+    def folder(self, **over):
+        raw, catalog = board_with_official_catalog()
+        files = {"latest.json": tiny_latest(), "raw.json": raw, "catalog.json": catalog, "rates.json": rates_file(105.0, 16000.0, eur=19000.0)}
+        files.update(over)
+        d = tempfile.mkdtemp()
+        for name, data in files.items():
+            if data is not None:
+                with open(os.path.join(d, name), "w", encoding="utf-8") as fh:
+                    json.dump(data, fh)
+        return d
+
+    def run_audit(self, folder):
+        rep, board = audit_board.audit(folder, self.NOW)
+        return rep, "\n".join(rep.lines), board
+
+    def test_a_healthy_folder_passes_and_reports_coverage_and_the_base_price_rule(self):
+        rep, text, board = self.run_audit(self.folder())
+        self.assertEqual(rep.failed, 0, text)
+        self.assertIn("harga dasar: 1 kartu, nilainya [500]", text)
+        self.assertIn("dari listing: 2 (40%) | harga dasar: 1 | belum berharga: 2 (40%)", text)
+        self.assertIn("latest.json: 0.8 jam", text)                                    # generated 02:10, audited at 03:00
+        self.assertEqual(len(board["raw_cards"]), 5)
+
+    def test_old_files_and_missing_references_are_warnings_not_failures(self):
+        rep, _ = audit_board.audit(self.folder(), self.NOW + timedelta(days=5))
+        self.assertEqual(rep.failed, 0)
+        self.assertGreaterEqual(rep.warned, 2)
+        self.assertIn("PERHATIAN latest.json", "\n".join(rep.lines))
+        self.assertIn("tanpa data TCGdex: kolom Acuan EN tidak tampil", "\n".join(rep.lines))
+
+    def test_a_broken_raw_file_a_missing_bot_file_and_a_wrong_base_price_fail_the_audit(self):
+        raw, catalog = board_with_official_catalog()
+        raw["cards"][0]["listings"][2]["ask_idr"] = 999999                               # outside the card's own range
+        rep, text, _ = self.run_audit(self.folder(**{"raw.json": raw}))
+        self.assertGreaterEqual(rep.failed, 1)
+        self.assertIn("GAGAL     raw.json", text)
+        rep, text, board = self.run_audit(self.folder(**{"latest.json": None}))
+        self.assertEqual(board, None)
+        self.assertIn("GAGAL     latest.json: tidak ada", text)
+        raw, catalog = board_with_official_catalog()
+        next(c for c in catalog["cards"] if c["number"] == "115/193")["rarity"] = "SAR"  # a base price on a rarity that has none
+        rep, text, _ = self.run_audit(self.folder(**{"raw.json": raw, "catalog.json": catalog}))
+        self.assertIn("GAGAL     harga dasar pada rarity selain C", text)
+
+    def test_the_command_line_prints_the_report_and_returns_the_failure_count_as_an_exit_code(self):
+        out = []
+        with mock.patch("builtins.print", lambda *a, **k: out.append(" ".join(map(str, a)))):
+            self.assertEqual(audit_board.main(["--dir", self.folder(**{"latest.json": None})]), 1)
+        self.assertIn("AUDIT RADARKARTU", out[0])
+        self.assertIn("hasil: 2 GAGAL", "\n".join(out))                                # the missing latest.json and the board that cannot be built
 
 
 class MarketplaceProbe(unittest.TestCase):
