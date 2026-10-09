@@ -14,6 +14,7 @@ These scripts only read `latest.json`; they never write it and are not part of t
 - `python3 tools/classify.py "judul listing"` memisahkan slab, kartu RAW, produk segel, dan non-Pokémon dari judul listing.
 - `python3 tools/watch_queries.py [latest.json]` mencetak kata kunci pencarian per kartu yang dipantau, untuk dataset EGS dan RAW.
 - `python3 tools/validate_raw.py [raw.json]` memeriksa format `raw.json`.
+- `python3 tools/audit_board.py [--dir .]` mengaudit berkas data dan papan yang dibangun darinya (umur data, validasi, aturan harga dasar, cakupan harga, kewajaran terhadap harga Yuyutei, ketipisan harga slab, acuan JP dan EN); hanya membaca, keluar 1 bila ada yang GAGAL.
 - `python3 tools/test_tools.py` menjalankan uji otomatis semua alat di atas.
 
 ## Dataset RAW
