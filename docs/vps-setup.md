@@ -285,3 +285,6 @@ sudo systemctl daemon-reload && sudo systemctl enable --now egs-tcgdex.timer
 ```
 (Kalau unit sementara `egs-tcgdex` dari `systemd-run` masih ada, pastikan sudah selesai sebelum mengaktifkan unit tetap ini: namanya sama.) Set Jepang 30th Celebration (padanan MA6) belum ada di TCGdex per 7 Okt 2026 (daftar set Jepang hanya memuat M5, M6, dan M-P pada deret M); MA6 hanya punya acuan EN sampai set itu muncul.
 
+## Folder masuk untuk alat lain (Dots)
+
+Listing yang dilihat alat lain di marketplace masuk lewat berkas di `/opt/egs-raw/inbox`, bukan lewat penulisan langsung ke `raw.json`, database, atau repo. Menyiapkan folder, format berkas, aturan pemeriksaan, laporan balik, dan pesan siap tempel untuk Dots ada di [inbox.md](inbox.md). Pengumpul RAW dan pemantau slab membacanya sendiri tiap putaran (tidak perlu pemicu tambahan).

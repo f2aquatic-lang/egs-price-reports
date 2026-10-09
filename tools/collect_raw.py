@@ -34,6 +34,7 @@ from urllib.request import Request, urlopen
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_site  # noqa: E402
+import intake  # noqa: E402
 import validate_raw  # noqa: E402
 import watch_queries  # noqa: E402
 from classify import classify_title, guess_name, text_language  # noqa: E402
@@ -680,6 +681,16 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
     db = open_db(cfg.db)
     ctr, to_check, catalog_on = Counter(), [], getattr(cfg, "catalog", False)
     listings = [l for l in map(to_listing, items.values())]
+    inbox_dir = getattr(cfg, "inbox", None)
+    inbox_rows, inbox_problems, inbox_info = intake.load(inbox_dir, "raw", now, cfg.max_age_hours, getattr(cfg, "inbox_settle", intake.SETTLE_SECONDS))
+    for r in inbox_rows:      # listings another tool saw (docs/inbox.md): judged below exactly like a toco listing, as old as the sighting
+        listings.append({"url": r["url"], "title": r["title"], "description": r["description"], "ask": r["price"], "list": None, "city": r["city"] or "?",
+                         "stock": r["stock"], "image": r["photo"], "seen_at": r["seen_at"]})
+    if inbox_info["files"] or inbox_info["skipped_files"]:
+        log(f"folder masuk {inbox_dir}: {inbox_info['files']} berkas, {inbox_info['rows']} baris, {len(inbox_rows)} RAW diambil, {inbox_info['bad']} ditolak, "
+            f"{inbox_info['expired']} kedaluwarsa, {inbox_info['other_kind']} jenis lain")
+        for problem in inbox_problems[:20]:
+            log(f"  ! masuk: {problem}")
     sets_by_total = denominator_sets(l["title"] for l in listings) if catalog_on else {}
     official = load_official(getattr(cfg, "catalog_json", None)) if catalog_on else {}
     jp, rates = load_json(getattr(cfg, "jp_json", None)), load_json(getattr(cfg, "rates_json", None))
@@ -694,6 +705,13 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
         if not l["ask"] or l["ask"] <= 0:
             ctr["tanpa_harga"] += 1
             continue
+        seen = (l.get("seen_at") or now).isoformat()
+        if l.get("seen_at"):
+            prev = db.execute("SELECT last_seen FROM listing WHERE url=?", (l["url"],)).fetchone()
+            if prev and prev[0] and prev[0] >= seen:
+                ctr["masuk_sudah_diambil"] += 1      # this sighting (or a newer one) was taken in an earlier run
+                continue
+            ctr["masuk_diambil"] += 1
         kind = classify_title(l["title"])["kind"]
         ctr["jenis_" + kind] += 1
         conf = cset = cnum = None
@@ -720,7 +738,7 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
             "image_url=COALESCE(excluded.image_url, listing.image_url), kind=excluded.kind, card_set=excluded.card_set, "
             "card_number=excluded.card_number, conf=excluded.conf, last_seen=excluded.last_seen, variant=excluded.variant",
             (l["url"], l["title"], l["ask"], l["list"], l["city"], l["stock"], l["image"], kind, cset, cnum,
-             conf, now.isoformat(), now.isoformat(), variant or None))
+             conf, seen, seen, variant or None))
         if (conf in MATCHED or conf == CATALOG) and l["stock"] != 0:
             to_check.append({**l, "tracked": conf in MATCHED})
     db.commit()
@@ -739,6 +757,8 @@ def run(cfg, post_fn, image_fn, classify_fn, now=None, sleep=time.sleep, log=pri
     db.commit()  # the daily snapshots written by build_raw must survive the run
     db.close()
     ctr.update({"listing_dibaca": len(items), "foto_dicek_sekarang": checker.calls})
+    if inbox_info["files"] and not cfg.dry_run:
+        intake.write_report(inbox_dir, "raw", now, {**inbox_info, "taken": len(inbox_rows)}, inbox_problems)
     return raw, dict(ctr)
 
 
@@ -789,6 +809,8 @@ def main(argv=None):
                     help="jp_prices.json (tools/fetch_jp_prices.py): dipakai untuk mengenali versi foil dan listing yang kemahalan")
     ap.add_argument("--tcgdex-json", default="tcgdex.json" if os.path.exists("tcgdex.json") else None,
                     help="tcgdex.json (tools/fetch_tcgdex.py): menghubungkan kartu Indonesia dengan kartu Jepang yang nomornya beda, supaya harga Yuyutei bisa dipakai untuk mengenali listing kemahalan")
+    ap.add_argument("--inbox", default=os.environ.get("EGS_INBOX", intake.DEFAULT_FOLDER),
+                    help="folder masuk (tools/intake.py, docs/inbox.md): berkas listing RAW yang dijatuhkan alat lain, diperiksa dan dinilai seperti listing toco; folder yang tidak ada = kosong")
     ap.add_argument("--rates-json", default="rates.json" if os.path.exists("rates.json") else None,
                     help="rates.json (tools/fetch_rates.py): kurs yen untuk membandingkan dengan harga Yuyutei")
     ap.add_argument("--default-prices", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "default_prices.json"),

@@ -12,6 +12,7 @@ repository checkout, where the publisher copies them), builds the board in memor
   5. kewajaran      asking prices against the Japanese (Yuyutei) price: the share that is more than 3 times it
   6. slab EGS       how thin the slab prices are (listings per card and grade), the review queue, the sources
   7. acuan          how much of the board has a Japanese and an English reference, and their age
+  8. folder masuk   the inbox of docs/inbox.md: files, age of the newest, the last report of each collector
 
 Exit code 0 when nothing is wrong, 1 when a check FAILED (validation error, duplicate rows, impossible price, a file missing or unreadable).
 Warnings (PERHATIAN) do not change the exit code. Standard library only.
@@ -71,7 +72,7 @@ def age_hours(iso, now):
     return (now - (t if t.tzinfo else t.replace(tzinfo=timezone.utc))).total_seconds() / 3600
 
 
-def audit(folder, now=None):
+def audit(folder, now=None, inbox=None):
     now = now or datetime.now(timezone.utc)
     rep, data = Report(), {name: load(folder, name) for name, _, _ in FILES}
     marks = load(folder, "card_marks.json")
@@ -175,14 +176,32 @@ def audit(folder, now=None):
         (rep.warn if h > 72 else rep.ok)(f"data EN (TCGdex) berumur {h:.0f} jam" + ("; papan sudah menulis 'data lama'" if h > 72 else ""))
     else:
         rep.warn("tanpa data TCGdex: kolom Acuan EN tidak tampil")
+    rep.head("8. folder masuk")
+    if not inbox or not os.path.isdir(inbox):
+        rep.info(f"{inbox or '(tidak diatur)'}: belum ada (docs/inbox.md)")
+    else:
+        files = [os.path.join(inbox, n) for n in sorted(os.listdir(inbox)) if n.lower().endswith((".json", ".csv", ".tsv")) and not n.startswith(".")]
+        if not files:
+            rep.warn(f"{inbox}: ada, tetapi tidak berisi berkas")
+        else:
+            newest = max(os.path.getmtime(f) for f in files)
+            h = (now.timestamp() - newest) / 3600
+            (rep.warn if h > 36 else rep.ok)(f"{len(files)} berkas, yang terbaru {h:.1f} jam" + ("; tidak ada kiriman baru dalam 36 jam: listing masuk sudah kedaluwarsa" if h > 36 else ""))
+        for consumer in ("raw", "slab"):
+            path = os.path.join(inbox, "status", f"laporan-{consumer}.txt")
+            if os.path.exists(path):
+                with open(path, encoding="utf-8") as fh:
+                    text = fh.read().splitlines()
+                rep.info(f"laporan {consumer}: " + " | ".join(l for l in text[1:3]))
     return rep, board
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--dir", default=".", help="folder berisi berkas data (bawaan: folder ini)")
+    ap.add_argument("--inbox", default=os.environ.get("EGS_INBOX", "/opt/egs-raw/inbox"), help="folder masuk (docs/inbox.md)")
     a = ap.parse_args(argv)
-    rep, _ = audit(a.dir)
+    rep, _ = audit(a.dir, inbox=a.inbox)
     print("AUDIT RADARKARTU" + "\n".join(rep.lines))
     print(f"\nhasil: {rep.failed} GAGAL, {rep.warned} PERHATIAN")
     return 1 if rep.failed else 0

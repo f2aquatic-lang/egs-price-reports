@@ -36,6 +36,7 @@ import fetch_catalog  # noqa: E402
 import fetch_jp_prices  # noqa: E402
 import fetch_rates  # noqa: E402
 import fetch_tcgdex  # noqa: E402
+import intake  # noqa: E402
 import probe_marketplaces  # noqa: E402
 import probe_pokemon_card  # noqa: E402
 import probe_toco  # noqa: E402
@@ -592,6 +593,52 @@ class Collector(unittest.TestCase):
         return collect_raw.run(self.cfg, self.post_fn, self.image_fn, None if self.cfg.dry_run else self.classify_fn,
                                now=now or datetime(2026, 10, 3, 1, 0, tzinfo=timezone.utc), sleep=lambda s: None,
                                log=lambda *a: None)
+
+    def inbox_with(self, rows, name="dots.json"):
+        folder = os.path.join(self.tmp.name, "inbox")
+        os.makedirs(folder, exist_ok=True)
+        path = os.path.join(folder, name)
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(rows, fh, ensure_ascii=False)
+        stamp = (datetime(2026, 10, 3, 1, 0, tzinfo=timezone.utc) - timedelta(minutes=5)).timestamp()
+        os.utime(path, (stamp, stamp))
+        return folder
+
+    def test_listings_in_the_inbox_are_judged_like_toco_listings_and_read_again_without_changing_anything(self):
+        shop = {"url": "https://shopee.co.id/Pikachu-ex-SAR-i.1.2?sp_atk=1", "judul": "Pikachu ex SAR MA3 234/193 Kartu Pokemon TCG Indonesia", "harga": "Rp2.450.000",
+                "jenis": "raw", "seen_at": "2026-10-03T07:30:00+07:00", "toko": "Toko A"}
+        rows = [shop, {**shop, "url": "https://shopee.co.id/Slab-i.3.4", "judul": "Pikachu ex SAR 234/193 MA3 ID EGS 10", "jenis": "slab"},
+                {**shop, "url": "https://cardtell.id/x/1"}, {**shop, "url": "https://shopee.co.id/Lama-i.5.6", "seen_at": "2026-09-30T07:30:00+07:00"}]
+        inbox = self.inbox_with(rows)
+        raw, ctr = self.go(lang_mode="text", inbox=inbox, inbox_settle=0)
+        pika = next(c for c in raw["cards"] if c["card_number"] == "234/193")
+        urls = [l["url"] for l in pika["listings"]]
+        self.assertIn("https://shopee.co.id/Pikachu-ex-SAR-i.1.2", urls)                                       # tracking parameters gone, judged like the toco ones
+        self.assertEqual(pika["stats"]["n"], 3)
+        self.assertEqual(sum(1 for c in raw["cards"] for l in c["listings"] if "slab-i.3.4" in l["url"].lower() or "cardtell" in l["url"] or "Lama" in l["url"]), 0)   # slab, refused host, expired
+        self.assertEqual((ctr["masuk_diambil"], ctr.get("masuk_sudah_diambil", 0)), (1, 0))
+        with open(os.path.join(inbox, "status", "laporan-raw.txt"), encoding="utf-8") as fh:
+            report = fh.read()
+        self.assertIn("situs cardtell.id tidak diterima", report)
+        self.assertIn("kedaluwarsa: 1", report)
+        self.assertEqual(validate_raw.validate(raw)[0], [])
+        again, ctr = self.go(lang_mode="text", inbox=inbox, inbox_settle=0)                                     # the same file read again: nothing changes
+        self.assertEqual((ctr["masuk_sudah_diambil"], ctr.get("masuk_diambil", 0)), (1, 0))
+        self.assertEqual(next(c for c in again["cards"] if c["card_number"] == "234/193")["stats"], pika["stats"])
+        self.inbox_with([{**shop, "harga": 2300000, "seen_at": "2026-10-03T07:45:00+07:00"}], name="lebih-baru.json")     # a later sighting of the same page with a new price
+        newer, ctr = self.go(lang_mode="text", inbox=inbox, inbox_settle=0)
+        self.assertEqual(ctr["masuk_diambil"], 1)
+        listing = next(l for c in newer["cards"] if c["card_number"] == "234/193" for l in c["listings"] if "shopee" in l["url"])
+        self.assertEqual(listing["ask_idr"], 2300000)
+
+    def test_an_inbox_listing_ages_by_its_sighting_time_not_by_the_run(self):
+        old = {"url": "https://shopee.co.id/Pikachu-ex-SAR-i.1.2", "judul": "Pikachu ex SAR MA3 234/193 Kartu Pokemon TCG Indonesia", "harga": 2450000, "jenis": "raw",
+               "seen_at": "2026-10-02T10:00:00+07:00"}                                                         # 22 hours before the run: counted
+        inbox = self.inbox_with([old])
+        raw, _ = self.go(lang_mode="text", inbox=inbox, inbox_settle=0)
+        self.assertIn("shopee", " ".join(l["url"] for c in raw["cards"] for l in c["listings"]))
+        later, _ = self.go(now=datetime(2026, 10, 3, 1, 0, tzinfo=timezone.utc) + timedelta(hours=20), lang_mode="text", inbox=inbox, inbox_settle=0)
+        self.assertNotIn("shopee", " ".join(l["url"] for c in later["cards"] for l in c["listings"]))         # 42 hours old at the next run: over the 36 hours, gone
 
     def test_search_body_matches_what_the_site_sends(self):
         b = collect_raw.search_body("Pikachu ex 234/193", 45, 45)
@@ -3242,6 +3289,38 @@ class EgsWatch(unittest.TestCase):
             w.writerows(rows)
         return path
 
+    def inbox_with(self, rows, name="dots.json"):
+        folder = os.path.join(self.tmp.name, "inbox")
+        os.makedirs(folder, exist_ok=True)
+        path = os.path.join(folder, name)
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(rows, fh, ensure_ascii=False)
+        stamp = (self.T0 - timedelta(minutes=5)).timestamp()
+        os.utime(path, (stamp, stamp))
+        return folder
+
+    def test_slab_rows_in_the_inbox_are_judged_like_toco_listings_and_age_by_their_sighting_time(self):
+        seen = (self.T0 - timedelta(hours=40)).isoformat()
+        shop = {"url": "https://shopee.co.id/Pikachu-i.1.2?sp_atk=x", "judul": "Pikachu ex SAR 234/193 MA3 ID EGS 10", "harga": "Rp2.450.000", "jenis": "slab", "seen_at": seen, "toko": "Toko A"}
+        inbox = self.inbox_with([shop, {**shop, "url": "https://shopee.co.id/raw-i.3.4", "judul": "Pikachu ex SAR MA3 234/193 Indonesia", "jenis": "raw"},
+                                 {**shop, "url": "https://cardtell.id/x", "judul": "Pikachu ex SAR 234/193 MA3 ID EGS 10"}])
+        fake = FakeEgsToco([])
+        export, code = self.go(fake, no_search=True, inbox=inbox, inbox_settle=0)
+        self.assertEqual((code, fake.posts), (0, []))
+        self.assertEqual(egs_watch.validate(export), [])
+        row = export["listings"][0]
+        self.assertEqual((len(export["listings"]), row["url"], row["source"], row["origin"], row["counted"]), (1, "https://shopee.co.id/Pikachu-i.1.2", "shopee", "import", True))
+        self.assertEqual(row["last_ok"], seen)                                                                  # the sighting time, not the time of the run
+        ib = export["run"]["inbox"]
+        self.assertEqual((ib["taken"], ib["bad"], ib["already_taken"]), (1, 1, 0))
+        self.assertIn("cardtell.id tidak diterima", "\n".join(ib["problems"]))
+        self.assertIn("kedaluwarsa: 0", open(os.path.join(inbox, "status", "laporan-slab.txt"), encoding="utf-8").read())
+        again, _ = self.go(fake, no_search=True, inbox=inbox, inbox_settle=0)                                   # the same file read again changes nothing
+        self.assertEqual(again["run"]["inbox"]["already_taken"], 1)
+        self.assertEqual((len(again["listings"]), again["listings"][0]["asking_idr"], again["listings"][0]["last_ok"]), (1, 2450000, seen))
+        older, _ = self.go(fake, no_search=True, now=self.T0 + timedelta(hours=10), inbox=inbox, inbox_settle=0)  # 50 hours after the sighting: shown, not counted
+        self.assertEqual((older["listings"][0]["counted"], older["listings"][0]["excluded"]), (False, "stale"))
+
     def test_hand_collected_rows_are_judged_like_toco_listings_and_nothing_is_fetched(self):
         path = self.write_import([
             ("https://shopee.co.id/Pikachu-ex-SAR-i.111.222?sp_atk=abc&xptdk=1", "Pikachu ex SAR 234/193 MA3 ID EGS 10", "Rp2.450.000", "Toko A", "https://down-id.img.example/a.jpg", "1"),
@@ -3753,6 +3832,127 @@ class BoardBridge(unittest.TestCase):
         self.assertIsNone(build_site.en_price({"id": "x", "name": "N", "cardmarket": {"unit": "USD", "trend": 5.0}}))
 
 
+class Intake(unittest.TestCase):
+    NOW = datetime(2026, 10, 9, 5, 0, tzinfo=timezone.utc)
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.folder = self.tmp.name
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def drop(self, name, content, age=600):
+        path = os.path.join(self.folder, name)
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(content if isinstance(content, str) else json.dumps(content, ensure_ascii=False))
+        stamp = (self.NOW - timedelta(seconds=age)).timestamp()
+        os.utime(path, (stamp, stamp))
+        return path
+
+    def load(self, kind="raw", max_age=36, **over):
+        return intake.load(self.folder, kind, self.NOW, max_age, **over)
+
+    @staticmethod
+    def row(**over):
+        base = {"url": "https://shopee.co.id/Pikachu-ex-i.1.2?sp_atk=x#frag", "judul": "Pikachu ex SAR 234/193 MA3 Indonesia", "harga": "Rp2.450.000", "jenis": "raw",
+                "seen_at": "2026-10-09T11:30:00+07:00", "toko": "Toko A"}
+        base.update(over)
+        return {k: v for k, v in base.items() if v is not None}
+
+    def test_a_json_file_and_a_csv_file_are_read_and_the_address_is_cleaned(self):
+        self.drop("a.json", [self.row()])
+        self.drop("b.csv", "url;judul;harga;jenis;seen_at;toko\nhttps://www.tokopedia.com/tokob/pikachu;Pikachu ex SAR MA3 234/193 Indonesia;2400000;raw;2026-10-09T04:00:00Z;Toko B\n")
+        rows, problems, info = self.load()
+        self.assertEqual([(r["url"], r["price"], r["source"], r["seller"]) for r in rows],
+                         [("https://www.tokopedia.com/tokob/pikachu", 2400000, "tokopedia", "Toko B"), ("https://shopee.co.id/Pikachu-ex-i.1.2", 2450000, "shopee", "Toko A")])
+        self.assertEqual((problems, info["files"], info["rows"], info["taken"], info["sources"]), ([], 2, 2, 2, {"tokopedia": 1, "shopee": 1}))
+        self.assertEqual(rows[1]["seen_at"], datetime(2026, 10, 9, 4, 30, tzinfo=timezone.utc))              # +07:00 is converted to UTC
+        self.drop("c.json", {"listings": [self.row(url="https://shopee.co.id/Lain-i.5.6", harga=99500)]})   # the object form with a "listings" list
+        self.assertEqual(len(self.load()[0]), 3)
+
+    def test_every_row_is_checked_and_a_bad_one_is_refused_with_its_reason(self):
+        bad = [self.row(url="javascript:alert(1)"), self.row(url="https://cardtell.id/x/1"), self.row(url="https://pokepedia.id/m/2"), self.row(url="https://evil.example/x"),
+               self.row(url="https://shopee.co.id/a", harga="1,250,000"), self.row(url="https://shopee.co.id/b", harga=100), self.row(url="https://shopee.co.id/c", harga=5_000_000_000),
+               self.row(url="https://shopee.co.id/d", jenis="bundel"), self.row(url="https://shopee.co.id/e", jenis=None), self.row(url="https://shopee.co.id/f", seen_at="2026-10-09T11:30:00"),
+               self.row(url="https://shopee.co.id/g", seen_at="kemarin"), self.row(url="https://shopee.co.id/h", seen_at="2026-10-10T11:30:00+07:00"), self.row(url="https://shopee.co.id/i", judul=""),
+               self.row(url="https://shopee.co.id/j", judul="x" * 500), self.row(url="https://shopee.co.id/k", stok="banyak"), self.row(url="https://shopee.co.id/l", stok=-1)]
+        self.drop("bad.json", bad + [self.row(url="https://shopee.co.id/ok")])
+        rows, problems, info = self.load()
+        self.assertEqual([r["url"] for r in rows], ["https://shopee.co.id/ok"])
+        self.assertEqual((info["rows"], info["bad"]), (17, 16))
+        text = "\n".join(problems)
+        for want in ("harus diawali http", "situs cardtell.id tidak diterima", "situs pokepedia.id tidak diterima", "situs evil.example tidak diterima", "bukan rupiah utuh",
+                     "jenis 'bundel' harus raw atau slab", "jenis 'None' harus raw atau slab", "tanpa zona", "bukan ISO 8601", "ada di masa depan", "judul kosong", "lebih dari 400",
+                     "stok 'banyak' bukan angka", "stok negatif"):
+            self.assertIn(want, text)
+
+    def test_the_newest_sighting_wins_old_rows_expire_and_each_consumer_takes_only_its_kind(self):
+        self.drop("1.json", [self.row(harga=2450000, seen_at="2026-10-09T10:00:00+07:00"), self.row(url="https://shopee.co.id/old", seen_at="2026-10-07T10:00:00+07:00"),
+                             self.row(url="https://shopee.co.id/slab", jenis="egs", judul="Pikachu ex EGS 10")])
+        self.drop("2.json", [self.row(harga=2300000, seen_at="2026-10-09T11:00:00+07:00")])               # a later sighting of the same page in another file
+        rows, _, info = self.load("raw")
+        self.assertEqual([(r["url"], r["price"]) for r in rows], [("https://shopee.co.id/Pikachu-ex-i.1.2", 2300000)])
+        self.assertEqual((info["expired"], info["other_kind"], info["taken"]), (1, 1, 1))
+        rows, _, info = self.load("slab", max_age=48)
+        self.assertEqual([r["url"] for r in rows], ["https://shopee.co.id/slab"])
+        self.assertEqual((info["expired"], info["other_kind"]), (0, 3))                                    # the three raw rows belong to the other consumer
+        self.assertEqual(self.load("slab", max_age=0.25)[2]["expired"], 1)                                 # the slab row was seen 30 minutes ago: older than 15 minutes
+
+    def test_a_missing_time_means_the_file_time_and_a_file_still_being_written_waits(self):
+        self.drop("a.json", [self.row(seen_at=None)], age=3600)
+        rows, _, _ = self.load()
+        self.assertEqual(rows[0]["seen_at"], self.NOW - timedelta(seconds=3600))
+        self.drop("b.json", [self.row(url="https://shopee.co.id/new")], age=5)                             # changed 5 seconds ago
+        rows, problems, info = self.load()
+        self.assertEqual(([r["url"] for r in rows], info["skipped_files"]), (["https://shopee.co.id/Pikachu-ex-i.1.2"], 1))
+        self.assertIn("masih berubah", "\n".join(problems))
+        self.assertEqual(len(self.load(settle_seconds=0)[0]), 2)
+
+    def test_temporary_names_other_files_a_missing_folder_and_oversized_files_are_left_alone(self):
+        for name in ("a.json.tmp", "a.part", ".hidden.json", "catatan.txt", "gambar.png"):
+            self.drop(name, [self.row()])
+        os.makedirs(os.path.join(self.folder, "status"))
+        rows, problems, info = self.load()
+        self.assertEqual((rows, problems, info["files"]), ([], [], 0))
+        self.assertEqual(intake.load(os.path.join(self.folder, "tidak-ada"), "raw", self.NOW, 36)[2]["files"], 0)
+        self.assertEqual(intake.load(None, "raw", self.NOW, 36)[0], [])
+        self.drop("big.json", [self.row(url=f"https://shopee.co.id/{n}") for n in range(5)])
+        with mock.patch.object(intake, "MAX_ROWS", 3):
+            rows, problems, _ = self.load()
+        self.assertEqual((rows, "lebih dari 3" in "\n".join(problems)), ([], True))
+        with mock.patch.object(intake, "MAX_FILE_BYTES", 10):
+            self.assertIn("MB, dilewati", "\n".join(self.load()[1]))
+        self.drop("rusak.json", "[{\"url\": ")
+        self.assertIn("JSON tidak valid", "\n".join(self.load()[1]))
+        self.drop("kosong.csv", "url,judul,harga,jenis\n")
+        self.assertIn("kolomnya tidak dikenal", "\n".join(self.load()[1]))
+
+    def test_a_picture_address_must_name_a_public_host_and_a_bad_one_only_loses_the_picture(self):
+        for url, public in (("https://down-id.example.com/a.jpg", True), ("http://8.8.8.8/a.jpg", True), ("http://localhost/a.jpg", False), ("http://127.0.0.1/a.jpg", False),
+                            ("http://169.254.169.254/latest", False), ("http://192.168.1.5/a.jpg", False), ("http://10.0.0.7/a.jpg", False), ("http://nodot/a.jpg", False),
+                            ("http://[::1]/a.jpg", False), ("http://db.internal/a.jpg", False)):
+            self.assertEqual(intake.public_host(url), public, url)
+        self.drop("a.json", [self.row(foto="http://169.254.169.254/latest/meta-data"), self.row(url="https://shopee.co.id/two", foto="https://down-id.example.com/a.jpg?x=1")])
+        rows, problems, _ = self.load()
+        self.assertEqual(problems, [])
+        self.assertEqual(sorted((r["url"].rsplit("/", 1)[-1], r["photo"]) for r in rows), [("Pikachu-ex-i.1.2", None), ("two", "https://down-id.example.com/a.jpg")])
+
+    def test_the_report_file_tells_the_dropping_tool_what_was_taken_and_why_a_row_was_refused(self):
+        self.drop("a.json", [self.row(), self.row(url="https://cardtell.id/x")])
+        rows, problems, info = self.load()
+        intake.write_report(self.folder, "raw", self.NOW, {**info, "taken": len(rows)}, problems)
+        with open(os.path.join(self.folder, "status", "laporan-raw.txt"), encoding="utf-8") as fh:
+            text = fh.read()
+        for want in ("laporan raw 2026-10-09 12:00 WIB", "diambil untuk raw: 1", "ditolak: 1", "sumber: shopee 1", "cardtell.id tidak diterima"):
+            self.assertIn(want, text)
+        os.chmod(self.folder, 0o500)                                                                       # a read-only folder: the report is skipped quietly
+        try:
+            intake.write_report(os.path.join(self.folder, "status"), "slab", self.NOW, info, [])
+        finally:
+            os.chmod(self.folder, 0o700)
+
+
 class AuditBoard(unittest.TestCase):
     NOW = datetime(2026, 10, 3, 3, 0, tzinfo=timezone.utc)
 
@@ -3799,6 +3999,25 @@ class AuditBoard(unittest.TestCase):
         next(c for c in catalog["cards"] if c["number"] == "115/193")["rarity"] = "SAR"  # a base price on a rarity that has none
         rep, text, _ = self.run_audit(self.folder(**{"raw.json": raw, "catalog.json": catalog}))
         self.assertIn("GAGAL     harga dasar pada rarity selain C", text)
+
+    def test_the_inbox_is_reported_with_its_newest_file_and_the_last_report_of_each_collector(self):
+        inbox = tempfile.mkdtemp()
+        rep, _ = audit_board.audit(self.folder(), self.NOW, inbox=inbox)
+        self.assertIn("ada, tetapi tidak berisi berkas", "\n".join(rep.lines))
+        path = os.path.join(inbox, "dots.json")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write("[]")
+        stamp = (self.NOW - timedelta(hours=2)).timestamp()
+        os.utime(path, (stamp, stamp))
+        os.makedirs(os.path.join(inbox, "status"))
+        with open(os.path.join(inbox, "status", "laporan-raw.txt"), "w", encoding="utf-8") as fh:
+            fh.write("laporan raw 2026-10-03 08:00 WIB\nfile dibaca: 1\nbaris: 3 | diambil: 1\n")
+        text = "\n".join(audit_board.audit(self.folder(), self.NOW, inbox=inbox)[0].lines)
+        self.assertIn("1 berkas, yang terbaru 2.0 jam", text)
+        self.assertIn("laporan raw: file dibaca: 1 | baris: 3 | diambil: 1", text)
+        stale = "\n".join(audit_board.audit(self.folder(), self.NOW + timedelta(days=2), inbox=inbox)[0].lines)
+        self.assertIn("PERHATIAN 1 berkas", stale)
+        self.assertIn("belum ada (docs/inbox.md)", "\n".join(audit_board.audit(self.folder(), self.NOW, inbox=os.path.join(inbox, "x"))[0].lines))
 
     def test_the_command_line_prints_the_report_and_returns_the_failure_count_as_an_exit_code(self):
         out = []

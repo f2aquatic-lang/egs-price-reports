@@ -46,7 +46,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import collect_raw  # noqa: E402
 import egs_identity as ident  # noqa: E402
 import egs_worksheet  # noqa: E402
+import intake  # noqa: E402
 import watch_queries  # noqa: E402
+from intake import SOURCE_HOSTS, clean_url, parse_rupiah, source_of  # noqa: E402,F401  (kept here: tests and callers use egs_watch.parse_rupiah and others)
 
 SITE = collect_raw.SITE
 UA = collect_raw.UA
@@ -342,39 +344,9 @@ def normalize(item):
 # The bot never opens these sites: a person looks at a listing, writes down what is on the page, and this file goes through the same
 # identity check, dedupe and statistics as a toco listing. Nothing here logs in, solves a challenge or reads another seller's pages.
 
-SOURCE_HOSTS = (("toco.id", "toco"), ("shopee.co.id", "shopee"), ("shopee.com", "shopee"), ("shp.ee", "shopee"),
-                ("tokopedia.com", "tokopedia"), ("tokopedia.link", "tokopedia"))
 IMPORT_COLUMNS = {"url": ("url", "link", "tautan", "alamat"), "title": ("title", "judul", "nama"), "price": ("price", "harga", "ask"),
                   "seller": ("seller", "toko", "penjual", "store"), "photo": ("photo", "foto", "image", "gambar"),
                   "stock": ("stock", "stok"), "description": ("description", "deskripsi", "keterangan"), "city": ("city", "kota", "lokasi")}
-
-
-def source_of(url):
-    """Where a listing lives, from its address: toco, shopee, tokopedia, or the host name."""
-    host = (urlsplit(url).hostname or "").lower()
-    for h, name in SOURCE_HOSTS:
-        if host == h or host.endswith("." + h):
-            return name
-    return host or "lain"
-
-
-def parse_rupiah(text):
-    """'Rp1.250.000', '1.250.000', '1250000', 1250000 -> 1250000; None for anything else (a decimal comma means the number is not a rupiah price)."""
-    if isinstance(text, (int, float)) and not isinstance(text, bool):
-        return int(text) if text > 0 else None
-    t = re.sub(r"(?i)rp\.?|idr|\s", "", str(text or ""))
-    if not re.fullmatch(r"\d{1,3}(\.\d{3})+|\d+", t):
-        return None
-    value = int(t.replace(".", ""))
-    return value if value > 0 else None
-
-
-def clean_url(url):
-    """The address without tracking parameters and fragments: the same page must not become two listings."""
-    parts = urlsplit(str(url or "").strip())
-    if parts.scheme not in ("http", "https") or not parts.hostname:
-        return None
-    return f"{parts.scheme}://{parts.netloc.lower()}{parts.path}".rstrip("/")
 
 
 def normalize_import(row):
@@ -975,6 +947,24 @@ def run(cfg, post, status_fn=fetch_status, photo_fn=None, now=None, sleep=time.s
     toco = Toco(post, cfg.cache_dir, cfg.cache_ttl, sleep=sleep, log=log)
     no_search = getattr(cfg, "no_search", False)
     imports, import_problems = read_import(cfg.import_file) if getattr(cfg, "import_file", None) else ([], [])
+    inbox_dir = getattr(cfg, "inbox", None)
+    inbox_rows, inbox_problems, inbox_info = intake.load(inbox_dir, "slab", now, COUNT_STALE_HOURS, getattr(cfg, "inbox_settle", intake.SETTLE_SECONDS))
+    inbox_seen = {}      # address -> when the dropping tool saw it: the listing is as old as that, not as old as this run
+    if inbox_info["files"] or inbox_info["skipped_files"]:
+        merged = {n["url"]: n for n in imports}
+        for r in inbox_rows:
+            rec, problem = normalize_import({"url": r["url"], "title": r["title"], "price": r["price"], "seller": r["seller"], "photo": r["photo"],
+                                             "stock": r["stock"], "description": r["description"], "city": r["city"]})
+            if problem:
+                inbox_problems.append(problem)
+            else:
+                merged[rec["url"]] = rec
+                inbox_seen[rec["url"]] = r["seen_at"]
+        imports = list(merged.values())
+        log(f"folder masuk {inbox_dir}: {inbox_info['files']} berkas, {inbox_info['rows']} baris, {len(inbox_seen)} slab diambil, {inbox_info['bad']} ditolak, "
+            f"{inbox_info['expired']} kedaluwarsa, {inbox_info['other_kind']} jenis lain")
+        for problem in inbox_problems[:20]:
+            log(f"  ! masuk: {problem}")
     manual, ws_info = Counter(), None
     if getattr(cfg, "worksheet", None):
         reads, ws_rows, ws_problems = egs_worksheet.read(cfg.worksheet, collect_raw.fetch)
@@ -1018,10 +1008,16 @@ def run(cfg, post, status_fn=fetch_status, photo_fn=None, now=None, sleep=time.s
             accepted_new += 1
         elif v["verdict"] == "rejected":
             rejected[v["reasons"][0]["code"]] += 1
-    imported = Counter()
+    imported, already = Counter(), 0
     for n in imports:
+        when = inbox_seen.get(n["url"])
+        if when is not None:
+            prev = db.execute("SELECT last_ok FROM listing WHERE url=?", (n["url"],)).fetchone()
+            if prev and prev["last_ok"] and datetime.fromisoformat(prev["last_ok"]) >= when:
+                already += 1      # this sighting (or a newer one) was taken in an earlier run: reading the same file again changes nothing
+                continue
         v, read = judge(db, n, catalog, tracked, photo_fn, photo_budget)
-        new = upsert(db, n, v, now, read, origin="import")
+        new = upsert(db, n, v, when or now, read, origin="import")
         imported[v["verdict"]] += 1
         cand += 1
         if v["verdict"] == "accepted" and new:
@@ -1029,6 +1025,8 @@ def run(cfg, post, status_fn=fetch_status, photo_fn=None, now=None, sleep=time.s
         elif v["verdict"] == "rejected":
             rejected[v["reasons"][0]["code"]] += 1
     db.commit()
+    if inbox_info["files"] and not cfg.dry_run:
+        intake.write_report(inbox_dir, "slab", now, {**inbox_info, "taken": len(inbox_seen)}, inbox_problems)
     healthy = no_search or (not blocked and toco.ok + toco.cached >= 1 and (toco.ok + toco.cached) >= 0.5 * (toco.ok + toco.cached + toco.failed))
     rc = Counter()
     if healthy and not no_search:
@@ -1046,7 +1044,9 @@ def run(cfg, post, status_fn=fetch_status, photo_fn=None, now=None, sleep=time.s
                 "checked_ok": cand - sum(rejected.values()) + rc["ok"] + rc["unavailable"],
                 "check_failed": rc["fetch_failed"] + rc["blocked"], "recheck": dict(rc), "photo_reads": cfg.photo_budget - photo_budget[0], "promoted": promoted,
                 "imported": ({"rows": len(imports), "accepted": imported["accepted"], "ambiguous": imported["ambiguous"], "rejected": imported["rejected"],
-                              "problems": import_problems[:20]} if getattr(cfg, "import_file", None) or ws_info else None),
+                              "problems": import_problems[:20]} if getattr(cfg, "import_file", None) or ws_info or inbox_seen else None),
+                "inbox": ({"files": inbox_info["files"], "rows": inbox_info["rows"], "taken": len(inbox_seen), "already_taken": already, "expired": inbox_info["expired"],
+                           "bad": inbox_info["bad"], "sources": inbox_info["sources"], "problems": inbox_problems[:20]} if inbox_info["files"] else None),
                 "worksheet": ws_info,
                 "dry_run": bool(cfg.dry_run), "finished_at": (now if explicit_clock else datetime.now(timezone.utc)).isoformat()}
     if not items and not imports and not healthy:
@@ -1090,6 +1090,8 @@ def main(argv=None):
     ap.add_argument("--recheck-limit", type=int, default=80, help="listing yang diperiksa satu per satu bila tidak muncul di pencarian")
     ap.add_argument("--import", dest="import_file", metavar="BERKAS",
                     help="CSV atau JSON listing yang dikumpulkan sendiri (kolom: url, judul, harga, toko, foto, stok): dinilai dan dihitung seperti listing toco; tanpa membuka situsnya")
+    ap.add_argument("--inbox", metavar="FOLDER", default=os.environ.get("EGS_INBOX", intake.DEFAULT_FOLDER),
+                    help="folder masuk (tools/intake.py, docs/inbox.md): berkas listing slab yang dijatuhkan alat lain, diperiksa dan dinilai seperti listing toco; folder yang tidak ada = kosong")
     ap.add_argument("--worksheet", metavar="BERKAS_ATAU_ALAMAT",
                     help="lembar kerja yang sudah Anda isi (CSV, atau alamat 'publikasikan ke web' dari Google Sheets): foto antrean yang Anda baca dan harga Tokopedia/Shopee yang Anda catat")
     ap.add_argument("--make-worksheet", metavar="CSV", help="tulis lembar kerja (foto + kolom isian) dari --out dan --catalog, lalu selesai")
