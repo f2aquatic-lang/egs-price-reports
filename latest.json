@@ -1,21 +1,21 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-10T20:10:05.200586+00:00",
+  "generated_at": "2026-10-11T02:10:05.054246+00:00",
   "price_type": "OBSERVED_ASKING_ONLY",
   "source": "toco_public_reviewed",
   "coverage": {
     "watched": 6,
     "observed_within_14_days": 6,
     "fresh_within_8_hours": 6,
-    "last_observed_at": "2026-10-10T16:30:14.219750+00:00"
+    "last_observed_at": "2026-10-10T22:30:14.231523+00:00"
   },
   "discovery": {
-    "generated_at": "2026-10-10T19:50:08.460656+00:00",
+    "generated_at": "2026-10-11T01:41:53.451632+00:00",
     "pages": 2,
     "links_examined": 90,
-    "candidates_latest": 38,
-    "tracked_latest": 5,
-    "pending_latest": 33,
+    "candidates_latest": 34,
+    "tracked_latest": 4,
+    "pending_latest": 30,
     "candidates": [
       {
         "url": "https://toco.id/id/listing/arceus-v-sr-aa-s9-id-egs-95-1790735706361-4864",
@@ -36,39 +36,21 @@
         "tracked": false
       },
       {
-        "url": "https://toco.id/id/listing/egs-10-ivysaur-ar-128-ma1-pokemon-evolusi-mega-id-1790389696466-55c2",
-        "search_text": "Sisa 1 EGS 10 Ivysaur AR #128 ma1 Pokemon Evolusi Mega [ID] Rp150.000 Kota Jakarta Utara",
-        "grade_hint": "10",
-        "tracked": false
-      },
-      {
-        "url": "https://toco.id/id/listing/egs-10-lapras-misty-145-sv10s-pokemon-kehadiran-juara-id-1790389322656-4dd7",
-        "search_text": "Sisa 1 EGS 10 Lapras Misty #145 sv10s Pokemon Kehadiran Juara [ID] Rp175.000 Kota Jakarta Utara",
-        "grade_hint": "10",
-        "tracked": false
-      },
-      {
-        "url": "https://toco.id/id/listing/egs-10-mega-venusaur-ex-sar-173-ma1-pokemon-evolusi-mega-id-1790389583180-2c05",
-        "search_text": "Sisa 1 EGS 10 Mega Venusaur ex SAR #173 ma1 Pokemon Evolusi Mega [ID] Rp650.000 Kota Jakarta Utara",
+        "url": "https://toco.id/id/listing/egs-10-pikachu-234-pokemon-indonesia-set-mega-impian-1784389258255-e1eb",
+        "search_text": "Sisa 1 EGS 10 SAR Pikachu #234 - Pokemon Indonesia set Mega Impian Rp2.760.000 Rp3.000.000 -8% Kota Jakarta Timur",
         "grade_hint": "10",
         "tracked": true
-      },
-      {
-        "url": "https://toco.id/id/listing/egs-10-typhlosion-ethan-141-sv10s-pokemon-kehadiran-juara-id-1790389412202-95a4",
-        "search_text": "Sisa 1 EGS 10 Typhlosion Ethan #141 sv10s Pokemon Kehadiran Juara [ID] Rp175.000 Kota Jakarta Utara",
-        "grade_hint": "10",
-        "tracked": false
-      },
-      {
-        "url": "https://toco.id/id/listing/egs-gemmint-10-mega-charizard-x-ex-ma-inferno-x-223japanese-grade-egs-10-gem-mint-1779119369913-5a36",
-        "search_text": "Sisa 1 EGS GemMint 10 Mega Charizard X EX MA Inferno X #223Japanese Grade: EGS 10 GEM MINT Rp3.400.000 Kota Jakarta Barat",
-        "grade_hint": "10",
-        "tracked": false
       },
       {
         "url": "https://toco.id/id/listing/genesect-v-sr-aa-s8-egs-95-1790735422588-9743",
         "search_text": "Sisa 1 Genesect V SR AA S8 EGS 9.5 Rp600.000 Kota Jambi",
         "grade_hint": "9.5",
+        "tracked": false
+      },
+      {
+        "url": "https://toco.id/id/listing/gol-d-roger-psec-egs-10-1776696479595-73ec",
+        "search_text": "Sisa 1 Gol D Roger PSEC* EGS 10 & Gold Don!! Roger Rp1.300.000 Terjual 1 Kabupaten Mojokerto",
+        "grade_hint": "10",
         "tracked": false
       },
       {
@@ -96,8 +78,8 @@
         "tracked": false
       },
       {
-        "url": "https://toco.id/id/listing/kartu-pokemon-indonesia-slab-egs-10-leafeon-oricorio-zoroark-sar-1782198264420-fb5b",
-        "search_text": "Sisa 1 Kartu Pokemon Indonesia slab EGS 10 Leafeon SAR Festival Terastal ex Rp1.200.000 Rp2.000.000 -40% Kabupaten Bogor",
+        "url": "https://toco.id/id/listing/kartu-pokemon-lapras-misty-ar-sv10s-slab-egs-10-1783959175736-4328",
+        "search_text": "Sisa 1 Kartu Pokemon Lapras Misty AR sv10s Slab EGS 10 Rp400.000 Rp500.000 -20% Kota Jakarta Selatan JelajahiKota",
         "grade_hint": "10",
         "tracked": false
       },
@@ -108,16 +90,10 @@
         "tracked": true
       },
       {
-        "url": "https://toco.id/id/listing/kartu-pokemon-mega-rayquaza-ex-egs-grading-10-promo-25th-25-th-anniversary-original-1788853782214-9810",
-        "search_text": "Sisa 1 Kartu Pokemon Mega Rayquaza EX EGS Grading 10 Promo 25th 25 th Anniversary Original Rp1.250.000 Kota Jakarta Selatan",
-        "grade_hint": "10",
+        "url": "https://toco.id/id/listing/leaveon-vmax-egs-9-kartu-pokemon-slab-1780787659645-d380",
+        "search_text": "Sisa 1 LEAVEON VMAX EGS 9 Kartu pokemon slab Rp480.000 Xtra Diskon 5% Kabupaten Ponorogo",
+        "grade_hint": "9",
         "tracked": false
-      },
-      {
-        "url": "https://toco.id/id/listing/kartu-pokemon-pikachu-ex-sr-211182-egs-grading-10-kilat-rasi-original-1788853700917-e73b",
-        "search_text": "Sisa 1 Kartu Pokemon Pikachu EX SR 211/182 EGS Grading 10 Kilat Rasi Original Rp875.000 Kota Jakarta Selatan",
-        "grade_hint": "10",
-        "tracked": true
       },
       {
         "url": "https://toco.id/id/listing/ma-charizard-egs-95-indo-1783524315966-c12d",
@@ -144,20 +120,14 @@
         "tracked": false
       },
       {
-        "url": "https://toco.id/id/listing/mega-zeraora-ex-sar-m5-abyss-eye-1781441662944-ad56",
-        "search_text": "Sisa 1 Mega Zeraora ex SAR - m5 Abyss Eye EGS 9 Rp1.000.000 Kabupaten Sukoharjo",
-        "grade_hint": "9",
-        "tracked": false
-      },
-      {
-        "url": "https://toco.id/id/listing/one-piece-promo-card-monkey-d-luffy-p-106-egs-gem-mint-10-1785057164894-f4ba",
-        "search_text": "Sisa 1 One Piece Promo Card Monkey D. Luffy P-106 EGS Gem Mint 10 Rp700.000 Rp1.000.000 -30% Kota Jakarta Selatan",
+        "url": "https://toco.id/id/listing/mega-latias-ex-jp-egs-10-1785765419130-9475",
+        "search_text": "Sisa 1 Mega Darkrai Ex ID EGS 10 Rp2.500.000 Kota Pekanbaru",
         "grade_hint": "10",
         "tracked": false
       },
       {
         "url": "https://toco.id/id/listing/one-piece-tcg-slab-egs-95-sakazuki-op02-099-sr-parallel-prb01-jap-1784242800563-a1aa",
-        "search_text": "Sisa 1 One Piece TCG Slab EGS 9.5 Sakazuki OP02-099 SR Parallel PRB01 JAP Rp400.000 Kota Jakarta Barat",
+        "search_text": "Sisa 1 One Piece TCG Slab EGS 9.5 Sakazuki OP02-099 SR Parallel PRB01 JAP Rp400.000 Kota Jakarta Barat BeliPeta Cetak",
         "grade_hint": "9.5",
         "tracked": false
       },
@@ -180,14 +150,20 @@
         "tracked": false
       },
       {
-        "url": "https://toco.id/id/listing/pikachu-chr-073071-egs-10-indo-1786877736381-136a",
-        "search_text": "Sisa 1 Pikachu CHR 073/071 EGS 9.5 Indo Rp600.000 Kota Jakarta Timur",
-        "grade_hint": "9.5",
+        "url": "https://toco.id/id/listing/pika-egs-10-1788180004726-6179",
+        "search_text": "Sisa 1 Pika egs 10 Rp600.000 Kabupaten Pemalang",
+        "grade_hint": "10",
         "tracked": false
       },
       {
         "url": "https://toco.id/id/listing/pikachu-scarlet-violet-original-chinese-egs-10-grading-slab-original-1782460999517-1755",
         "search_text": "Sisa 1 pikachu Scarlet violet Original Chinese egs 10 Grading Slab Original Rp1.000.000 Kabupaten Deli Serdang",
+        "grade_hint": "10",
+        "tracked": false
+      },
+      {
+        "url": "https://toco.id/id/listing/pokemon-gyarados-jahat-25th-anniversary-egs-10-gem-mint-1783763561707-6c6f",
+        "search_text": "Sisa 1 Pokemon Gyarados Jahat 25th Anniversary EGS 10 GEM MINT Rp825.000 Rp1.500.000 -45% Kota Bekasi",
         "grade_hint": "10",
         "tracked": false
       },
@@ -198,21 +174,9 @@
         "tracked": false
       },
       {
-        "url": "https://toco.id/id/listing/pokemon-mew-reverse-holo-25th-egs-9-1778378971421-7319",
-        "search_text": "Sisa 1 Pokemon Mew reverse holo 25th EGS 9 Rp968.000 Rp1.100.000 -12% Kota Jakarta Utara",
+        "url": "https://toco.id/id/listing/pokemon-mew-vmax-ind-egs-9-1778378691276-c542",
+        "search_text": "Sisa 1 Pokemon Mew Vmax ind EGS 9 Rp990.000 Rp1.100.000 -10% Kota Jakarta Utara",
         "grade_hint": "9",
-        "tracked": false
-      },
-      {
-        "url": "https://toco.id/id/listing/pokemon-mewtwo-mew-gx-tagteam-ind-egs-95-1778378533009-36e0",
-        "search_text": "Sisa 1 Pokemon Mewtwo & Mew GX tagteam ind EGS 9.5 Rp1.080.000 Rp1.200.000 -10% Kota Jakarta Utara",
-        "grade_hint": "9.5",
-        "tracked": false
-      },
-      {
-        "url": "https://toco.id/id/listing/pokemon-mewtwo-vstar-hr-ind-egs-95-1778378366289-e19b",
-        "search_text": "Sisa 1 Pokemon Mewtwo Vstar HR ind EGS 9.5 Rp945.000 Rp1.050.000 -10% Kota Jakarta Utara",
-        "grade_hint": "9.5",
         "tracked": false
       },
       {
@@ -222,15 +186,15 @@
         "tracked": false
       },
       {
-        "url": "https://toco.id/id/listing/takato-matsuki-ex2-056-p-r-egs-9-1790736566100-c700",
-        "search_text": "Sisa 1 Takato Matsuki EX2-056 P-R EGS 9 Rp750.000 Kota Jambi",
-        "grade_hint": "9",
+        "url": "https://toco.id/id/listing/pokemon-vaporeon-masterball-holo-egs-95-1778401133684-1f85",
+        "search_text": "Sisa 1 Pokemon Vaporeon masterball holo EGS 9.5 Rp765.000 Rp850.000 -10% Kota Jakarta Utara",
+        "grade_hint": "9.5",
         "tracked": false
       },
       {
-        "url": "https://toco.id/id/listing/tcg-onepiece-boa-hancock-egs-10-1788331704668-d966",
-        "search_text": "Sisa 1 TCG Onepiece Boa Hancock EGS 10 Rp600.000 Rp900.000 -34% Kabupaten Bandung Barat",
-        "grade_hint": "10",
+        "url": "https://toco.id/id/listing/takato-matsuki-ex2-056-p-r-egs-9-1790736566100-c700",
+        "search_text": "Sisa 1 Takato Matsuki EX2-056 P-R EGS 9 Rp750.000 Kota Jambi",
+        "grade_hint": "9",
         "tracked": false
       },
       {
@@ -240,10 +204,22 @@
         "tracked": true
       },
       {
+        "url": "https://toco.id/id/listing/tcg-pokemon-indonesia-ar-sv10-typhlosion-ethan-slab-egs-gem-mint-10-1780712420209-6b03",
+        "search_text": "Sisa 1 TCG POKEMON INDONESIA AR SV10 TYPHLOSION & ETHAN + SLAB EGS GEM MINT 10 Rp650.000 Rp1.000.000 -35% Xtra Diskon 5% Kota Tangerang Selatan",
+        "grade_hint": "10",
+        "tracked": false
+      },
+      {
         "url": "https://toco.id/id/listing/tcg-pokemon-indonesia-ma-232193-mega-dragonite-ex-slab-egs-95-1782381379114-3b4d",
         "search_text": "Sisa 1 TCG POKEMON INDONESIA MA 232/193 MEGA DRAGONITE EX + SLAB EGS 9.5 Rp600.000 Rp750.000 -20% Kota Tangerang Selatan",
         "grade_hint": "9.5",
         "tracked": true
+      },
+      {
+        "url": "https://toco.id/id/listing/tcg-pokemon-indonesia-ma3-228193-mega-lucario-ex-slab-egs-gem-mint-10-1780712405369-c2b4",
+        "search_text": "Sisa 1 TCG POKEMON INDONESIA MA3 228/193 MEGA LUCARIO EX + SLAB EGS GEM MINT 10 Rp650.000 Rp1.000.000 -35% Xtra Diskon 5% Kota Tangerang Selatan",
+        "grade_hint": "10",
+        "tracked": false
       }
     ]
   },
@@ -256,17 +232,23 @@
       "grade": "10",
       "url": "https://toco.id/id/listing/egs-10-mega-venusaur-ex-sar-173-ma1-pokemon-evolusi-mega-id-1790389583180-2c05",
       "latest": {
-        "observed_at": "2026-10-10T16:30:03.011151+00:00",
+        "observed_at": "2026-10-10T22:30:03.115772+00:00",
         "asking_idr": 650000,
         "in_stock": true
       },
       "previous_day": {
-        "observed_at": "2026-10-09T16:30:03.235388+00:00",
+        "observed_at": "2026-10-10T16:30:03.011151+00:00",
         "asking_idr": 650000,
         "in_stock": true
       },
       "change_from_previous_day_idr": 0,
       "daily_latest": [
+        {
+          "date_wib": "2026-10-11",
+          "observed_at": "2026-10-10T22:30:03.115772+00:00",
+          "asking_idr": 650000,
+          "in_stock": true
+        },
         {
           "date_wib": "2026-10-10",
           "observed_at": "2026-10-10T16:30:03.011151+00:00",
@@ -361,17 +343,23 @@
       "grade": "10",
       "url": "https://toco.id/id/listing/kartu-pokemon-pikachu-ex-sr-211182-egs-grading-10-kilat-rasi-original-1788853700917-e73b",
       "latest": {
-        "observed_at": "2026-10-10T16:30:05.239064+00:00",
+        "observed_at": "2026-10-10T22:30:05.337936+00:00",
         "asking_idr": 875000,
         "in_stock": true
       },
       "previous_day": {
-        "observed_at": "2026-10-09T16:30:05.501632+00:00",
+        "observed_at": "2026-10-10T16:30:05.239064+00:00",
         "asking_idr": 875000,
         "in_stock": true
       },
       "change_from_previous_day_idr": 0,
       "daily_latest": [
+        {
+          "date_wib": "2026-10-11",
+          "observed_at": "2026-10-10T22:30:05.337936+00:00",
+          "asking_idr": 875000,
+          "in_stock": true
+        },
         {
           "date_wib": "2026-10-10",
           "observed_at": "2026-10-10T16:30:05.239064+00:00",
@@ -466,17 +454,23 @@
       "grade": "10",
       "url": "https://toco.id/id/listing/egs-10-pikachu-234-pokemon-indonesia-set-mega-impian-1784389258255-e1eb",
       "latest": {
-        "observed_at": "2026-10-10T16:30:07.424938+00:00",
+        "observed_at": "2026-10-10T22:30:07.599728+00:00",
         "asking_idr": 2760000,
         "in_stock": true
       },
       "previous_day": {
-        "observed_at": "2026-10-09T16:30:07.819476+00:00",
+        "observed_at": "2026-10-10T16:30:07.424938+00:00",
         "asking_idr": 2760000,
         "in_stock": true
       },
       "change_from_previous_day_idr": 0,
       "daily_latest": [
+        {
+          "date_wib": "2026-10-11",
+          "observed_at": "2026-10-10T22:30:07.599728+00:00",
+          "asking_idr": 2760000,
+          "in_stock": true
+        },
         {
           "date_wib": "2026-10-10",
           "observed_at": "2026-10-10T16:30:07.424938+00:00",
@@ -565,17 +559,23 @@
       "grade": "10",
       "url": "https://toco.id/id/listing/kartu-pokemon-mega-charizard-x-ex-ma-223193-egs-grading-10-mega-impian-original-1788853544170-191d",
       "latest": {
-        "observed_at": "2026-10-10T16:30:09.654113+00:00",
+        "observed_at": "2026-10-10T22:30:09.791370+00:00",
         "asking_idr": 875000,
         "in_stock": true
       },
       "previous_day": {
-        "observed_at": "2026-10-09T16:30:10.064847+00:00",
+        "observed_at": "2026-10-10T16:30:09.654113+00:00",
         "asking_idr": 875000,
         "in_stock": true
       },
       "change_from_previous_day_idr": 0,
       "daily_latest": [
+        {
+          "date_wib": "2026-10-11",
+          "observed_at": "2026-10-10T22:30:09.791370+00:00",
+          "asking_idr": 875000,
+          "in_stock": true
+        },
         {
           "date_wib": "2026-10-10",
           "observed_at": "2026-10-10T16:30:09.654113+00:00",
@@ -664,17 +664,23 @@
       "grade": "9.5",
       "url": "https://toco.id/id/listing/tcg-pokemon-indonesia-ar-210193-zekrom-n-slab-egs-95-1782381348156-dcc2",
       "latest": {
-        "observed_at": "2026-10-10T16:30:11.990390+00:00",
+        "observed_at": "2026-10-10T22:30:12.021850+00:00",
         "asking_idr": 550000,
         "in_stock": true
       },
       "previous_day": {
-        "observed_at": "2026-10-09T16:30:12.367458+00:00",
+        "observed_at": "2026-10-10T16:30:11.990390+00:00",
         "asking_idr": 550000,
         "in_stock": true
       },
       "change_from_previous_day_idr": 0,
       "daily_latest": [
+        {
+          "date_wib": "2026-10-11",
+          "observed_at": "2026-10-10T22:30:12.021850+00:00",
+          "asking_idr": 550000,
+          "in_stock": true
+        },
         {
           "date_wib": "2026-10-10",
           "observed_at": "2026-10-10T16:30:11.990390+00:00",
@@ -763,17 +769,23 @@
       "grade": "9.5",
       "url": "https://toco.id/id/listing/tcg-pokemon-indonesia-ma-232193-mega-dragonite-ex-slab-egs-95-1782381379114-3b4d",
       "latest": {
-        "observed_at": "2026-10-10T16:30:14.219750+00:00",
+        "observed_at": "2026-10-10T22:30:14.231523+00:00",
         "asking_idr": 600000,
         "in_stock": true
       },
       "previous_day": {
-        "observed_at": "2026-10-09T16:30:14.627447+00:00",
+        "observed_at": "2026-10-10T16:30:14.219750+00:00",
         "asking_idr": 600000,
         "in_stock": true
       },
       "change_from_previous_day_idr": 0,
       "daily_latest": [
+        {
+          "date_wib": "2026-10-11",
+          "observed_at": "2026-10-10T22:30:14.231523+00:00",
+          "asking_idr": 600000,
+          "in_stock": true
+        },
         {
           "date_wib": "2026-10-10",
           "observed_at": "2026-10-10T16:30:14.219750+00:00",
