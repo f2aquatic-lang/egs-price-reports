@@ -1,21 +1,21 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-12T20:10:05.488150+00:00",
+  "generated_at": "2026-10-13T02:10:05.682021+00:00",
   "price_type": "OBSERVED_ASKING_ONLY",
   "source": "toco_public_reviewed",
   "coverage": {
     "watched": 6,
     "observed_within_14_days": 6,
     "fresh_within_8_hours": 6,
-    "last_observed_at": "2026-10-12T16:30:20.341006+00:00"
+    "last_observed_at": "2026-10-12T22:30:21.229560+00:00"
   },
   "discovery": {
-    "generated_at": "2026-10-12T19:45:53.508526+00:00",
+    "generated_at": "2026-10-13T01:41:02.817139+00:00",
     "pages": 2,
     "links_examined": 90,
-    "candidates_latest": 42,
+    "candidates_latest": 41,
     "tracked_latest": 6,
-    "pending_latest": 36,
+    "pending_latest": 35,
     "candidates": [
       {
         "url": "https://toco.id/id/listing/arceus-v-sr-aa-s9-id-egs-95-1790735706361-4864",
@@ -144,15 +144,15 @@
         "tracked": false
       },
       {
-        "url": "https://toco.id/id/listing/mega-charizard-x-ex-sr-graded-egs-95-gem-mint-1783578307303-4bdd",
-        "search_text": "Sisa 1 MEGA CHARIZARD X EX SR (GRADED EGS 9.5 GEM MINT) Rp675.000 Kota Depok",
-        "grade_hint": "9.5",
+        "url": "https://toco.id/id/listing/mega-charizard-x-ex-kobaran-biru-egs-10-clear-slab-not-tag-grading-slab-original-1782460884578-9151",
+        "search_text": "Sisa 1 Mega charizard X ex kobaran biru egs 10 Clear slab not tag Grading Slab Original Rp950.000 Kabupaten Deli Serdang",
+        "grade_hint": "10",
         "tracked": false
       },
       {
-        "url": "https://toco.id/id/listing/mega-dragonite-ex-ma3-232193-egs-10-celar-slab-not-tag-grading-slab-original-1782460930972-257c",
-        "search_text": "Sisa 1 Mega Dragonite Ex MA3 232/193 egs 10 celar slab not tag Grading Slab Original Rp850.000 Kabupaten Deli Serdang",
-        "grade_hint": "10",
+        "url": "https://toco.id/id/listing/mega-charizard-x-ex-sr-graded-egs-95-gem-mint-1783578307303-4bdd",
+        "search_text": "Sisa 1 MEGA CHARIZARD X EX SR (GRADED EGS 9.5 GEM MINT) Rp675.000 Kota Depok",
+        "grade_hint": "9.5",
         "tracked": false
       },
       {
@@ -200,12 +200,6 @@
       {
         "url": "https://toco.id/id/listing/pika-egs-10-1788180004726-6179",
         "search_text": "Sisa 1 Pika egs 10 Rp600.000 Kabupaten Pemalang",
-        "grade_hint": "10",
-        "tracked": false
-      },
-      {
-        "url": "https://toco.id/id/listing/pikachu-scarlet-violet-original-chinese-egs-10-grading-slab-original-1782460999517-1755",
-        "search_text": "Sisa 1 pikachu Scarlet violet Original Chinese egs 10 Grading Slab Original Rp1.000.000 Kabupaten Deli Serdang",
         "grade_hint": "10",
         "tracked": false
       },
@@ -280,17 +274,23 @@
       "grade": "10",
       "url": "https://toco.id/id/listing/egs-10-mega-venusaur-ex-sar-173-ma1-pokemon-evolusi-mega-id-1790389583180-2c05",
       "latest": {
-        "observed_at": "2026-10-12T16:30:03.517176+00:00",
+        "observed_at": "2026-10-12T22:30:03.535667+00:00",
         "asking_idr": 650000,
         "in_stock": true
       },
       "previous_day": {
-        "observed_at": "2026-10-11T16:30:03.292929+00:00",
+        "observed_at": "2026-10-12T16:30:03.517176+00:00",
         "asking_idr": 650000,
         "in_stock": true
       },
       "change_from_previous_day_idr": 0,
       "daily_latest": [
+        {
+          "date_wib": "2026-10-13",
+          "observed_at": "2026-10-12T22:30:03.535667+00:00",
+          "asking_idr": 650000,
+          "in_stock": true
+        },
         {
           "date_wib": "2026-10-12",
           "observed_at": "2026-10-12T16:30:03.517176+00:00",
@@ -385,17 +385,23 @@
       "grade": "10",
       "url": "https://toco.id/id/listing/kartu-pokemon-pikachu-ex-sr-211182-egs-grading-10-kilat-rasi-original-1788853700917-e73b",
       "latest": {
-        "observed_at": "2026-10-12T16:30:07.063075+00:00",
+        "observed_at": "2026-10-12T22:30:07.075856+00:00",
         "asking_idr": 875000,
         "in_stock": true
       },
       "previous_day": {
-        "observed_at": "2026-10-11T16:30:05.601517+00:00",
+        "observed_at": "2026-10-12T16:30:07.063075+00:00",
         "asking_idr": 875000,
         "in_stock": true
       },
       "change_from_previous_day_idr": 0,
       "daily_latest": [
+        {
+          "date_wib": "2026-10-13",
+          "observed_at": "2026-10-12T22:30:07.075856+00:00",
+          "asking_idr": 875000,
+          "in_stock": true
+        },
         {
           "date_wib": "2026-10-12",
           "observed_at": "2026-10-12T16:30:07.063075+00:00",
@@ -490,17 +496,23 @@
       "grade": "10",
       "url": "https://toco.id/id/listing/egs-10-pikachu-234-pokemon-indonesia-set-mega-impian-1784389258255-e1eb",
       "latest": {
-        "observed_at": "2026-10-12T16:30:10.606702+00:00",
+        "observed_at": "2026-10-12T22:30:10.615446+00:00",
         "asking_idr": 2760000,
         "in_stock": true
       },
       "previous_day": {
-        "observed_at": "2026-10-11T16:30:07.804976+00:00",
+        "observed_at": "2026-10-12T16:30:10.606702+00:00",
         "asking_idr": 2760000,
         "in_stock": true
       },
       "change_from_previous_day_idr": 0,
       "daily_latest": [
+        {
+          "date_wib": "2026-10-13",
+          "observed_at": "2026-10-12T22:30:10.615446+00:00",
+          "asking_idr": 2760000,
+          "in_stock": true
+        },
         {
           "date_wib": "2026-10-12",
           "observed_at": "2026-10-12T16:30:10.606702+00:00",
@@ -595,17 +607,23 @@
       "grade": "10",
       "url": "https://toco.id/id/listing/kartu-pokemon-mega-charizard-x-ex-ma-223193-egs-grading-10-mega-impian-original-1788853544170-191d",
       "latest": {
-        "observed_at": "2026-10-12T16:30:13.261050+00:00",
+        "observed_at": "2026-10-12T22:30:14.154049+00:00",
         "asking_idr": 875000,
         "in_stock": true
       },
       "previous_day": {
-        "observed_at": "2026-10-11T16:30:09.983471+00:00",
+        "observed_at": "2026-10-12T16:30:13.261050+00:00",
         "asking_idr": 875000,
         "in_stock": true
       },
       "change_from_previous_day_idr": 0,
       "daily_latest": [
+        {
+          "date_wib": "2026-10-13",
+          "observed_at": "2026-10-12T22:30:14.154049+00:00",
+          "asking_idr": 875000,
+          "in_stock": true
+        },
         {
           "date_wib": "2026-10-12",
           "observed_at": "2026-10-12T16:30:13.261050+00:00",
@@ -700,17 +718,23 @@
       "grade": "9.5",
       "url": "https://toco.id/id/listing/tcg-pokemon-indonesia-ar-210193-zekrom-n-slab-egs-95-1782381348156-dcc2",
       "latest": {
-        "observed_at": "2026-10-12T16:30:16.802773+00:00",
+        "observed_at": "2026-10-12T22:30:17.691418+00:00",
         "asking_idr": 550000,
         "in_stock": true
       },
       "previous_day": {
-        "observed_at": "2026-10-11T16:30:12.173500+00:00",
+        "observed_at": "2026-10-12T16:30:16.802773+00:00",
         "asking_idr": 550000,
         "in_stock": true
       },
       "change_from_previous_day_idr": 0,
       "daily_latest": [
+        {
+          "date_wib": "2026-10-13",
+          "observed_at": "2026-10-12T22:30:17.691418+00:00",
+          "asking_idr": 550000,
+          "in_stock": true
+        },
         {
           "date_wib": "2026-10-12",
           "observed_at": "2026-10-12T16:30:16.802773+00:00",
@@ -805,17 +829,23 @@
       "grade": "9.5",
       "url": "https://toco.id/id/listing/tcg-pokemon-indonesia-ma-232193-mega-dragonite-ex-slab-egs-95-1782381379114-3b4d",
       "latest": {
-        "observed_at": "2026-10-12T16:30:20.341006+00:00",
+        "observed_at": "2026-10-12T22:30:21.229560+00:00",
         "asking_idr": 600000,
         "in_stock": true
       },
       "previous_day": {
-        "observed_at": "2026-10-11T16:30:14.381789+00:00",
+        "observed_at": "2026-10-12T16:30:20.341006+00:00",
         "asking_idr": 600000,
         "in_stock": true
       },
       "change_from_previous_day_idr": 0,
       "daily_latest": [
+        {
+          "date_wib": "2026-10-13",
+          "observed_at": "2026-10-12T22:30:21.229560+00:00",
+          "asking_idr": 600000,
+          "in_stock": true
+        },
         {
           "date_wib": "2026-10-12",
           "observed_at": "2026-10-12T16:30:20.341006+00:00",
