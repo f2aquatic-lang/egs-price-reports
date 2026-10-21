@@ -3,20 +3,20 @@
  "kind": "EGS_WATCH",
  "price_type": "OBSERVED_ASKING_ONLY",
  "source": "toco_public_search",
- "generated_at": "2026-10-20T22:50:01.457802+00:00",
+ "generated_at": "2026-10-21T04:50:01.396318+00:00",
  "run": {
-  "started_at": "2026-10-20T22:50:01.457802+00:00",
+  "started_at": "2026-10-21T04:50:01.396318+00:00",
   "queries": 143,
-  "requests": 287,
-  "ok_requests": 287,
+  "requests": 284,
+  "ok_requests": 284,
   "failed_requests": 0,
   "cached_requests": 0,
   "retries": 0,
   "blocked": null,
   "source_ok": true,
-  "results_seen": 3954,
-  "ignored_not_egs": 3786,
-  "candidates": 168,
+  "results_seen": 3941,
+  "ignored_not_egs": 3768,
+  "candidates": 173,
   "accepted_new": 0,
   "rejected": 91,
   "rejected_reasons": {
@@ -25,11 +25,11 @@
    "no_pokemon_signal": 11,
    "product": 6
   },
-  "checked_ok": 80,
+  "checked_ok": 83,
   "check_failed": 0,
   "recheck": {
-   "ok": 3,
    "missing_from_search": 6,
+   "ok": 1,
    "skipped": 0
   },
   "photo_reads": 0,
@@ -37,15 +37,15 @@
   "imported": null,
   "worksheet": null,
   "dry_run": false,
-  "finished_at": "2026-10-20T22:54:29.705394+00:00"
+  "finished_at": "2026-10-21T04:56:57.981147+00:00"
  },
  "summary": {
-  "candidates_found": 168,
+  "candidates_found": 173,
   "accepted_total": 33,
   "accepted_existing": 6,
   "accepted_auto": 27,
   "accepted_new_this_run": 0,
-  "ambiguous": 53,
+  "ambiguous": 56,
   "rejected_this_run": 91,
   "rejected_reasons": {
    "foreign_language": 42,
@@ -57,7 +57,7 @@
   "cards": 27,
   "sellers_unique": 14,
   "status": {
-   "ok": 80,
+   "ok": 83,
    "missing_from_search": 6
   },
   "by_source": {
@@ -66,7 +66,7 @@
     "counted": 31
    }
   },
-  "checked_ok_this_run": 80,
+  "checked_ok_this_run": 83,
   "check_failed_this_run": 0,
   "price_changes_24h": 0,
   "price_changes": [],
@@ -74,7 +74,7 @@
    "fresh_8h": 30,
    "fresh_24h": 0,
    "older": 3,
-   "newest_ok": "2026-10-20T22:50:01.457802+00:00",
+   "newest_ok": "2026-10-21T04:50:01.396318+00:00",
    "oldest_ok": "2026-10-09T04:50:01.863019+00:00"
   }
  },
@@ -774,10 +774,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -797,7 +797,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 200000,
     "in_stock": true
    },
@@ -810,7 +810,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 200000,
      "in_stock": true
     },
@@ -921,10 +921,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -944,7 +944,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 200000,
     "in_stock": true
    },
@@ -957,7 +957,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 200000,
      "in_stock": true
     },
@@ -1071,10 +1071,10 @@
    "list_idr": 1300000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1095,7 +1095,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 1196000,
     "in_stock": true
    },
@@ -1108,7 +1108,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 1196000,
      "in_stock": true
     },
@@ -1219,7 +1219,7 @@
    "list_idr": null,
    "stock": 1,
    "status": "missing_from_search",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
    "last_ok": "2026-10-09T04:50:01.863019+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
    "last_seen_in_search": "2026-10-09T04:50:01.863019+00:00",
@@ -1295,10 +1295,10 @@
    "list_idr": 2300000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1318,7 +1318,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 2070000,
     "in_stock": true
    },
@@ -1331,7 +1331,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 2070000,
      "in_stock": true
     },
@@ -1442,10 +1442,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1465,7 +1465,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 500000,
     "in_stock": true
    },
@@ -1478,7 +1478,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 500000,
      "in_stock": true
     },
@@ -1589,10 +1589,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1612,7 +1612,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 150000,
     "in_stock": true
    },
@@ -1625,7 +1625,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 150000,
      "in_stock": true
     },
@@ -1736,10 +1736,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1759,7 +1759,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 175000,
     "in_stock": true
    },
@@ -1772,7 +1772,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 175000,
      "in_stock": true
     },
@@ -1883,10 +1883,10 @@
    "list_idr": 500000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -1906,7 +1906,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 400000,
     "in_stock": true
    },
@@ -1919,7 +1919,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 400000,
      "in_stock": true
     },
@@ -2030,10 +2030,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-09-28T16:30:10.681264+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -2054,7 +2054,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 875000,
     "in_stock": true
    },
@@ -2067,7 +2067,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 875000,
      "in_stock": true
     },
@@ -2226,10 +2226,10 @@
    "list_idr": 2000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2250,7 +2250,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 1340000,
     "in_stock": true
    },
@@ -2263,7 +2263,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 1340000,
      "in_stock": true
     },
@@ -2374,10 +2374,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2397,7 +2397,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 675000,
     "in_stock": true
    },
@@ -2410,7 +2410,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 675000,
      "in_stock": true
     },
@@ -2521,10 +2521,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2544,7 +2544,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 850000,
     "in_stock": true
    },
@@ -2557,7 +2557,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 850000,
      "in_stock": true
     },
@@ -2668,10 +2668,10 @@
    "list_idr": 750000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-09-28T16:30:15.397359+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -2692,7 +2692,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 600000,
     "in_stock": true
    },
@@ -2705,7 +2705,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 600000,
      "in_stock": true
     },
@@ -2867,10 +2867,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -2891,7 +2891,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 550000,
     "in_stock": true
    },
@@ -2904,7 +2904,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 550000,
      "in_stock": true
     },
@@ -3015,10 +3015,10 @@
    "list_idr": 3000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -3039,7 +3039,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 2700000,
     "in_stock": true
    },
@@ -3052,7 +3052,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 2700000,
      "in_stock": true
     },
@@ -3163,10 +3163,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -3187,7 +3187,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 780000,
     "in_stock": true
    },
@@ -3200,7 +3200,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 780000,
      "in_stock": true
     },
@@ -3311,10 +3311,10 @@
    "list_idr": 1000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -3334,7 +3334,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 650000,
     "in_stock": true
    },
@@ -3347,7 +3347,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 650000,
      "in_stock": true
     },
@@ -3458,10 +3458,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-09-27T16:30:02.943431+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -3481,7 +3481,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 650000,
     "in_stock": true
    },
@@ -3494,7 +3494,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 650000,
      "in_stock": true
     },
@@ -3659,10 +3659,10 @@
    "list_idr": 1100000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -3683,7 +3683,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 968000,
     "in_stock": true
    },
@@ -3696,7 +3696,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 968000,
      "in_stock": true
     },
@@ -3807,10 +3807,10 @@
    "list_idr": 1200000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -3831,7 +3831,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 1080000,
     "in_stock": true
    },
@@ -3844,7 +3844,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 1080000,
      "in_stock": true
     },
@@ -3955,10 +3955,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -3978,7 +3978,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 500000,
     "in_stock": true
    },
@@ -3991,7 +3991,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 500000,
      "in_stock": true
     },
@@ -4102,7 +4102,7 @@
    "list_idr": null,
    "stock": 1,
    "status": "missing_from_search",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
    "last_ok": "2026-10-19T04:50:01.483248+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
    "last_seen_in_search": "2026-10-19T04:50:01.483248+00:00",
@@ -4237,10 +4237,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-09-27T16:30:05.172022+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -4260,7 +4260,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 875000,
     "in_stock": true
    },
@@ -4273,7 +4273,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 875000,
      "in_stock": true
     },
@@ -4438,10 +4438,10 @@
    "list_idr": 3000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-09-28T16:30:08.362111+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -4461,7 +4461,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 2760000,
     "in_stock": true
    },
@@ -4474,7 +4474,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 2760000,
      "in_stock": true
     },
@@ -4633,10 +4633,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -4656,7 +4656,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 1000000,
     "in_stock": true
    },
@@ -4669,7 +4669,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 1000000,
      "in_stock": true
     },
@@ -4780,10 +4780,10 @@
    "list_idr": 1000000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -4804,7 +4804,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 650000,
     "in_stock": true
    },
@@ -4817,7 +4817,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 650000,
      "in_stock": true
     },
@@ -4928,10 +4928,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -4952,7 +4952,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 800000,
     "in_stock": true
    },
@@ -4965,7 +4965,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 800000,
      "in_stock": true
     },
@@ -5076,10 +5076,10 @@
    "list_idr": 1500000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -5100,7 +5100,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 1050000,
     "in_stock": true
    },
@@ -5113,7 +5113,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 1050000,
      "in_stock": true
     },
@@ -5224,10 +5224,10 @@
    "list_idr": null,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -5247,7 +5247,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 175000,
     "in_stock": true
    },
@@ -5260,7 +5260,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 175000,
      "in_stock": true
     },
@@ -5371,10 +5371,10 @@
    "list_idr": 850000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "search",
    "verdict": "accepted",
    "identity": {
@@ -5395,7 +5395,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 765000,
     "in_stock": true
    },
@@ -5408,7 +5408,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 765000,
      "in_stock": true
     },
@@ -5519,10 +5519,10 @@
    "list_idr": 750000,
    "stock": 1,
    "status": "ok",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "first_seen": "2026-09-28T16:30:13.065047+00:00",
-   "last_seen_in_search": "2026-10-20T22:50:01.457802+00:00",
+   "last_seen_in_search": "2026-10-21T04:50:01.396318+00:00",
    "origin": "bot",
    "verdict": "accepted",
    "identity": {
@@ -5543,7 +5543,7 @@
    "counted": true,
    "excluded": null,
    "latest": {
-    "observed_at": "2026-10-20T22:50:01.457802+00:00",
+    "observed_at": "2026-10-21T04:50:01.396318+00:00",
     "asking_idr": 550000,
     "in_stock": true
    },
@@ -5556,7 +5556,7 @@
    "daily_latest": [
     {
      "date_wib": "2026-10-21",
-     "observed_at": "2026-10-20T22:50:01.457802+00:00",
+     "observed_at": "2026-10-21T04:50:01.396318+00:00",
      "asking_idr": 550000,
      "in_stock": true
     },
@@ -5716,7 +5716,7 @@
    "list_idr": null,
    "stock": 1,
    "status": "missing_from_search",
-   "status_at": "2026-10-20T22:50:01.457802+00:00",
+   "status_at": "2026-10-21T04:50:01.396318+00:00",
    "last_ok": "2026-10-17T10:50:01.079448+00:00",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
    "last_seen_in_search": "2026-10-17T10:50:01.079448+00:00",
@@ -5837,7 +5837,7 @@
    "city": "Kabupaten Belitung",
    "status": "ok",
    "first_seen": "2026-10-07T22:50:02.035769+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "company_conflict",
@@ -5900,7 +5900,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -5958,7 +5958,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -6016,7 +6016,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-13T10:50:02.134207+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "number_missing",
@@ -6070,7 +6070,7 @@
    "city": "Kota Jakarta Utara",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "card_not_in_catalog",
@@ -6097,7 +6097,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T08:02:32.232555+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -6155,7 +6155,7 @@
    "city": "Kota Pekanbaru",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "title_changed",
@@ -6177,6 +6177,118 @@
    }
   },
   {
+   "url": "https://toco.id/id/listing/egs-10-umbreon-sar-30th-1792548632742-7f09",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/30ec35c6-220c-460f-a31a-9377eba9d120-0ac08b05-66d1-48fb-bb73-7e481006251c-a37a6271-29a6-4a81-ac71-c4269595a157.webp",
+   "title": "EGS 10 UMBREON SAR 30th",
+   "asking_idr": 1600000,
+   "stock": 1,
+   "seller": "yaka7",
+   "city": "Kota Jakarta Utara",
+   "status": "ok",
+   "first_seen": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
+   "reasons": [
+    {
+     "code": "language_unproven",
+     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
+    },
+    {
+     "code": "number_missing",
+     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+    }
+   ],
+   "suggestions": [
+    {
+     "set_code": "AS4A",
+     "card_number": "110/178",
+     "name": "Umbreon",
+     "rarity": "U",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00002638.png"
+    },
+    {
+     "set_code": "AS4D",
+     "card_number": "101/182",
+     "name": "Umbreon",
+     "rarity": "U",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00004293.jpg"
+    },
+    {
+     "set_code": "MA6",
+     "card_number": "093/130",
+     "name": "Umbreon",
+     "rarity": null,
+     "image": "https://asia.pokemon-card.com/id/card-img/id00019739.png"
+    },
+    {
+     "set_code": "MA6",
+     "card_number": "094/130",
+     "name": "Umbreon ex",
+     "rarity": "RR",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00019740.png"
+    }
+   ],
+   "identity": {
+    "company": "EGS",
+    "grade": "10"
+   }
+  },
+  {
+   "url": "https://toco.id/id/listing/egs-10-espeon-sar-30th-1792548576136-25c8",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/6af40640-8036-4d61-8135-baa51d1ed502-0ac08b05-66d1-48fb-bb73-7e481006251c-d0bce2a0-7725-4f75-85ca-611039a0228c.webp",
+   "title": "EGS 10 ESPEON SAR 30th",
+   "asking_idr": 1400000,
+   "stock": 1,
+   "seller": "yaka7",
+   "city": "Kota Jakarta Utara",
+   "status": "ok",
+   "first_seen": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
+   "reasons": [
+    {
+     "code": "language_unproven",
+     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
+    },
+    {
+     "code": "number_missing",
+     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+    }
+   ],
+   "suggestions": [
+    {
+     "set_code": "AS4A",
+     "card_number": "074/178",
+     "name": "Espeon",
+     "rarity": "C",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00002604.png"
+    },
+    {
+     "set_code": "AS4D",
+     "card_number": "065/182",
+     "name": "Espeon",
+     "rarity": "C",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00004257.jpg"
+    },
+    {
+     "set_code": "MA6",
+     "card_number": "071/130",
+     "name": "Espeon",
+     "rarity": null,
+     "image": "https://asia.pokemon-card.com/id/card-img/id00019717.png"
+    },
+    {
+     "set_code": "MA6",
+     "card_number": "072/130",
+     "name": "Espeon ex",
+     "rarity": "RR",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00019718.png"
+    }
+   ],
+   "identity": {
+    "company": "EGS",
+    "grade": "10"
+   }
+  },
+  {
    "url": "https://toco.id/id/listing/kartu-pokemon-mega-rayquaza-ex-egs-grading-10-promo-25th-25-th-anniversary-original-1788853782214-9810",
    "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/bc324928-30f2-40d8-be70-af7b3bcdf7b1-e0f3cb66-a233-4680-a3c5-9bf624032789-849398b7-ea24-485a-8e30-100eb52ab2f8.webp",
    "title": "Kartu Pokemon Mega Rayquaza EX EGS Grading 10 Promo 25th 25 th Anniversary Original",
@@ -6186,7 +6298,7 @@
    "city": "Kota Jakarta Selatan",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "set_unknown",
@@ -6242,7 +6354,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "card_not_in_catalog",
@@ -6269,7 +6381,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "card_not_in_catalog",
@@ -6296,7 +6408,7 @@
    "city": "Kota Jakarta Pusat",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "language_unproven",
@@ -6339,7 +6451,7 @@
    "city": "Kabupaten Deli Serdang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "language_conflict",
@@ -6395,6 +6507,55 @@
    }
   },
   {
+   "url": "https://toco.id/id/listing/egs-10-don-sar-1792548495552-cabc",
+   "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/20f7b0bb-294c-4697-a628-04e7c7d29213-0ac08b05-66d1-48fb-bb73-7e481006251c-e2e38f04-82b4-4dc2-bb59-735a2bc3efce.webp",
+   "title": "EGS 10 DON SAR",
+   "asking_idr": 1000000,
+   "stock": 1,
+   "seller": "yaka7",
+   "city": "Kota Jakarta Utara",
+   "status": "ok",
+   "first_seen": "2026-10-21T04:50:01.396318+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
+   "reasons": [
+    {
+     "code": "language_unproven",
+     "text": "Bahasa Indonesia belum terbukti (tidak ada kata ID/Indonesia, kode set MA, atau foto)"
+    },
+    {
+     "code": "number_missing",
+     "text": "Nomor kartu tidak ditulis dan belum terbaca dari foto"
+    }
+   ],
+   "suggestions": [
+    {
+     "set_code": "SV4A",
+     "card_number": "175/190",
+     "name": "Don",
+     "rarity": "U",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00010075.png"
+    },
+    {
+     "set_code": "SV4A",
+     "card_number": "344/190",
+     "name": "Don",
+     "rarity": "SR",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00010273.png"
+    },
+    {
+     "set_code": "SV4A",
+     "card_number": "352/190",
+     "name": "Don",
+     "rarity": "SAR",
+     "image": "https://asia.pokemon-card.com/id/card-img/id00010281.png"
+    }
+   ],
+   "identity": {
+    "company": "EGS",
+    "grade": "10"
+   }
+  },
+  {
    "url": "https://toco.id/id/listing/pokemon-mew-vmax-ind-egs-9-1778378691276-c542",
    "photo": "https://d13eru2cpf9i9v.cloudfront.net/toco/38d5dd70-8234-4b4b-88f3-124d93be7c98-e74956b4-1520-405d-a7e7-fec76d41eec5-0e5f357c-f818-4bb6-bdbd-3262c3edd6f8.webp",
    "title": "Pokemon Mew Vmax ind EGS 9",
@@ -6404,7 +6565,7 @@
    "city": "Kota Jakarta Utara",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -6463,7 +6624,7 @@
    "city": "Kota Jakarta Barat",
    "status": "ok",
    "first_seen": "2026-10-19T22:50:02.127971+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "language_unproven",
@@ -6519,7 +6680,7 @@
    "city": "Kabupaten Deli Serdang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -6577,7 +6738,7 @@
    "city": "Kota Jakarta Utara",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -6636,7 +6797,7 @@
    "city": "Kota Jakarta Barat",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "grade_missing",
@@ -6699,7 +6860,7 @@
    "city": "Kota Bekasi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "set_unknown",
@@ -6726,7 +6887,7 @@
    "city": "Kabupaten Karawang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -6785,7 +6946,7 @@
    "city": "Kota Tangerang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "number_missing",
@@ -6840,7 +7001,7 @@
    "city": "Kota Padang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "name_mismatch",
@@ -6870,7 +7031,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -6907,7 +7068,7 @@
    "city": "Kota Tangerang Selatan",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "set_unknown",
@@ -6934,7 +7095,7 @@
    "city": "Kota Jakarta Timur",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "title_changed",
@@ -6996,7 +7157,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -7033,7 +7194,7 @@
    "city": "Kota Jakarta Timur",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "set_unknown",
@@ -7059,7 +7220,7 @@
    "city": "Kabupaten Pemalang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "number_missing",
@@ -7084,7 +7245,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -7147,7 +7308,7 @@
    "city": "Kota Jakarta Timur",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "name_mismatch",
@@ -7177,7 +7338,7 @@
    "city": "Kota Bandar Lampung",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "set_unknown",
@@ -7203,7 +7364,7 @@
    "city": "Kota Tangerang Selatan",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "grade_missing",
@@ -7243,7 +7404,7 @@
    "city": "Kota Tangerang Selatan",
    "status": "ok",
    "first_seen": "2026-10-19T10:50:01.056081+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "number_missing",
@@ -7283,7 +7444,7 @@
    "city": "Kota Jakarta Utara",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "name_mismatch",
@@ -7316,7 +7477,7 @@
    "city": "Kabupaten Cianjur",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "number_missing",
@@ -7370,7 +7531,7 @@
    "city": "Kota Bandar Lampung",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "language_conflict",
@@ -7401,7 +7562,7 @@
    "city": "Kabupaten Ponorogo",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "bundle",
@@ -7434,7 +7595,7 @@
    "city": "Kota Tangerang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "number_missing",
@@ -7488,7 +7649,7 @@
    "city": "Kota Jakarta Barat",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "bundle",
@@ -7519,7 +7680,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "card_not_in_catalog",
@@ -7546,7 +7707,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T08:02:32.232555+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "card_not_in_catalog",
@@ -7629,7 +7790,7 @@
    "city": "Kota Balikpapan",
    "status": "ok",
    "first_seen": "2026-10-09T22:50:01.894410+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "company_conflict",
@@ -7667,7 +7828,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "language_conflict",
@@ -7697,7 +7858,7 @@
    "city": "Kota Tangerang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "name_mismatch",
@@ -7727,7 +7888,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "number_missing",
@@ -7781,7 +7942,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "name_mismatch",
@@ -7814,7 +7975,7 @@
    "city": "Kota Bandar Lampung",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -7872,7 +8033,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "title_changed",
@@ -7902,7 +8063,7 @@
    "city": "Kabupaten Magetan",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "language_conflict",
@@ -7960,7 +8121,7 @@
    "city": "Kota Jambi",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "photo_unsure",
@@ -8019,7 +8180,7 @@
    "city": "Kota Malang",
    "status": "ok",
    "first_seen": "2026-10-06T06:44:56.138235+00:00",
-   "last_ok": "2026-10-20T22:50:01.457802+00:00",
+   "last_ok": "2026-10-21T04:50:01.396318+00:00",
    "reasons": [
     {
      "code": "company_conflict",
